@@ -1,0 +1,132 @@
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: air24-mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - ./mosquitto/data:/mosquitto/data
+    restart: unless-stopped
+
+
+  nodered:
+    image: nodered/node-red:latest
+    container_name: air24-nodered
+    ports:
+      - "1880:1880"
+    volumes:
+      - ./nodered/data:/data
+    depends_on:
+      - mosquitto
+      - influxdb
+      - postgres
+    restart: unless-stopped
+
+  
+  influxdb:
+    image: influxdb:2.7
+    container_name: air24-influxdb
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./influx/data:/var/lib/influxdb2
+    restart: unless-stopped
+
+
+  postgres:
+    image: postgres:16
+    container_name: air24-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+  
+  
+  api:
+    build:
+      context: ./api
+    container_name: air24-api
+    ports:
+      - "8000:8000"
+    environment:
+      API_KEY: ${API_KEY}
+    depends_on:
+      - postgres
+      - influxdb
+    restart: unless-stopped
+   
+  
+  air-simulator:
+    build:
+      context: ./simulators/air
+    container_name: air24-simulator
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
+  
+  energy-simulator:
+    profiles: ["team-1"]
+    build:
+      context: ./simulators/energy
+    container_name: air24-energy-simulator
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
+  coldchain-simulator:
+    profiles: ["team-2"]
+    build:
+      context: ./simulators/coldchain
+    container_name: air24-coldchain-simulator
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
+
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    container_name: air24-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+
