@@ -1,4 +1,3 @@
-
 services:
   mosquitto:
     image: eclipse-mosquitto:2
@@ -9,7 +8,6 @@ services:
       - ./mosquitto/config:/mosquitto/config:ro
       - ./mosquitto/data:/mosquitto/data
     restart: unless-stopped
-
 
   nodered:
     image: nodered/node-red:latest
@@ -24,7 +22,6 @@ services:
       - postgres
     restart: unless-stopped
 
-  
   influxdb:
     image: influxdb:2.7
     container_name: air24-influxdb
@@ -41,7 +38,6 @@ services:
       - ./influx/data:/var/lib/influxdb2
     restart: unless-stopped
 
-
   postgres:
     image: postgres:16
     container_name: air24-postgres
@@ -55,8 +51,7 @@ services:
       - ./postgres/data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
-  
-  
+
   api:
     build:
       context: ./api
@@ -65,12 +60,44 @@ services:
       - "8000:8000"
     environment:
       API_KEY: ${API_KEY}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
+      INFLUXDB_ORG: ${INFLUXDB_ORG}
+      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET}
     depends_on:
       - postgres
       - influxdb
     restart: unless-stopped
-   
-  
+
+  dashboard:
+    image: nginx:alpine
+    container_name: air24-dashboard
+    ports:
+      - "8080:80"
+    volumes:
+      - ./dashboard:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    container_name: air24-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+
   air-simulator:
     build:
       context: ./simulators/air
@@ -84,7 +111,6 @@ services:
       - mosquitto
     restart: unless-stopped
 
-  
   energy-simulator:
     profiles: ["team-1"]
     build:
@@ -112,21 +138,3 @@ services:
     depends_on:
       - mosquitto
     restart: unless-stopped
-
-
-
-  grafana:
-    image: grafana/grafana:11.5.2
-    container_name: air24-grafana
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./grafana/data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
-    depends_on:
-      - influxdb
-    restart: unless-stopped
-
