@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini IoT Platform Kampus - AIR24</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .pulse-dot {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col antialiased">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700/80 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">
+          IOT
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-lg font-bold text-white leading-tight">Mini IoT Platform Kampus</h1>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium border border-blue-500/30">AIR24</span>
+          </div>
+          <p class="text-xs text-slate-400">Tim 3 · Smart Environment & Wali Integrasi Lintas Domain</p>
+        </div>
+      </div>
+
+      <!-- Live Clock & Controls -->
+      <div class="flex items-center space-x-4">
+        <!-- Live Status Pill -->
+        <div id="conn-status-pill" class="flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+          <span id="conn-status-text">API Terhubung</span>
+        </div>
+
+        <!-- Clock (WIB) -->
+        <div class="hidden sm:block text-right">
+          <div id="clock-time" class="text-xs font-mono font-bold text-slate-200">--:--:-- WIB</div>
+          <div id="clock-date" class="text-[10px] text-slate-400">Loading...</div>
+        </div>
+
+        <!-- Auto-refresh Toggle & Settings -->
+        <button id="btn-refresh" onclick="fetchSummary()" class="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- TAB NAVIGATION -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-700/50 flex space-x-6 text-sm font-medium">
+      <button onclick="switchTab('overview')" id="tab-btn-overview" class="py-3 border-b-2 border-blue-500 text-blue-400 flex items-center space-x-2 transition">
+        <span>🌐 Ringkasan Kampus</span>
+      </button>
+      <button onclick="switchTab('air')" id="tab-btn-air" class="py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition">
+        <span>🌱 Smart Environment (Air)</span>
+      </button>
+      <button onclick="switchTab('coldchain')" id="tab-btn-coldchain" class="py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition">
+        <span>❄️ Cold-Chain</span>
+      </button>
+      <button onclick="switchTab('energy')" id="tab-btn-energy" class="py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition">
+        <span>⚡ Smart Energy</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ERROR ALERT BANNER (IF API FAILS) -->
+  <div id="api-error-banner" class="hidden bg-rose-900/40 border-b border-rose-500/50 text-rose-200 px-4 py-2.5 text-xs text-center">
+    <strong>Peringatan Koneksi:</strong> Gagal menghubungi FastAPI di port 8000. Pastikan service API berjalan dan X-API-Key sesuai.
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- KPI BAR LINTAS DOMAIN (Bagian 7.4) -->
+    <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      
+      <!-- Total Perangkat -->
+      <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+        <div class="text-xs text-slate-400 font-medium">Total Perangkat</div>
+        <div class="mt-2 flex items-baseline space-x-2">
+          <span id="kpi-online-devices" class="text-2xl font-extrabold text-emerald-400">0</span>
+          <span class="text-xs text-slate-400">/ <span id="kpi-total-devices">10</span> Online</span>
+        </div>
+        <div class="mt-2 w-full bg-slate-700 rounded-full h-1.5 overflow-hidden">
+          <div id="kpi-devices-bar" class="bg-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Alert Aktif -->
+      <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+        <div class="text-xs text-slate-400 font-medium">Alert Aktif</div>
+        <div class="mt-2 flex items-baseline space-x-2">
+          <span id="kpi-active-alerts" class="text-2xl font-extrabold text-amber-400">0</span>
+          <span class="text-[11px] text-slate-400">Kejadian</span>
+        </div>
+        <div class="mt-2 flex space-x-1.5 text-[10px]">
+          <span id="badge-warning" class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">Warn: 0</span>
+          <span id="badge-critical" class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400">Crit: 0</span>
+        </div>
+      </div>
+
+      <!-- Domain Energy KPI -->
+      <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+        <div class="text-xs text-slate-400 font-medium flex items-center justify-between">
+          <span>⚡ Daya Total</span>
+          <span class="text-[10px] text-blue-400 font-bold">Energy</span>
+        </div>
+        <div class="mt-2 flex items-baseline space-x-1">
+          <span id="kpi-energy-val" class="text-2xl font-extrabold text-white">--</span>
+          <span class="text-xs text-slate-400">W</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex justify-between">
+          <span>Perangkat: <span id="kpi-energy-online">4/4</span></span>
+        </div>
+      </div>
+
+      <!-- Domain Cold-Chain KPI -->
+      <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+        <div class="text-xs text-slate-400 font-medium flex items-center justify-between">
+          <span>❄️ Suhu Terburuk</span>
+          <span class="text-[10px] text-cyan-400 font-bold">Cold-Chain</span>
+        </div>
+        <div class="mt-2 flex items-baseline space-x-1">
+          <span id="kpi-coldchain-val" class="text-2xl font-extrabold text-white">--</span>
+          <span class="text-xs text-slate-400">°C</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex justify-between">
+          <span>Perangkat: <span id="kpi-coldchain-online">3/3</span></span>
+        </div>
+      </div>
+
+      <!-- Domain Air KPI: CO2 Terburuk -->
+      <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+        <div class="text-xs text-slate-400 font-medium flex items-center justify-between">
+          <span>🌱 CO₂ Tertinggi</span>
+          <span class="text-[10px] text-emerald-400 font-bold">Air</span>
+        </div>
+        <div class="mt-2 flex items-baseline space-x-1">
+          <span id="kpi-air-co2-val" class="text-2xl font-extrabold text-white">--</span>
+          <span class="text-xs text-slate-400">ppm</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex justify-between">
+          <span>Perangkat: <span id="kpi-air-online">3/3</span></span>
+        </div>
+      </div>
+
+      <!-- Domain Air KPI: PM2.5 / Kebisingan -->
+      <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+        <div class="text-xs text-slate-400 font-medium flex items-center justify-between">
+          <span>💨 PM2.5 Max</span>
+          <span class="text-[10px] text-purple-400 font-bold">Air</span>
+        </div>
+        <div class="mt-2 flex items-baseline space-x-1">
+          <span id="kpi-air-pm25-val" class="text-2xl font-extrabold text-white">--</span>
+          <span class="text-xs text-slate-400">µg/m³</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex justify-between">
+          <span>Ambang batas: &lt;35</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- TAB 1: RINGKASAN KAMPUS (CROSS-DOMAIN OVERVIEW) -->
+    <!-- ============================================================== -->
+    <div id="content-overview" class="space-y-6">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- KOLOM 1 & 2: DAFTAR PERANGKAT (10 Devices Registry + Live Status) -->
+        <div class="lg:col-span-2 bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-base font-bold text-white">Daftar Perangkat Kampus (Registry & Status)</h2>
+              <p class="text-xs text-slate-400">10 Perangkat Wajib Lintas 3 Domain (GET /api/v1/devices)</p>
+            </div>
+            <!-- Filter Dropdown -->
+            <div class="flex space-x-2">
+              <select id="filter-domain" onchange="renderDevicesTable()" class="bg-slate-700 border border-slate-600 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none">
+                <option value="all">Semua Domain</option>
+                <option value="energy">Smart Energy</option>
+                <option value="coldchain">Cold-Chain</option>
+                <option value="air">Smart Environment</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Table Container -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-700/50 text-slate-300 font-semibold border-b border-slate-600">
+                <tr>
+                  <th class="py-2.5 px-3">Device ID</th>
+                  <th class="py-2.5 px-3">Nama Perangkat</th>
+                  <th class="py-2.5 px-3">Domain</th>
+                  <th class="py-2.5 px-3">Lokasi</th>
+                  <th class="py-2.5 px-3">Jenis</th>
+                  <th class="py-2.5 px-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="device-table-body" class="divide-y divide-slate-700/50">
+                <!-- Data populated dynamically -->
+                <tr>
+                  <td colspan="6" class="py-4 text-center text-slate-400">Memuat daftar perangkat...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- KOLOM 3: FEED ALERT GABUNGAN (Bagian 7.4) + TOMBOL ACK -->
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-base font-bold text-white">Feed Alert Lintas Domain</h2>
+              <p class="text-xs text-slate-400">Kejadian Terdeteksi & Tombol ACK</p>
+            </div>
+            <button onclick="fetchAlerts()" class="text-xs text-blue-400 hover:underline">Refresh</button>
+          </div>
+
+          <!-- Alert Items List -->
+          <div id="alerts-feed-container" class="flex-1 overflow-y-auto max-h-[420px] space-y-2.5 pr-1">
+            <div class="text-center py-8 text-xs text-slate-400">Tidak ada alert aktif saat ini. Sistem dalam keadaan normal.</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- TAB 2: SMART ENVIRONMENT / AIR QUALITY (TIM 3) -->
+    <!-- ============================================================== -->
+    <div id="content-air" class="hidden space-y-6">
+      
+      <!-- Domain Air Header -->
+      <div class="bg-gradient-to-r from-emerald-900/40 to-slate-800 border border-emerald-500/30 rounded-2xl p-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+              <span>🌱 Domain Smart Environment (Air Quality & Kebisingan)</span>
+              <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">Owner: Tim 3</span>
+            </h2>
+            <p class="text-xs text-slate-300 mt-1">
+              Pemantauan konsentrasi CO₂ (ppm), partikulat PM2.5 (µg/m³), dan kebisingan (dB) di ruang kampus BSD-A.
+            </p>
+          </div>
+          <!-- Ambang Rules Info Pill -->
+          <div class="flex flex-wrap gap-2 text-[11px]">
+            <div class="px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
+              CO₂ Warn: <strong class="text-amber-400">&gt;1000</strong> · Crit: <strong class="text-rose-400">&gt;1500 ppm</strong>
+            </div>
+            <div class="px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
+              PM2.5 Warn: <strong class="text-amber-400">&gt;35</strong> · Crit: <strong class="text-rose-400">&gt;75 µg/m³</strong>
+            </div>
+            <div class="px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
+              Noise Warn: <strong class="text-amber-400">&gt;70 dB</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Air Quality Room Cards (3 Nodes: aq-01, aq-02, aq-03) -->
+      <div id="air-rooms-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Injeksi Gangguan Quick Guide (Untuk Demo UAS) -->
+      <div class="bg-slate-800/60 border border-slate-700 rounded-2xl p-5">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+          <span>🛠️ Kontrol & Injektor Gangguan Demo (Bagian 11)</span>
+        </h3>
+        <p class="text-xs text-slate-400 mt-1">Jalankan perintah ini di terminal untuk memicu simulasi saat sesi demo live:</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-xs">
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-emerald-400">
+            python simulator.py --mode CO2_SPIKE
+          </div>
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-purple-400">
+            python simulator.py --mode PM_SPIKE
+          </div>
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-amber-400">
+            python simulator.py --mode NOISE_SPIKE
+          </div>
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-blue-400">
+            python simulator.py --mode STOP
+          </div>
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-rose-400">
+            python simulator.py --mode CRASH
+          </div>
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-slate-300">
+            python simulator.py --mode NORMAL
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- TAB 3: COLD-CHAIN (TIM 2) -->
+    <!-- ============================================================== -->
+    <div id="content-coldchain" class="hidden space-y-6">
+      <div class="bg-gradient-to-r from-cyan-900/40 to-slate-800 border border-cyan-500/30 rounded-2xl p-5">
+        <h2 class="text-lg font-bold text-white">❄️ Cold-Chain / Smart Storage (Tim 2)</h2>
+        <p class="text-xs text-slate-300 mt-1">Pemantauan suhu penyimpanan biologis/vaksin, kelembapan, status pintu, dan eskalasi bertingkat.</p>
+      </div>
+      <div id="coldchain-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- TAB 4: SMART ENERGY (TIM 1) -->
+    <!-- ============================================================== -->
+    <div id="content-energy" class="hidden space-y-6">
+      <div class="bg-gradient-to-r from-blue-900/40 to-slate-800 border border-blue-500/30 rounded-2xl p-5">
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-white">⚡ Smart Energy (Tim 1)</h2>
+            <p class="text-xs text-slate-300 mt-1">Simulasi 4 kWh meter per ruang, deteksi pemborosan di luar jam kerja, dan estimasi tagihan.</p>
+          </div>
+          <div class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-300">
+            Asumsi Tarif: <strong class="text-emerald-400">Rp 1.500 / kWh</strong> (Simulasi)
+          </div>
+        </div>
+      </div>
+      <div id="energy-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-800/60 border-t border-slate-700/80 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>Mini IoT Platform Kampus · CSEB3073 IoT Cloud &amp; Backend · Universitas Prasetiya Mulya</div>
+      <div class="flex items-center space-x-3">
+        <a href="http://localhost:3000" target="_blank" class="text-slate-400 hover:text-white transition underline">Observability Grafana (3000)</a>
+        <span>·</span>
+        <a href="http://localhost:8000/docs" target="_blank" class="text-slate-400 hover:text-white transition underline">OpenAPI /docs (8000)</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCRIPT LOGIC (FETCH API & UI REACTIVITY) -->
+  <script>
+    const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8000' : `http://${window.location.hostname}:8000`;
+    const API_KEY = 'wanganteng'; // Demo key set in .env
+    const HEADERS = {
+      'Content-Type': 'application/json',
+      'X-API-Key': API_KEY
+    };
+
+    let allDevices = [];
+    let currentTab = 'overview';
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock-time').textContent = now.toLocaleTimeString('id-ID') + ' WIB';
+      document.getElementById('clock-date').textContent = now.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Tab Navigation
+    function switchTab(tabId) {
+      currentTab = tabId;
+      const tabs = ['overview', 'air', 'coldchain', 'energy'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const content = document.getElementById(`content-${t}`);
+        if (t === tabId) {
+          btn.className = "py-3 border-b-2 border-blue-500 text-blue-400 flex items-center space-x-2 transition";
+          content.classList.remove('hidden');
+        } else {
+          btn.className = "py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition";
+          content.classList.add('hidden');
+        }
+      });
+      if (tabId === 'air') fetchAirRooms();
+      if (tabId === 'coldchain') fetchColdchainChambers();
+      if (tabId === 'energy') fetchEnergyRooms();
+    }
+
+    // Main Fetch Summary (Cross-Domain)
+    async function fetchSummary() {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/summary`, { headers: HEADERS });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        
+        // Hide Error Banner
+        document.getElementById('api-error-banner').classList.add('hidden');
+        document.getElementById('conn-status-pill').className = "flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        document.getElementById('conn-status-text').textContent = "API Terhubung";
+
+        // Update KPIs
+        const dev = data.devices || {};
+        document.getElementById('kpi-online-devices').textContent = dev.online || 0;
+        document.getElementById('kpi-total-devices').textContent = dev.total || 10;
+        const pct = dev.total > 0 ? (dev.online / dev.total) * 100 : 0;
+        document.getElementById('kpi-devices-bar').style.width = `${pct}%`;
+
+        const alerts = data.alerts_active || {};
+        const totalAlerts = (alerts.warning || 0) + (alerts.critical || 0) + (alerts.escalated || 0);
+        document.getElementById('kpi-active-alerts').textContent = totalAlerts;
+        document.getElementById('badge-warning').textContent = `Warn: ${alerts.warning || 0}`;
+        document.getElementById('badge-critical').textContent = `Crit: ${(alerts.critical || 0) + (alerts.escalated || 0)}`;
+
+        // Domain KPIs
+        const dom = data.domains || {};
+        if (dom.energy) {
+          document.getElementById('kpi-energy-val').textContent = dom.energy.kpi?.value ?? '--';
+          document.getElementById('kpi-energy-online').textContent = `${dom.energy.devices_online}/${dom.energy.devices_total}`;
+        }
+        if (dom.coldchain) {
+          document.getElementById('kpi-coldchain-val').textContent = dom.coldchain.kpi?.value ?? '--';
+          document.getElementById('kpi-coldchain-online').textContent = `${dom.coldchain.devices_online}/${dom.coldchain.devices_total}`;
+        }
+        if (dom.air) {
+          document.getElementById('kpi-air-co2-val').textContent = dom.air.kpi?.value ?? '--';
+          document.getElementById('kpi-air-online').textContent = `${dom.air.devices_online}/${dom.air.devices_total}`;
+        }
+
+      } catch (err) {
+        console.error("Summary fetch error:", err);
+        document.getElementById('api-error-banner').classList.remove('hidden');
+        document.getElementById('conn-status-pill').className = "flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20";
+        document.getElementById('conn-status-text').textContent = "API Terputus";
+      }
+    }
+
+    // Fetch Devices Registry
+    async function fetchDevices() {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/devices`, { headers: HEADERS });
+        if (!res.ok) return;
+        allDevices = await res.json();
+        renderDevicesTable();
+      } catch (err) {
+        console.error("Fetch devices error:", err);
+      }
+    }
+
+    function renderDevicesTable() {
+      const tbody = document.getElementById('device-table-body');
+      const filter = document.getElementById('filter-domain').value;
+      const filtered = filter === 'all' ? allDevices : allDevices.filter(d => d.domain === filter);
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">Tidak ada perangkat yang cocok.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(d => {
+        let domainBadge = '';
+        if (d.domain === 'energy') domainBadge = '<span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-400">Energy</span>';
+        else if (d.domain === 'coldchain') domainBadge = '<span class="px-2 py-0.5 rounded text-[10px] bg-cyan-500/20 text-cyan-400">Cold-Chain</span>';
+        else domainBadge = '<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400">Air Quality</span>';
+
+        return `
+          <tr class="hover:bg-slate-700/30 transition">
+            <td class="py-2.5 px-3 font-mono font-bold text-slate-200">${d.device_id}</td>
+            <td class="py-2.5 px-3 font-medium text-slate-300">${d.display_name}</td>
+            <td class="py-2.5 px-3">${domainBadge}</td>
+            <td class="py-2.5 px-3 text-slate-400">${d.gedung} / ${d.ruang}</td>
+            <td class="py-2.5 px-3 text-slate-400 font-mono">${d.jenis}</td>
+            <td class="py-2.5 px-3 text-center">
+              <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span>Online</span>
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Fetch Alerts & Render Feed with ACK
+    async function fetchAlerts() {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/alerts?limit=20`, { headers: HEADERS });
+        if (!res.ok) return;
+        const alerts = await res.json();
+        const container = document.getElementById('alerts-feed-container');
+
+        if (!alerts || alerts.length === 0) {
+          container.innerHTML = `<div class="text-center py-8 text-xs text-slate-400">Tidak ada alert aktif. Semua sensor normal.</div>`;
+          return;
+        }
+
+        container.innerHTML = alerts.map(a => {
+          const isAcked = !!a.ts_acked;
+          let sevClass = "border-amber-500/50 bg-amber-500/10 text-amber-300";
+          if (a.severity === 'critical') sevClass = "border-rose-500/50 bg-rose-500/10 text-rose-300";
+          else if (a.severity === 'escalated') sevClass = "border-purple-500/50 bg-purple-500/10 text-purple-300";
+
+          return `
+            <div class="border rounded-xl p-3 text-xs transition ${sevClass}">
+              <div class="flex items-center justify-between font-semibold">
+                <span class="font-mono text-[11px]">[${a.code}] ${a.device_id}</span>
+                <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-900/40">${a.severity}</span>
+              </div>
+              <p class="mt-1 text-slate-200 text-[11px] leading-relaxed">${a.message}</p>
+              <div class="mt-2 pt-2 border-t border-slate-700/40 flex items-center justify-between text-[10px] text-slate-400">
+                <span>${a.ts_raised ? new Date(a.ts_raised).toLocaleTimeString('id-ID') : '--'}</span>
+                ${isAcked ? `
+                  <span class="text-emerald-400 font-semibold flex items-center space-x-1">
+                    <span>✓ Di-ACK oleh ${a.acked_by || 'operator'}</span>
+                  </span>
+                ` : `
+                  <button onclick="ackAlert('${a.id}')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium border border-slate-600 transition">
+                    Tandai ACK
+                  </button>
+                `}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error("Alerts fetch error:", err);
+      }
+    }
+
+    // POST /api/v1/alerts/{id}/ack
+    async function ackAlert(alertId) {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/alerts/${alertId}/ack`, {
+          method: 'POST',
+          headers: HEADERS,
+          body: JSON.stringify({ acked_by: 'Kelompok 3 Operator' })
+        });
+        if (res.ok) {
+          fetchAlerts();
+          fetchSummary();
+        }
+      } catch (err) {
+        alert("Gagal memanggil API ACK: " + err);
+      }
+    }
+
+    // Fetch Air Quality Rooms (Tim 3 Domain Tab)
+    async function fetchAirRooms() {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/air/rooms`, { headers: HEADERS });
+        if (!res.ok) return;
+        const data = await res.json();
+        const container = document.getElementById('air-rooms-container');
+        const rooms = data.rooms || [];
+
+        // Max PM2.5 calculation for top KPI
+        let maxPm = 0;
+        rooms.forEach(r => { if (r.pm25_ugm3 > maxPm) maxPm = r.pm25_ugm3; });
+        document.getElementById('kpi-air-pm25-val').textContent = maxPm > 0 ? maxPm.toFixed(1) : '--';
+
+        container.innerHTML = rooms.map(r => {
+          const co2 = r.co2_ppm;
+          const pm = r.pm25_ugm3;
+          const noise = r.noise_db;
+
+          const co2Color = co2 > 1500 ? 'text-rose-400' : (co2 > 1000 ? 'text-amber-400' : 'text-emerald-400');
+          const pmColor = pm > 75 ? 'text-rose-400' : (pm > 35 ? 'text-amber-400' : 'text-emerald-400');
+          const noiseColor = noise > 70 ? 'text-amber-400' : 'text-emerald-400';
+
+          return `
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="font-bold text-white text-base">${r.display_name}</h3>
+                  <p class="text-xs text-slate-400 font-mono">${r.device_id} · ${r.gedung} / ${r.ruang}</p>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400">
+                  ${r.status}
+                </span>
+              </div>
+
+              <!-- Metrics Grid -->
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-slate-700/40 p-2.5 rounded-xl border border-slate-600/40">
+                  <div class="text-[10px] text-slate-400 font-medium">CO₂</div>
+                  <div class="text-lg font-extrabold ${co2Color} mt-1">${co2}</div>
+                  <div class="text-[9px] text-slate-400">ppm</div>
+                </div>
+
+                <div class="bg-slate-700/40 p-2.5 rounded-xl border border-slate-600/40">
+                  <div class="text-[10px] text-slate-400 font-medium">PM2.5</div>
+                  <div class="text-lg font-extrabold ${pmColor} mt-1">${pm}</div>
+                  <div class="text-[9px] text-slate-400">µg/m³</div>
+                </div>
+
+                <div class="bg-slate-700/40 p-2.5 rounded-xl border border-slate-600/40">
+                  <div class="text-[10px] text-slate-400 font-medium">Noise</div>
+                  <div class="text-lg font-extrabold ${noiseColor} mt-1">${noise}</div>
+                  <div class="text-[9px] text-slate-400">dB</div>
+                </div>
+              </div>
+
+              <div class="pt-2 border-t border-slate-700/40 flex items-center justify-between text-[10px] text-slate-500">
+                <span>Update: ${new Date(r.last_updated).toLocaleTimeString('id-ID')}</span>
+                <span>QoS 1 Telemetry</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error("Air rooms error:", err);
+      }
+    }
+
+    // Fetch Coldchain Chambers (Tim 2 Domain Tab)
+    async function fetchColdchainChambers() {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/coldchain/chambers`, { headers: HEADERS });
+        if (!res.ok) return;
+        const chambers = await res.json();
+        const container = document.getElementById('coldchain-container');
+
+        container.innerHTML = chambers.map(c => `
+          <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-white text-base">${c.display_name}</h3>
+                <p class="text-xs text-slate-400 font-mono">${c.device_id} · ${c.gedung} / ${c.ruang}</p>
+              </div>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400">Online</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-center">
+              <div class="bg-slate-700/40 p-3 rounded-xl border border-slate-600/40">
+                <div class="text-[10px] text-slate-400">Suhu Saat Ini</div>
+                <div class="text-2xl font-bold text-cyan-300 mt-1">${c.temp_c}°C</div>
+                <div class="text-[10px] text-slate-400 mt-1">Setpoint: ${c.setpoint_c}°C</div>
+              </div>
+              <div class="bg-slate-700/40 p-3 rounded-xl border border-slate-600/40">
+                <div class="text-[10px] text-slate-400">Status Pintu</div>
+                <div class="text-lg font-bold ${c.door_open ? 'text-rose-400' : 'text-emerald-400'} mt-1">
+                  ${c.door_open ? 'TERBUKA' : 'TERTUTUP'}
+                </div>
+                <div class="text-[10px] text-slate-400 mt-1">Kelembapan: ${c.humidity_pct}%</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error("Coldchain fetch error:", e);
+      }
+    }
+
+    // Fetch Energy Rooms (Tim 1 Domain Tab)
+    async function fetchEnergyRooms() {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/energy/rooms`, { headers: HEADERS });
+        if (!res.ok) return;
+        const rooms = await res.json();
+        const container = document.getElementById('energy-container');
+
+        container.innerHTML = rooms.map(r => `
+          <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono font-bold text-xs text-slate-200">${r.device_id}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">${r.ruang}</span>
+            </div>
+            <div class="text-xl font-extrabold text-white mt-1">${r.power_w} <span class="text-xs text-slate-400">W</span></div>
+            <div class="text-xs text-slate-400 mt-1">Kumulatif: <strong class="text-slate-200">${r.energy_kwh} kWh</strong></div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error("Energy fetch error:", e);
+      }
+    }
+
+    // Initial Load & Loop
+    function init() {
+      fetchSummary();
+      fetchDevices();
+      fetchAlerts();
+      fetchAirRooms();
+    }
+
+    init();
+    // Auto Refresh every 5 seconds (Bagian 7.4 Point 5)
+    setInterval(() => {
+      fetchSummary();
+      fetchAlerts();
+      if (currentTab === 'overview') fetchDevices();
+      if (currentTab === 'air') fetchAirRooms();
+      if (currentTab === 'coldchain') fetchColdchainChambers();
+      if (currentTab === 'energy') fetchEnergyRooms();
+    }, 5000);
+  </script>
+</body>
+</html>
