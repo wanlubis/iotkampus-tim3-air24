@@ -1,0 +1,309 @@
+[
+    {
+        "id": "tab_ingest",
+        "type": "tab",
+        "label": "Ingest & Validation",
+        "disabled": false,
+        "info": "Tab Ingest data MQTT bersama seluruh domain"
+    },
+    {
+        "id": "tab_rules_air",
+        "type": "tab",
+        "label": "Rules - Air Quality",
+        "disabled": false,
+        "info": "Rule engine deteksi ambang CO2, PM2.5, Noise Tim 3"
+    },
+    {
+        "id": "mqtt_broker_local",
+        "type": "mqtt-broker",
+        "name": "Mosquitto Broker",
+        "broker": "mosquitto",
+        "port": "1883",
+        "clientid": "nodered-engine",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": ""
+    },
+    {
+        "id": "influxdb_config",
+        "type": "influxdb",
+        "hostname": "influxdb",
+        "port": "8086",
+        "protocol": "http",
+        "database": "iot",
+        "name": "InfluxDB 2 (iot)",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://influxdb:8086",
+        "timeout": "10",
+        "rejectUnauthorized": false
+    },
+    {
+        "id": "mqtt_in_telemetry",
+        "type": "mqtt in",
+        "z": "tab_ingest",
+        "name": "MQTT Telemetry",
+        "topic": "kampus/+/+/+/+/telemetry",
+        "qos": "1",
+        "datatype": "json",
+        "broker": "mqtt_broker_local",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 120,
+        "wires": [
+            [
+                "fn_validate_telemetry"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_in_status",
+        "type": "mqtt in",
+        "z": "tab_ingest",
+        "name": "MQTT Status (LWT/Birth)",
+        "topic": "kampus/+/+/+/+/status",
+        "qos": "1",
+        "datatype": "json",
+        "broker": "mqtt_broker_local",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 170,
+        "y": 240,
+        "wires": [
+            [
+                "fn_validate_status"
+            ]
+        ]
+    },
+    {
+        "id": "fn_validate_telemetry",
+        "type": "function",
+        "z": "tab_ingest",
+        "name": "Validate Telemetry & Format Influx",
+        "func": "let data = msg.payload;\nif (typeof data === 'string') {\n    try { data = JSON.parse(data); } catch(e) { return [null, {payload: 'Invalid JSON: ' + e}]; }\n}\n\n// Validasi Skema Wajib (Bagian 4.3)\nif (!data || data.schema !== 'kampus.telemetry.v1' || !data.device_id || !data.domain || !data.gedung || !data.ruang || !data.metrics) {\n    return [null, {payload: 'Rejected schema: ' + JSON.stringify(data)}];\n}\n\nif (typeof data.ts !== 'number') {\n    return [null, {payload: 'Rejected invalid ts: ' + data.ts}];\n}\n\n// Format InfluxDB Point\nlet fields = {};\nfor (let k in data.metrics) {\n    let val = data.metrics[k];\n    if (typeof val === 'number') {\n        fields[k] = val;\n    } else if (typeof val === 'boolean') {\n        fields[k] = val ? 1 : 0;\n    }\n}\n\nlet tags = {\n    domain: data.domain,\n    gedung: data.gedung,\n    ruang: data.ruang,\n    device_id: data.device_id\n};\n\nlet validMsg = {\n    measurement: 'telemetry',\n    payload: [fields, tags],\n    timestamp: data.ts * 1000000, // nanoseconds\n    original: data\n};\n\n// Output 1: ke InfluxDB\n// Output 2: ke Audit Log (jika reject)\n// Output 3: ke Tab Rules Air\nreturn [validMsg, null, {payload: data}];\n",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 120,
+        "wires": [
+            [
+                "out_influx_telemetry"
+            ],
+            [
+                "debug_audit_log"
+            ],
+            [
+                "link_to_rules"
+            ]
+        ]
+    },
+    {
+        "id": "fn_validate_status",
+        "type": "function",
+        "z": "tab_ingest",
+        "name": "Validate Status & Format Influx",
+        "func": "let data = msg.payload;\nif (typeof data === 'string') {\n    try { data = JSON.parse(data); } catch(e) { return [null, {payload: 'Invalid JSON'}]; }\n}\n\nif (!data || data.schema !== 'kampus.status.v1' || !data.device_id || !data.domain || !data.status) {\n    return [null, {payload: 'Rejected status schema: ' + JSON.stringify(data)}];\n}\n\nlet isOnline = (data.status.toLowerCase() === 'online') ? 1 : 0;\nlet fields = { online: isOnline };\nlet tags = {\n    domain: data.domain,\n    gedung: data.gedung || '',\n    ruang: data.ruang || '',\n    device_id: data.device_id\n};\n\nlet validMsg = {\n    measurement: 'status',\n    payload: [fields, tags],\n    timestamp: (data.ts || Date.now()) * 1000000\n};\n\nreturn [validMsg, null];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 240,
+        "wires": [
+            [
+                "out_influx_status"
+            ],
+            [
+                "debug_audit_log"
+            ]
+        ]
+    },
+    {
+        "id": "out_influx_telemetry",
+        "type": "influxdb out",
+        "z": "tab_ingest",
+        "influxdb": "influxdb_config",
+        "name": "Write Telemetry to Influx",
+        "measurement": "telemetry",
+        "precision": "ms",
+        "retentionPolicy": "",
+        "database": "iot",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "prasmul",
+        "bucket": "iot",
+        "x": 750,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "out_influx_status",
+        "type": "influxdb out",
+        "z": "tab_ingest",
+        "influxdb": "influxdb_config",
+        "name": "Write Status to Influx",
+        "measurement": "status",
+        "precision": "ms",
+        "retentionPolicy": "",
+        "database": "iot",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "prasmul",
+        "bucket": "iot",
+        "x": 740,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "debug_audit_log",
+        "type": "debug",
+        "z": "tab_ingest",
+        "name": "Audit Reject Log",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "link_to_rules",
+        "type": "link out",
+        "z": "tab_ingest",
+        "name": "Link Out to Air Rules",
+        "mode": "link",
+        "links": [
+            "link_from_ingest"
+        ],
+        "x": 695,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "link_from_ingest",
+        "type": "link in",
+        "z": "tab_rules_air",
+        "name": "Link In Telemetry",
+        "links": [
+            "link_to_rules"
+        ],
+        "x": 115,
+        "y": 120,
+        "wires": [
+            [
+                "fn_air_rule_engine"
+            ]
+        ]
+    },
+    {
+        "id": "fn_air_rule_engine",
+        "type": "function",
+        "z": "tab_rules_air",
+        "name": "Air Quality Rule Engine (Section 7.3)",
+        "func": "let data = msg.payload;\nif (!data || data.domain !== 'air') {\n    return null;\n}\n\nlet m = data.metrics || {};\nlet co2 = m.co2_ppm;\nlet pm25 = m.pm25_ugm3;\nlet noise = m.noise_db;\n\nlet alerts = [];\n\n// 1. CO2 Threshold: >1000 warning, >1500 critical\nif (co2 > 1500) {\n    alerts.push({\n        device_id: data.device_id,\n        domain: 'air',\n        code: 'CO2_HIGH',\n        severity: 'critical',\n        message: 'Kadar CO2 sangat tinggi mencapai ' + co2 + ' ppm di ' + data.ruang,\n        value: co2,\n        context: { ruang: data.ruang, gedung: data.gedung }\n    });\n} else if (co2 > 1000) {\n    alerts.push({\n        device_id: data.device_id,\n        domain: 'air',\n        code: 'CO2_HIGH',\n        severity: 'warning',\n        message: 'Kadar CO2 melebihi batas 1000 ppm (' + co2 + ' ppm) di ' + data.ruang,\n        value: co2,\n        context: { ruang: data.ruang, gedung: data.gedung }\n    });\n}\n\n// 2. PM2.5 Threshold: >35 warning, >75 critical\nif (pm25 > 75) {\n    alerts.push({\n        device_id: data.device_id,\n        domain: 'air',\n        code: 'PM25_HIGH',\n        severity: 'critical',\n        message: 'Partikulat PM2.5 sangat berbahaya (' + pm25 + ' ug/m3) di ' + data.ruang,\n        value: pm25,\n        context: { ruang: data.ruang, gedung: data.gedung }\n    });\n} else if (pm25 > 35) {\n    alerts.push({\n        device_id: data.device_id,\n        domain: 'air',\n        code: 'PM25_HIGH',\n        severity: 'warning',\n        message: 'Partikulat PM2.5 di atas ambang batas (' + pm25 + ' ug/m3) di ' + data.ruang,\n        value: pm25,\n        context: { ruang: data.ruang, gedung: data.gedung }\n    });\n}\n\n// 3. Noise Threshold: >70 warning\nif (noise > 70) {\n    alerts.push({\n        device_id: data.device_id,\n        domain: 'air',\n        code: 'NOISE_HIGH',\n        severity: 'warning',\n        message: 'Tingkat kebisingan bising mencapai ' + noise + ' dB di ' + data.ruang,\n        value: noise,\n        context: { ruang: data.ruang, gedung: data.gedung }\n    });\n}\n\nif (alerts.length === 0) {\n    return null;\n}\n\n// Kembalikan setiap alert sebagai pesan tersendiri\nreturn [alerts.map(a => ({\n    payload: a,\n    headers: {\n        'Content-Type': 'application/json',\n        'X-API-Key': 'air24-secret-key-demo'\n    }\n}))];\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 120,
+        "wires": [
+            [
+                "http_post_alert",
+                "debug_alert_raised"
+            ]
+        ]
+    },
+    {
+        "id": "http_post_alert",
+        "type": "http request",
+        "z": "tab_rules_air",
+        "name": "Post Alert to FastAPI",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://api:8000/api/v1/alerts",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 620,
+        "y": 120,
+        "wires": [
+            [
+                "debug_alert_response"
+            ]
+        ]
+    },
+    {
+        "id": "debug_alert_raised",
+        "type": "debug",
+        "z": "tab_rules_air",
+        "name": "Alert Triggered",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "debug_alert_response",
+        "type": "debug",
+        "z": "tab_rules_air",
+        "name": "FastAPI Alert Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 850,
+        "y": 120,
+        "wires": []
+    }
+]

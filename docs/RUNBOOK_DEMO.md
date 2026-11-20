@@ -49,7 +49,7 @@ Buka terminal PowerShell dan jalankan:
    `{"error": {"code": "UNAUTHORIZED", "message": "X-API-Key tidak valid"}}`
 2. Panggil API dengan header token yang benar:
    ```bash
-   curl -i -H "X-API-Key: wanganteng" http://localhost:8000/api/v1/summary
+   curl -i -H "X-API-Key: air24-secret-key-demo" http://localhost:8000/api/v1/summary
    ```
    *Ekspektasi:* HTTP Status **200 OK**, data ringkasan 3 domain lengkap sesuai kontrak Bagian 7.5.
 

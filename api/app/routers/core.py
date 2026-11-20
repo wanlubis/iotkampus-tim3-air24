@@ -59,12 +59,35 @@ def get_devices(
         query += " ORDER BY device_id ASC"
         cur.execute(query, params)
         rows = cur.fetchall()
-        # Convert created_at to WIB isoformat
+
+        # Query status online nyata dari InfluxDB (last 2m)
+        online_device_ids = set()
+        influx = get_influx_client()
+        if influx:
+            try:
+                bucket = os.getenv("INFLUXDB_BUCKET", "iot")
+                q_status = f'''
+                from(bucket: "{bucket}")
+                  |> range(start: -2m)
+                  |> filter(fn: (r) => r["_measurement"] == "status")
+                  |> last()
+                '''
+                tables = influx.query_api().query(q_status)
+                for table in tables:
+                    for rec in table.records:
+                        val = rec.get_value()
+                        if val == 1 or val == "online" or str(val).lower() == "online":
+                            online_device_ids.add(rec.values.get("device_id"))
+            except Exception as e:
+                print(f"[Devices Status Influx Error] {e}")
+
+        # Convert created_at to WIB isoformat and attach real live status
         result = []
         for r in rows:
             item = dict(r)
             if item.get("created_at"):
                 item["created_at"] = item["created_at"].astimezone(WIB).isoformat()
+            item["status"] = "online" if item["device_id"] in online_device_ids else "offline"
             result.append(item)
         return result
     finally:
@@ -444,10 +467,10 @@ def get_summary():
 
     # Query Status & KPIs from InfluxDB
     influx = get_influx_client()
-    domain_online = {"energy": 4, "coldchain": 3, "air": 3}
+    domain_online = {"energy": 0, "coldchain": 0, "air": 0}
     kpi_energy = {"name": "power_w_total", "value": 0.0, "unit": "W"}
-    kpi_coldchain = {"name": "temp_c_max", "value": 4.0, "unit": "°C"}
-    kpi_air = {"name": "co2_ppm_max", "value": 450.0, "unit": "ppm"}
+    kpi_coldchain = {"name": "temp_c_max", "value": 0.0, "unit": "°C"}
+    kpi_air = {"name": "co2_ppm_max", "value": 0.0, "unit": "ppm"}
 
     if influx:
         bucket = os.getenv("INFLUXDB_BUCKET", "iot")
@@ -469,11 +492,10 @@ def get_summary():
                     if (val == 1 or val == "online" or str(val).lower() == "online") and dom in online_set:
                         online_set[dom].add(dev)
             
-            # If records found in last 2m, update online counts
-            if any(len(s) > 0 for s in online_set.values()):
-                domain_online["energy"] = len(online_set["energy"])
-                domain_online["coldchain"] = len(online_set["coldchain"])
-                domain_online["air"] = len(online_set["air"])
+            # Hitung jumlah nyata perangkat yang online
+            domain_online["energy"] = len(online_set["energy"])
+            domain_online["coldchain"] = len(online_set["coldchain"])
+            domain_online["air"] = len(online_set["air"])
 
             # Query KPIs from latest telemetry
             q_telemetry = f'''

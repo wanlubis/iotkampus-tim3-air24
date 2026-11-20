@@ -17,7 +17,7 @@ def get_pg_connection():
             port=int(os.getenv("POSTGRES_PORT", "5432")),
             dbname=os.getenv("POSTGRES_DB", "kampus"),
             user=os.getenv("POSTGRES_USER", "iot_user"),
-            password=os.getenv("POSTGRES_PASSWORD", "0")
+            password=os.getenv("POSTGRES_PASSWORD", "iot_password")
         )
         return conn
     except Exception as e:
@@ -26,7 +26,7 @@ def get_pg_connection():
 
 def get_influx_client():
     url = os.getenv("INFLUXDB_URL", "http://influxdb:8086")
-    token = os.getenv("INFLUXDB_TOKEN", "wanganteng")
+    token = os.getenv("INFLUXDB_TOKEN", "air24_super_secret_token_12345")
     org = os.getenv("INFLUXDB_ORG", "prasmul")
     try:
         client = InfluxDBClient(url=url, token=token, org=org, timeout=3000)

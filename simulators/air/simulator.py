@@ -61,6 +61,14 @@ def status_topic(device):
 def heartbeat_topic(device):
     return f"kampus/air/{device['gedung']}/{device['ruang']}/{device['id']}/heartbeat"
 
+def make_heartbeat_payload(device):
+    return {
+        "ts": timestamp_ms(),
+        "device_id": device["id"],
+        "domain": "air",
+        "status": "alive"
+    }
+
 def make_status_payload(device, status):
     return {
         "schema": "kampus.status.v1",
@@ -145,10 +153,12 @@ def main():
             while True:
                 time.sleep(1)
 
-        # Loop pengiriman Telemetry
+        # Loop pengiriman Telemetry & Heartbeat
         cycle = 0
+        last_heartbeat = 0
         while True:
             cycle += 1
+            now_sec = time.time()
             print(f"\n--- Siklus Telemetri #{cycle} (Mode: {args.mode}) ---")
             for device, client in clients:
                 metrics = generate_reading(args.mode)
@@ -157,6 +167,15 @@ def main():
 
                 client.publish(topic, json.dumps(payload), qos=1).wait_for_publish()
                 print(f"[{device['id']}] CO2: {metrics['co2_ppm']} ppm | PM2.5: {metrics['pm25_ugm3']} µg/m³ | Noise: {metrics['noise_db']} dB")
+
+            # Kirim Heartbeat setiap 15 detik (Bagian 4.1 & 7.2)
+            if now_sec - last_heartbeat >= 15:
+                last_heartbeat = now_sec
+                for device, client in clients:
+                    hb_topic = heartbeat_topic(device)
+                    hb_payload = make_heartbeat_payload(device)
+                    client.publish(hb_topic, json.dumps(hb_payload), qos=0)
+                    print(f"[{device['id']}] Heartbeat published -> {hb_topic}")
 
             # Mode CRASH: Putus koneksi secara mendadak agar broker menaikkan LWT Offline
             if args.mode == "CRASH":
