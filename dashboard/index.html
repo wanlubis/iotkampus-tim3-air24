@@ -58,9 +58,6 @@
       <!-- Live Clock & Controls -->
       <div class="flex items-center space-x-4">
         <!-- Live Status Pill -->
-        <button onclick="promptApiKey()" title="Klik untuk mengubah API Key" class="flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 transition">
-          <span class="text-[10px] font-mono">🔑 API Key</span>
-        </button>
 
         <div id="conn-status-pill" class="flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
           <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
@@ -102,7 +99,7 @@
 
   <!-- ERROR ALERT BANNER (IF API FAILS) -->
   <div id="api-error-banner" class="hidden bg-rose-900/40 border-b border-rose-500/50 text-rose-200 px-4 py-2.5 text-xs text-center">
-    <strong>Peringatan Koneksi:</strong> Gagal menghubungi FastAPI di port 8000. Pastikan service API berjalan dan X-API-Key sesuai.
+    <strong>Peringatan Koneksi:</strong> Gagal menghubungi API. Pastikan service API dan proxy Nginx berjalan.
   </div>
 
   <!-- MAIN CONTAINER -->
@@ -382,27 +379,7 @@
 
   <!-- SCRIPT LOGIC (FETCH API & UI REACTIVITY) -->
   <script>
-    const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8000' : `http://${window.location.hostname}:8000`;
-    let API_KEY = localStorage.getItem('AIR24_API_KEY') || 'air24-secret-key-demo';
-    
-    function getHeaders() {
-      return {
-        'Content-Type': 'application/json',
-        'X-API-Key': API_KEY
-      };
-    }
-
-    function promptApiKey() {
-      const current = localStorage.getItem('AIR24_API_KEY') || 'air24-secret-key-demo';
-      const newKey = prompt('Masukkan X-API-Key untuk integrasi:', current);
-      if (newKey !== null && newKey.trim() !== '') {
-        API_KEY = newKey.trim();
-        localStorage.setItem('AIR24_API_KEY', API_KEY);
-        fetchSummary();
-        fetchDevices();
-        fetchAlerts();
-      }
-    }
+    // API diakses melalui Nginx reverse proxy.
 
     let allDevices = [];
     let currentTab = 'overview';
@@ -439,7 +416,7 @@
     // Main Fetch Summary (Cross-Domain)
     async function fetchSummary() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/summary`, { headers: getHeaders() });
+        const res = await fetch(`/api/v1/summary`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         
@@ -487,7 +464,7 @@
     // Fetch Devices Registry
     async function fetchDevices() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/devices`, { headers: getHeaders() });
+        const res = await fetch(`/api/v1/devices`);
         if (!res.ok) return;
         allDevices = await res.json();
         renderDevicesTable();
@@ -540,7 +517,7 @@
     // Fetch Alerts & Render Feed with ACK
     async function fetchAlerts() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/alerts?limit=20`, { headers: getHeaders() });
+        const res = await fetch(`/api/v1/alerts?limit=20`);
         if (!res.ok) return;
         const alerts = await res.json();
         const container = document.getElementById('alerts-feed-container');
@@ -587,9 +564,9 @@
     // POST /api/v1/alerts/{id}/ack
     async function ackAlert(alertId) {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/alerts/${alertId}/ack`, {
+        const res = await fetch(`/api/v1/alerts/${alertId}/ack`, {
           method: 'POST',
-          headers: getHeaders(),
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ acked_by: 'Kelompok 3 Operator' })
         });
         if (res.ok) {
@@ -604,7 +581,7 @@
     // Fetch Air Quality Rooms (Tim 3 Domain Tab)
     async function fetchAirRooms() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/air/rooms`, { headers: getHeaders() });
+        const res = await fetch(`/api/v1/air/rooms`);
         if (!res.ok) return;
         const data = await res.json();
         const container = document.getElementById('air-rooms-container');
@@ -673,7 +650,7 @@
     // Fetch Coldchain Chambers (Tim 2 Domain Tab)
     async function fetchColdchainChambers() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/coldchain/chambers`, { headers: getHeaders() });
+        const res = await fetch(`/api/v1/coldchain/chambers`);
         if (!res.ok) return;
         const chambers = await res.json();
         const container = document.getElementById('coldchain-container');
@@ -711,7 +688,7 @@
     // Fetch Energy Rooms (Tim 1 Domain Tab)
     async function fetchEnergyRooms() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/energy/rooms`, { headers: getHeaders() });
+        const res = await fetch(`/api/v1/energy/rooms`);
         if (!res.ok) return;
         const rooms = await res.json();
         const container = document.getElementById('energy-container');

@@ -11,6 +11,6 @@ datasources:
       defaultBucket: iot
       tlsSkipVerify: true
     secureJsonData:
-      token: air24_super_secret_token_12345
+      token: $INFLUXDB_TOKEN
     isDefault: true
     editable: true
