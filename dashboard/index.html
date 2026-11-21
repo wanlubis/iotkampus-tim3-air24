@@ -27,6 +27,15 @@
   </script>
   <!-- Chart.js CDN (untuk grafik interaktif Smart Energy) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <!-- Three.js ES Modules Import Map (untuk 3D Digital Twin Smart Energy) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
   <style>
     .pulse-dot {
       animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -53,6 +62,60 @@
       transform: translateY(-2px);
       border-color: rgba(56, 189, 248, 0.35);
       box-shadow: 0 12px 28px -10px rgba(14, 165, 233, 0.18);
+    }
+    /* 3D Digital Twin Viewport & Glass HUD */
+    #en3d-stage {
+      background: radial-gradient(circle at 50% 35%, #0c1930 0%, #050b18 60%, #02050d 100%);
+    }
+    #en3d-stage:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      border: none;
+    }
+    .en3d-hud {
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.74), rgba(7, 13, 28, 0.86));
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.18);
+      box-shadow: 0 8px 28px -8px rgba(0, 0, 0, 0.6);
+    }
+    .en3d-btn {
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #cbd5e1;
+      transition: all 0.18s ease;
+    }
+    .en3d-btn:hover {
+      background: rgba(30, 41, 59, 0.92);
+      border-color: rgba(56, 189, 248, 0.48);
+      color: #f8fafc;
+    }
+    .en3d-btn.active {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(56, 189, 248, 0.16));
+      border-color: rgba(56, 189, 248, 0.72);
+      color: #e0f2fe;
+      box-shadow: 0 0 14px -4px rgba(56, 189, 248, 0.5);
+    }
+    #en3d-drawer {
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease;
+    }
+    #en3d-drawer.en3d-drawer-closed {
+      transform: translateX(calc(100% + 24px));
+      opacity: 0;
+      pointer-events: none;
+    }
+    #en3d-tooltip {
+      position: absolute;
+      z-index: 30;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -115%) scale(0.96);
+      transition: opacity 0.14s ease, transform 0.14s ease;
+    }
+    #en3d-tooltip.visible {
+      opacity: 1;
+      transform: translate(-50%, -115%) scale(1);
     }
   </style>
 </head>
@@ -496,6 +559,175 @@
         </div>
       </div>
 
+      <!-- INTERACTIVE 3D DIGITAL TWIN: GEDUNG BSD-A LANTAI 3 (THREE.JS / WEBGL) -->
+      <div id="en3d-stage" class="relative w-full h-[500px] sm:h-[540px] rounded-2xl overflow-hidden border border-sky-500/25 shadow-2xl shadow-slate-950/80 select-none">
+        <!-- WebGL Canvas Host -->
+        <div id="en3d-canvas-host" class="absolute inset-0 w-full h-full"></div>
+
+        <!-- Floating Hover Tooltip (relative to 3D stage) -->
+        <div id="en3d-tooltip" class="en3d-hud rounded-xl px-3.5 py-2.5 min-w-[210px]">
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <div>
+              <div id="en3d-tt-room" class="text-xs font-bold text-white">r3012</div>
+              <div id="en3d-tt-device" class="text-[10px] font-mono text-slate-400">kwh-01 · Gedung BSD-A</div>
+            </div>
+            <span id="en3d-tt-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">NORMAL</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-700/60 text-[11px]">
+            <div>
+              <div class="text-slate-400 text-[10px]">Daya Instan</div>
+              <div id="en3d-tt-power" class="font-mono font-bold text-cyan-300">0 W</div>
+            </div>
+            <div>
+              <div class="text-slate-400 text-[10px]">Energi / Tagihan</div>
+              <div id="en3d-tt-energy" class="font-mono font-semibold text-slate-100">0 kWh</div>
+            </div>
+          </div>
+          <div class="mt-1 text-[10px] text-sky-300/80">Klik ruangan untuk fokus kamera &amp; detail</div>
+        </div>
+
+        <!-- 3D HUD Overlay -->
+        <div class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-3">
+          <!-- 3D Top Bar: Title + Camera Presets -->
+          <div class="pointer-events-auto en3d-hud rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 pulse-dot"></span>
+              <div>
+                <div class="text-xs sm:text-sm font-bold text-white leading-tight flex items-center gap-2">
+                  <span>3D Digital Twin · Lantai 3 Gedung BSD-A</span>
+                  <span id="en3d-mode-pill" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">Live API</span>
+                </div>
+                <div class="text-[10px] text-slate-400">Sinkron otomatis dengan filter &amp; data Smart Energy · Drag untuk putar, klik ruang untuk fokus</div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button data-en3d-cam="overview" type="button" class="en3d-cam-btn en3d-btn active text-[11px] font-medium px-2.5 py-1 rounded-lg">Overview</button>
+              <button data-en3d-cam="top" type="button" class="en3d-cam-btn en3d-btn text-[11px] font-medium px-2.5 py-1 rounded-lg">Top View</button>
+              <button data-en3d-cam="corridor" type="button" class="en3d-cam-btn en3d-btn text-[11px] font-medium px-2.5 py-1 rounded-lg">Corridor</button>
+              <button id="en3d-btn-reset" type="button" class="en3d-btn text-[11px] font-medium px-2.5 py-1 rounded-lg">Reset</button>
+              <button id="en3d-btn-orbit" type="button" class="en3d-btn text-[11px] font-medium px-2.5 py-1 rounded-lg">Auto Orbit</button>
+              <button id="en3d-btn-fullscreen" type="button" class="en3d-btn text-[11px] font-semibold px-2.5 py-1 rounded-lg border-sky-400/40 text-sky-200" title="Tampilkan 3D layar penuh">Layar Penuh</button>
+            </div>
+          </div>
+
+          <!-- Middle Area: Slide-In Room Detail Drawer (Right) -->
+          <div class="flex-1 relative my-2 flex justify-end items-start min-h-0">
+            <aside id="en3d-drawer" class="pointer-events-auto en3d-drawer-closed en3d-hud rounded-xl w-[290px] sm:w-[330px] max-h-full flex flex-col overflow-hidden">
+              <div class="px-3.5 py-2.5 border-b border-slate-700/60 flex items-start justify-between gap-2">
+                <div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <h4 id="en3d-dr-title" class="text-sm font-bold text-white">r3012</h4>
+                    <span id="en3d-dr-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/35">NORMAL</span>
+                  </div>
+                  <div id="en3d-dr-sub" class="text-[10px] font-mono text-slate-400 mt-0.5">kwh-01 · Gedung BSD-A</div>
+                </div>
+                <button id="en3d-btn-close-drawer" type="button" class="en3d-btn w-6 h-6 rounded-md flex items-center justify-center text-xs" title="Tutup detail">✕</button>
+              </div>
+
+              <div class="p-3 overflow-y-auto space-y-2.5 text-xs">
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="rounded-lg bg-slate-900/75 border border-slate-700/50 p-2">
+                    <div class="text-[10px] text-slate-400">Daya Instan</div>
+                    <div id="en3d-dr-power" class="text-base font-bold font-mono text-cyan-300">0 W</div>
+                  </div>
+                  <div class="rounded-lg bg-slate-900/75 border border-slate-700/50 p-2">
+                    <div class="text-[10px] text-slate-400">Energi Periode</div>
+                    <div id="en3d-dr-energy" class="text-base font-bold font-mono text-white">0.00 kWh</div>
+                  </div>
+                  <div class="rounded-lg bg-slate-900/75 border border-slate-700/50 p-2">
+                    <div class="text-[10px] text-slate-400">Estimasi Tagihan</div>
+                    <div id="en3d-dr-bill" class="text-xs font-bold font-mono text-emerald-300 mt-0.5">Rp 0</div>
+                  </div>
+                  <div class="rounded-lg bg-slate-900/75 border border-slate-700/50 p-2">
+                    <div class="text-[10px] text-slate-400">Beban vs 3000W</div>
+                    <div id="en3d-dr-load" class="text-xs font-bold font-mono text-sky-300 mt-0.5">0%</div>
+                  </div>
+                </div>
+
+                <!-- Mini 2D Trend Chart inside 3D Drawer -->
+                <div class="rounded-lg bg-slate-950/65 border border-slate-700/50 p-2.5">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[10px] font-semibold text-slate-300">Tren Daya Ruang (power_w)</span>
+                    <span id="en3d-dr-window" class="text-[10px] font-mono text-slate-400">1h</span>
+                  </div>
+                  <div class="h-[108px] relative">
+                    <canvas id="en3d-drawer-chart"></canvas>
+                  </div>
+                </div>
+
+                <!-- Baseline Comparison -->
+                <div class="rounded-lg bg-slate-900/65 border border-slate-700/50 p-2.5 space-y-1.5 text-[10px]">
+                  <div class="font-semibold text-slate-200">Baseline Jam Kerja vs Luar Jam Kerja</div>
+                  <div>
+                    <div class="flex justify-between text-slate-400 mb-0.5">
+                      <span>Jam Kerja (07–18 WIB)</span>
+                      <span id="en3d-dr-work" class="font-mono text-cyan-300">-</span>
+                    </div>
+                    <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div id="en3d-dr-work-bar" class="h-full bg-cyan-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-slate-400 mb-0.5">
+                      <span>Luar Jam Kerja</span>
+                      <span id="en3d-dr-after" class="font-mono text-amber-300">-</span>
+                    </div>
+                    <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div id="en3d-dr-after-bar" class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Active Room Alerts + ACK -->
+                <div class="rounded-lg bg-slate-900/65 border border-slate-700/50 p-2.5">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[10px] font-semibold text-slate-200">Alert Ruangan</span>
+                    <span id="en3d-dr-alert-cnt" class="text-[10px] font-mono text-slate-400">0</span>
+                  </div>
+                  <div id="en3d-dr-alerts" class="space-y-1.5 text-[10px]">
+                    <div class="text-slate-500 italic">Tidak ada alert pada ruangan ini.</div>
+                  </div>
+                </div>
+
+                <!-- Action: Sync 2D Charts to This Room -->
+                <button id="en3d-btn-sync-filter" type="button" class="w-full py-1.5 rounded-lg bg-sky-600/85 hover:bg-sky-500 text-white text-[11px] font-semibold transition">
+                  Filter Grafik 2D ke Ruang Ini
+                </button>
+              </div>
+            </aside>
+          </div>
+
+          <!-- 3D Bottom Dock: Quick Room Focus + Status Legend -->
+          <div class="pointer-events-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="en3d-hud rounded-xl px-2 py-1 flex flex-wrap items-center gap-1">
+              <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 px-1.5">Fokus:</span>
+              <button data-en3d-room="r3012" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1.5">
+                <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>r3012
+              </button>
+              <button data-en3d-room="r3013" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1.5">
+                <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>r3013
+              </button>
+              <button data-en3d-room="r3017" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1.5">
+                <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>r3017
+              </button>
+              <button data-en3d-room="lab-iot" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1.5">
+                <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>lab-iot
+              </button>
+            </div>
+
+            <div class="en3d-hud rounded-xl px-3 py-1.5 flex flex-wrap items-center gap-2.5 text-[10px] text-slate-300">
+              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-400"></span>Normal</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span>Waste (&gt;200W)</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span>High Load (&gt;3000W)</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-500"></span>Offline</span>
+              <span class="text-slate-600">|</span>
+              <span id="en3d-fps" class="font-mono text-cyan-300/80">60 FPS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- VISUALISASI UTAMA: 2 GRAFIK BARIS ATAS (LINE/AREA + DOUGHNUT) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Grafik 1: Line/Area Tren Daya -->
@@ -653,6 +885,9 @@
       if (tabId === 'air') fetchAirRooms();
       if (tabId === 'coldchain') fetchColdchainChambers();
       if (tabId === 'energy') fetchEnergyRooms();
+      if (window.en3d && typeof window.en3d.setActive === 'function') {
+        window.en3d.setActive(tabId === 'energy');
+      }
     }
 
     // Main Fetch Summary (Cross-Domain)
@@ -1623,6 +1858,22 @@
       renderEnergyBaselineChart(baseline, roomFilter);
       renderEnergyMetersTable();
       renderEnergyAlertsList();
+
+      const en3dPayload = {
+        rooms: enState.rooms,
+        bill,
+        waste,
+        alerts: enState.alerts,
+        telemetry: telemetry || [],
+        baseline: baseline || [],
+        roomFilter,
+        windowLabel: winLabel,
+        previewMode: enState.previewMode
+      };
+      window.__enLastPayload = en3dPayload;
+      if (window.en3d && typeof window.en3d.updateData === 'function') {
+        window.en3d.updateData(en3dPayload);
+      }
     }
 
     // Fetch Energy Rooms, Bill, Waste, Alerts, Telemetry & Baseline (Tim 1 Domain Tab)
@@ -1687,6 +1938,943 @@
       if (currentTab === 'coldchain') fetchColdchainChambers();
       if (currentTab === 'energy') fetchEnergyRooms();
     }, 5000);
+  </script>
+
+  <!-- ====================================================================== -->
+  <!-- 3D DIGITAL TWIN ENGINE (THREE.JS ES MODULE) FOR TAB SMART ENERGY       -->
+  <!-- ====================================================================== -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const ROOM_LAYOUT = [
+      {
+        ruang: 'r3012',
+        device_id: 'kwh-01',
+        label: 'Ruang Kuliah 3012',
+        subtitle: 'Kelas Reguler · 2 AC Split + Proyektor',
+        position: [-5.8, 0, -3.4],
+        size: [4.8, 2.5, 4.2],
+        type: 'classroom'
+      },
+      {
+        ruang: 'r3013',
+        device_id: 'kwh-02',
+        label: 'Ruang Kuliah 3013',
+        subtitle: 'Kelas Seminar · AC Cassette + Audio',
+        position: [5.8, 0, -3.4],
+        size: [4.8, 2.5, 4.2],
+        type: 'classroom'
+      },
+      {
+        ruang: 'r3017',
+        device_id: 'kwh-03',
+        label: 'Ruang Diskusi 3017',
+        subtitle: 'Studio Kolaborasi · Smart TV + Lighting',
+        position: [-5.8, 0, 3.6],
+        size: [4.8, 2.5, 4.2],
+        type: 'studio'
+      },
+      {
+        ruang: 'lab-iot',
+        device_id: 'kwh-04',
+        label: 'Lab IoT & Embedded',
+        subtitle: '30 Workstation · Server Rack + Oscilloscope',
+        position: [5.8, 0, 3.6],
+        size: [5.2, 2.7, 4.4],
+        type: 'lab'
+      }
+    ];
+
+    const STATUS_PALETTE = {
+      normal:    { hex: '#22d3ee', color: 0x22d3ee, badgeBg: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35', label: 'NORMAL', dot: 'bg-cyan-400' },
+      waste:     { hex: '#f59e0b', color: 0xf59e0b, badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-400/40', label: 'WASTE >200W', dot: 'bg-amber-400' },
+      high_load: { hex: '#f43f5e', color: 0xf43f5e, badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-500/45', label: 'HIGH LOAD', dot: 'bg-rose-500' },
+      offline:   { hex: '#64748b', color: 0x64748b, badgeBg: 'bg-slate-600/30 text-slate-300 border-slate-500/40', label: 'OFFLINE', dot: 'bg-slate-500' }
+    };
+
+    const CAMERA_PRESETS = {
+      overview: { pos: new THREE.Vector3(0, 13.5, 19.5), target: new THREE.Vector3(0, 0.8, 0) },
+      top:      { pos: new THREE.Vector3(0, 24.5, 2.2),  target: new THREE.Vector3(0, 0, 0) },
+      corridor: { pos: new THREE.Vector3(-15.5, 4.4, 0.4), target: new THREE.Vector3(3.5, 1.2, 0) }
+    };
+
+    const stageEl = document.getElementById('en3d-stage');
+    const hostEl = document.getElementById('en3d-canvas-host');
+    const tooltipEl = document.getElementById('en3d-tooltip');
+    const drawerEl = document.getElementById('en3d-drawer');
+
+    if (stageEl && hostEl) {
+      let initialized = false;
+      let isActive = false;
+      let rafId = null;
+
+      let scene, camera, renderer, controls, mdpCore, mdpRing, clock;
+      const roomObjects = new Map();
+      const hitMeshes = [];
+      const energyParticles = [];
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2(-99, -99);
+      let pointerDownPos = { x: 0, y: 0 };
+
+      let selectedRoom = null;
+      let hoveredRoom = null;
+      let autoOrbit = false;
+      let lastRoomFilter = 'all';
+      let drawerChart = null;
+      let currentRoomsMap = new Map();
+      let currentWindowLabel = '1 Jam Terakhir';
+
+      const camTransition = {
+        active: false,
+        startPos: new THREE.Vector3(),
+        endPos: new THREE.Vector3(),
+        startTarget: new THREE.Vector3(),
+        endTarget: new THREE.Vector3(),
+        progress: 0,
+        duration: 0.85
+      };
+
+      function fmtIdr(val) {
+        return 'Rp ' + Math.round(Number(val || 0)).toLocaleString('id-ID');
+      }
+
+      function escHtml(str) {
+        return String(str ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function flyCameraTo(pos, target, duration = 0.85) {
+        if (!camera || !controls) return;
+        camTransition.startPos.copy(camera.position);
+        camTransition.endPos.copy(pos);
+        camTransition.startTarget.copy(controls.target);
+        camTransition.endTarget.copy(target);
+        camTransition.progress = 0;
+        camTransition.duration = duration;
+        camTransition.active = true;
+      }
+
+      function setCameraPreset(name) {
+        const preset = CAMERA_PRESETS[name] || CAMERA_PRESETS.overview;
+        flyCameraTo(preset.pos, preset.target, 0.85);
+        stageEl.querySelectorAll('.en3d-cam-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.en3dCam === name);
+        });
+      }
+
+      function createLabelSprite(roomName, deviceId, powerText, statusHex) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 360;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false }));
+        sprite.scale.set(3.4, 1.2, 1);
+
+        function redraw(name, dev, powerStr, hex) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const r = 20;
+          ctx.fillStyle = 'rgba(8, 15, 32, 0.85)';
+          ctx.strokeStyle = hex;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(r + 6, 8);
+          ctx.lineTo(canvas.width - r - 6, 8);
+          ctx.quadraticCurveTo(canvas.width - 6, 8, canvas.width - 6, r + 8);
+          ctx.lineTo(canvas.width - 6, canvas.height - r - 8);
+          ctx.quadraticCurveTo(canvas.width - 6, canvas.height - 8, canvas.width - r - 6, canvas.height - 8);
+          ctx.lineTo(r + 6, canvas.height - 8);
+          ctx.quadraticCurveTo(6, canvas.height - 8, 6, canvas.height - r - 8);
+          ctx.lineTo(6, r + 8);
+          ctx.quadraticCurveTo(6, 8, r + 6, 8);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = hex;
+          ctx.beginPath();
+          ctx.arc(34, 42, 8, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = '700 28px Inter, system-ui, sans-serif';
+          ctx.fillText(name, 54, 51);
+
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '500 20px monospace';
+          ctx.fillText(dev, 236, 49);
+
+          ctx.fillStyle = hex;
+          ctx.font = '700 32px monospace';
+          ctx.fillText(powerStr, 30, 98);
+          texture.needsUpdate = true;
+        }
+
+        redraw(roomName, deviceId, powerText, statusHex);
+        return { sprite, redraw };
+      }
+
+      function buildRoomModule(cfg) {
+        const [w, , d] = cfg.size;
+        const group = new THREE.Group();
+        group.position.set(...cfg.position);
+        scene.add(group);
+
+        const pad = new THREE.Mesh(
+          new THREE.BoxGeometry(w, 0.14, d),
+          new THREE.MeshStandardMaterial({ color: 0x0f1c34, roughness: 0.45, metalness: 0.5 })
+        );
+        pad.position.y = 0.07;
+        pad.receiveShadow = true;
+        pad.castShadow = true;
+        group.add(pad);
+
+        const wallMat = new THREE.MeshPhysicalMaterial({
+          color: 0x1e293b,
+          emissive: 0x0ea5e9,
+          emissiveIntensity: 0.12,
+          transparent: true,
+          opacity: 0.24,
+          roughness: 0.15,
+          metalness: 0.1,
+          side: THREE.DoubleSide
+        });
+        const wallH = 1.55;
+        const wt = 0.08;
+        const bW = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, wt), wallMat);
+        bW.position.set(0, wallH / 2 + 0.14, -d / 2 + wt / 2);
+        const fW = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, wt), wallMat);
+        fW.position.set(0, wallH / 2 + 0.14, d / 2 - wt / 2);
+        const lW = new THREE.Mesh(new THREE.BoxGeometry(wt, wallH, d), wallMat);
+        lW.position.set(-w / 2 + wt / 2, wallH / 2 + 0.14, 0);
+        const rW = new THREE.Mesh(new THREE.BoxGeometry(wt, wallH, d), wallMat);
+        rW.position.set(w / 2 - wt / 2, wallH / 2 + 0.14, 0);
+        group.add(bW, fW, lW, rW);
+
+        const edgeMat = new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.72 });
+        const roomEdges = new THREE.LineSegments(
+          new THREE.EdgesGeometry(new THREE.BoxGeometry(w + 0.02, wallH, d + 0.02)),
+          edgeMat
+        );
+        roomEdges.position.y = wallH / 2 + 0.14;
+        group.add(roomEdges);
+
+        const furnMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.65, metalness: 0.35 });
+        if (cfg.type === 'lab') {
+          for (let i = -1; i <= 1; i += 2) {
+            const rack = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.15, 0.7), furnMat);
+            rack.position.set(i * 1.7, 0.72, -1.25);
+            rack.castShadow = true;
+            group.add(rack);
+          }
+          const bench = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.42, 0.65), furnMat);
+          bench.position.set(0, 0.35, 1.25);
+          group.add(bench);
+        } else {
+          for (let r = -1; r <= 1; r += 2) {
+            const desk = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.38, 0.55), furnMat);
+            desk.position.set(r * 1.35, 0.33, 1.1);
+            group.add(desk);
+          }
+        }
+
+        const meterZ = cfg.position[2] < 0 ? d / 2 - 0.16 : -d / 2 + 0.16;
+        const meterBox = new THREE.Mesh(
+          new THREE.BoxGeometry(0.45, 0.55, 0.18),
+          new THREE.MeshStandardMaterial({ color: 0x334155, emissive: 0x22d3ee, emissiveIntensity: 0.35, metalness: 0.6, roughness: 0.3 })
+        );
+        meterBox.position.set(-w / 2 + 0.7, 0.85, meterZ);
+        group.add(meterBox);
+
+        const pillarMat = new THREE.MeshStandardMaterial({
+          color: 0x64748b,
+          emissive: 0x64748b,
+          emissiveIntensity: 0.6,
+          transparent: true,
+          opacity: 0.86,
+          roughness: 0.2,
+          metalness: 0.2
+        });
+        const pillarGeom = new THREE.CylinderGeometry(0.52, 0.64, 1, 24);
+        pillarGeom.translate(0, 0.5, 0);
+        const pillar = new THREE.Mesh(pillarGeom, pillarMat);
+        pillar.position.set(0, 0.16, 0);
+        pillar.castShadow = true;
+        group.add(pillar);
+
+        const pillarShellMat = new THREE.MeshBasicMaterial({
+          color: 0x64748b,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.24
+        });
+        const pillarShellGeom = new THREE.CylinderGeometry(0.68, 0.78, 1, 12, 1, true);
+        pillarShellGeom.translate(0, 0.5, 0);
+        const pillarShell = new THREE.Mesh(pillarShellGeom, pillarShellMat);
+        pillarShell.position.set(0, 0.16, 0);
+        group.add(pillarShell);
+
+        const statusRingMat = new THREE.MeshBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.72 });
+        const statusRing = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.032, 10, 40), statusRingMat);
+        statusRing.rotation.x = Math.PI / 2;
+        statusRing.position.y = 0.2;
+        group.add(statusRing);
+
+        const roomLight = new THREE.PointLight(0x22d3ee, 1.8, 8.5, 1.8);
+        roomLight.position.set(0, 2.5, 0);
+        group.add(roomLight);
+
+        const hitMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(w, 4.6, d),
+          new THREE.MeshBasicMaterial({ visible: false })
+        );
+        hitMesh.position.y = 2.3;
+        hitMesh.userData.ruang = cfg.ruang;
+        group.add(hitMesh);
+        hitMeshes.push(hitMesh);
+
+        const labelObj = createLabelSprite(cfg.ruang, cfg.device_id, 'OFFLINE', '#64748b');
+        labelObj.sprite.position.set(0, 3.0, 0);
+        group.add(labelObj.sprite);
+
+        const startPt = new THREE.Vector3(0, 0.1, 0);
+        const midPt = new THREE.Vector3(cfg.position[0], 0.1, 0);
+        const endPt = new THREE.Vector3(cfg.position[0], 0.1, cfg.position[2]);
+        const conduitCurve = new THREE.CurvePath();
+        conduitCurve.add(new THREE.LineCurve3(startPt, midPt));
+        conduitCurve.add(new THREE.LineCurve3(midPt, endPt));
+
+        const tubeMat = new THREE.MeshStandardMaterial({
+          color: 0x1e3a5f,
+          emissive: 0x64748b,
+          emissiveIntensity: 0.45,
+          roughness: 0.3,
+          metalness: 0.5
+        });
+        scene.add(new THREE.Mesh(new THREE.TubeGeometry(conduitCurve, 28, 0.055, 8, false), tubeMat));
+
+        const pGeom = new THREE.SphereGeometry(0.11, 10, 10);
+        for (let i = 0; i < 4; i++) {
+          const pMesh = new THREE.Mesh(pGeom, new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+          pMesh.visible = false;
+          scene.add(pMesh);
+          energyParticles.push({
+            ruang: cfg.ruang,
+            mesh: pMesh,
+            curve: conduitCurve,
+            t: i / 4
+          });
+        }
+
+        roomObjects.set(cfg.ruang, {
+          cfg,
+          group,
+          wallMat,
+          edgeMat,
+          pillar,
+          pillarMat,
+          pillarShell,
+          pillarShellMat,
+          statusRing,
+          statusRingMat,
+          roomLight,
+          tubeMat,
+          labelObj,
+          currentHeight: 0.25,
+          targetHeight: 0.25,
+          currentColor: new THREE.Color(0x64748b),
+          targetColor: new THREE.Color(0x64748b),
+          currentScale: 1.0,
+          currentOpacity: 1.0,
+          targetOpacity: 1.0,
+          flowSpeed: 0,
+          lastLabelKey: ''
+        });
+      }
+
+      function initThreeScene() {
+        if (initialized) return;
+        const w = Math.max(hostEl.clientWidth, 320);
+        const h = Math.max(hostEl.clientHeight, 320);
+
+        scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x040916, 0.026);
+
+        camera = new THREE.PerspectiveCamera(44, w / h, 0.1, 140);
+        camera.position.copy(CAMERA_PRESETS.overview.pos);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+        hostEl.appendChild(renderer.domElement);
+
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.rotateSpeed = 0.72;
+        controls.zoomSpeed = 0.85;
+        controls.panSpeed = 0.7;
+        controls.minDistance = 7.2;
+        controls.maxDistance = 36;
+        controls.maxPolarAngle = Math.PI / 2 - 0.07;
+        controls.minPolarAngle = 0.14;
+        controls.target.copy(CAMERA_PRESETS.overview.target);
+        controls.addEventListener('start', () => { camTransition.active = false; });
+
+        scene.add(new THREE.AmbientLight(0x94a3b8, 0.65));
+        scene.add(new THREE.HemisphereLight(0x38bdf8, 0x0f172a, 0.7));
+
+        const dirLight = new THREE.DirectionalLight(0xe0f2fe, 1.45);
+        dirLight.position.set(14, 24, 14);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.set(1024, 1024);
+        dirLight.shadow.camera.near = 4;
+        dirLight.shadow.camera.far = 55;
+        dirLight.shadow.camera.left = -16;
+        dirLight.shadow.camera.right = 16;
+        dirLight.shadow.camera.top = 16;
+        dirLight.shadow.camera.bottom = -16;
+        dirLight.shadow.bias = -0.0005;
+        scene.add(dirLight);
+
+        const rimLight = new THREE.PointLight(0x38bdf8, 3.0, 26, 1.4);
+        rimLight.position.set(0, 7.5, 0);
+        scene.add(rimLight);
+
+        const floorMesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(140, 140),
+          new THREE.MeshStandardMaterial({ color: 0x040915, roughness: 0.88, metalness: 0.25 })
+        );
+        floorMesh.rotation.x = -Math.PI / 2;
+        floorMesh.position.y = -0.22;
+        floorMesh.receiveShadow = true;
+        scene.add(floorMesh);
+
+        const grid = new THREE.GridHelper(70, 70, 0x1e3a5f, 0x0c1b33);
+        grid.position.y = -0.2;
+        scene.add(grid);
+
+        const slab = new THREE.Mesh(
+          new THREE.BoxGeometry(19.2, 0.22, 13.6),
+          new THREE.MeshStandardMaterial({ color: 0x0b1528, roughness: 0.55, metalness: 0.45 })
+        );
+        slab.position.y = -0.11;
+        slab.receiveShadow = true;
+        scene.add(slab);
+
+        const slabOutline = new THREE.LineSegments(
+          new THREE.EdgesGeometry(new THREE.BoxGeometry(19.24, 0.24, 13.64)),
+          new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.42 })
+        );
+        slabOutline.position.y = -0.11;
+        scene.add(slabOutline);
+
+        const corridor = new THREE.Mesh(
+          new THREE.PlaneGeometry(18.4, 2.0),
+          new THREE.MeshStandardMaterial({ color: 0x0f203d, emissive: 0x0c2d57, emissiveIntensity: 0.45, roughness: 0.4, metalness: 0.5 })
+        );
+        corridor.rotation.x = -Math.PI / 2;
+        corridor.position.y = 0.012;
+        scene.add(corridor);
+
+        const mdpBase = new THREE.Mesh(
+          new THREE.CylinderGeometry(1.15, 1.35, 0.3, 32),
+          new THREE.MeshStandardMaterial({ color: 0x111f38, metalness: 0.65, roughness: 0.3 })
+        );
+        mdpBase.position.y = 0.15;
+        scene.add(mdpBase);
+
+        mdpCore = new THREE.Mesh(
+          new THREE.OctahedronGeometry(0.56, 0),
+          new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0ea5e9, emissiveIntensity: 1.5, metalness: 0.3, roughness: 0.15 })
+        );
+        mdpCore.position.y = 1.15;
+        scene.add(mdpCore);
+
+        mdpRing = new THREE.Mesh(
+          new THREE.TorusGeometry(0.95, 0.03, 12, 48),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.72 })
+        );
+        mdpRing.rotation.x = Math.PI / 2;
+        mdpRing.position.y = 0.55;
+        scene.add(mdpRing);
+
+        ROOM_LAYOUT.forEach(buildRoomModule);
+
+        // Pointer Raycasting on 3D canvas
+        renderer.domElement.addEventListener('pointermove', (e) => {
+          const rect = renderer.domElement.getBoundingClientRect();
+          pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+          pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+          raycaster.setFromCamera(pointer, camera);
+          const hits = raycaster.intersectObjects(hitMeshes, false);
+          const hitRoom = hits.length > 0 ? hits[0].object.userData.ruang : null;
+          hoveredRoom = hitRoom;
+          renderer.domElement.style.cursor = hitRoom ? 'pointer' : 'grab';
+          updateTooltip(hitRoom, e.clientX - rect.left, e.clientY - rect.top, rect.width);
+        });
+
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+          pointerDownPos = { x: e.clientX, y: e.clientY };
+        });
+
+        renderer.domElement.addEventListener('pointerup', (e) => {
+          if (Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y) > 6) return;
+          const rect = renderer.domElement.getBoundingClientRect();
+          pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+          pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+          raycaster.setFromCamera(pointer, camera);
+          const hits = raycaster.intersectObjects(hitMeshes, false);
+          if (hits.length > 0) selectRoom(hits[0].object.userData.ruang);
+        });
+
+        renderer.domElement.addEventListener('pointerleave', () => {
+          hoveredRoom = null;
+          tooltipEl.classList.remove('visible');
+        });
+
+        const resizeScene = () => {
+          if (!renderer || !camera) return;
+          const nw = Math.max(hostEl.clientWidth, 1);
+          const nh = Math.max(hostEl.clientHeight, 1);
+          camera.aspect = nw / nh;
+          camera.updateProjectionMatrix();
+          renderer.setSize(nw, nh);
+        };
+        new ResizeObserver(resizeScene).observe(hostEl);
+        document.addEventListener('fullscreenchange', () => {
+          const btnFs = document.getElementById('en3d-btn-fullscreen');
+          if (btnFs) btnFs.textContent = document.fullscreenElement === stageEl ? 'Keluar Fullscreen' : 'Layar Penuh';
+          setTimeout(resizeScene, 60);
+        });
+
+        clock = new THREE.Clock();
+        initialized = true;
+
+        if (window.__enLastPayload) {
+          updateData(window.__enLastPayload);
+        }
+      }
+
+      function updateTooltip(ruang, relX, relY, stageWidth) {
+        if (!ruang || !currentRoomsMap.has(ruang)) {
+          tooltipEl.classList.remove('visible');
+          return;
+        }
+        const r = currentRoomsMap.get(ruang);
+        const pal = STATUS_PALETTE[r.visualStatus] || STATUS_PALETTE.offline;
+        document.getElementById('en3d-tt-room').textContent = `${r.ruang} · ${r.label}`;
+        document.getElementById('en3d-tt-device').textContent = `${r.device_id} · Gedung BSD-A`;
+        const b = document.getElementById('en3d-tt-badge');
+        b.textContent = pal.label;
+        b.className = `text-[10px] font-semibold px-2 py-0.5 rounded-full border ${pal.badgeBg}`;
+        document.getElementById('en3d-tt-power').textContent = r.online ? `${r.power_w.toFixed(1)} W` : 'OFFLINE';
+        document.getElementById('en3d-tt-energy').textContent = `${r.energy_kwh.toFixed(2)} kWh · ${fmtIdr(r.bill_idr)}`;
+
+        tooltipEl.style.left = `${Math.min(stageWidth - 115, Math.max(115, relX))}px`;
+        tooltipEl.style.top = `${Math.max(88, relY - 10)}px`;
+        tooltipEl.classList.add('visible');
+      }
+
+      function renderDrawer(r) {
+        if (!r) return;
+        const pal = STATUS_PALETTE[r.visualStatus] || STATUS_PALETTE.offline;
+        document.getElementById('en3d-dr-title').textContent = `${r.ruang} — ${r.label}`;
+        const badge = document.getElementById('en3d-dr-badge');
+        badge.textContent = pal.label;
+        badge.className = `text-[10px] font-bold px-2 py-0.5 rounded-full border ${pal.badgeBg}`;
+        document.getElementById('en3d-dr-sub').textContent = `${r.device_id} · ${r.subtitle}`;
+        document.getElementById('en3d-dr-power').textContent = r.online ? `${r.power_w.toFixed(1)} W` : '0.0 W (Offline)';
+        document.getElementById('en3d-dr-energy').textContent = `${r.energy_kwh.toFixed(3)} kWh`;
+        document.getElementById('en3d-dr-bill').textContent = fmtIdr(r.bill_idr);
+        document.getElementById('en3d-dr-load').textContent = `${Math.min(100, Math.round((r.power_w / 3000) * 100))}%`;
+        document.getElementById('en3d-dr-window').textContent = currentWindowLabel;
+
+        document.getElementById('en3d-dr-work').textContent = r.avg_work_w !== null ? `${Number(r.avg_work_w).toFixed(1)} W` : '-';
+        document.getElementById('en3d-dr-after').textContent = r.avg_after_w !== null ? `${Number(r.avg_after_w).toFixed(1)} W` : '-';
+        document.getElementById('en3d-dr-work-bar').style.width = `${Math.min(100, (Number(r.avg_work_w || 0) / 3000) * 100)}%`;
+        document.getElementById('en3d-dr-after-bar').style.width = `${Math.min(100, (Number(r.avg_after_w || 0) / 3000) * 100)}%`;
+
+        const alertList = document.getElementById('en3d-dr-alerts');
+        document.getElementById('en3d-dr-alert-cnt').textContent = `${r.alerts.length} kejadian`;
+        if (!r.alerts.length) {
+          alertList.innerHTML = `<div class="text-slate-500 italic">Tidak ada alert aktif pada ruangan ini.</div>`;
+        } else {
+          alertList.innerHTML = r.alerts.slice(0, 4).map(a => {
+            const isAcked = Boolean(a.ts_acked);
+            const code = a.code || a.type || 'ALERT';
+            const sevCrit = a.severity === 'critical';
+            return `
+              <div class="rounded-lg p-2 border ${isAcked ? 'bg-slate-900/50 border-slate-700/50 opacity-65' : sevCrit ? 'bg-rose-500/10 border-rose-500/35' : 'bg-amber-500/10 border-amber-500/35'}">
+                <div class="flex items-center justify-between gap-1 mb-0.5">
+                  <span class="font-mono font-bold ${sevCrit ? 'text-rose-300' : 'text-amber-300'}">${escHtml(code)}</span>
+                  ${isAcked
+                    ? `<span class="text-emerald-300 font-semibold">✓ ACK</span>`
+                    : `<button data-en3d-ack="${escHtml(a.id)}" type="button" class="en3d-ack-btn px-2 py-0.5 rounded bg-sky-500/25 hover:bg-sky-500/40 text-sky-200 border border-sky-400/40 font-semibold">ACK</button>`}
+                </div>
+                <div class="text-slate-300 leading-snug">${escHtml(a.message || code)}</div>
+              </div>
+            `;
+          }).join('');
+
+          alertList.querySelectorAll('.en3d-ack-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              if (typeof window.ackEnergyAlert === 'function') {
+                window.ackEnergyAlert(btn.dataset.en3dAck);
+              }
+            });
+          });
+        }
+
+        // Mini Chart.js trend inside 3D drawer
+        const canvas = document.getElementById('en3d-drawer-chart');
+        if (canvas && typeof Chart !== 'undefined') {
+          const ctx = canvas.getContext('2d');
+          const grad = ctx.createLinearGradient(0, 0, 0, 108);
+          grad.addColorStop(0, `${pal.hex}55`);
+          grad.addColorStop(1, `${pal.hex}05`);
+          const labels = r.seriesLabels.length ? r.seriesLabels : ['Now'];
+          const vals = r.seriesVals.length ? r.seriesVals : [r.power_w];
+
+          if (drawerChart) {
+            drawerChart.data.labels = labels;
+            drawerChart.data.datasets[0].data = vals;
+            drawerChart.data.datasets[0].borderColor = pal.hex;
+            drawerChart.data.datasets[0].backgroundColor = grad;
+            drawerChart.update('none');
+          } else {
+            drawerChart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels,
+                datasets: [{
+                  label: 'Daya (W)',
+                  data: vals,
+                  borderColor: pal.hex,
+                  backgroundColor: grad,
+                  borderWidth: 2,
+                  fill: true,
+                  tension: 0.35,
+                  pointRadius: 2,
+                  pointHoverRadius: 4
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 200 },
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.94)',
+                    borderColor: 'rgba(56, 189, 248, 0.4)',
+                    borderWidth: 1,
+                    callbacks: { label: c => ` ${Number(c.parsed.y || 0).toFixed(1)} W` }
+                  }
+                },
+                scales: {
+                  x: { grid: { color: 'rgba(51,65,85,0.28)' }, ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 4 } },
+                  y: { beginAtZero: true, grid: { color: 'rgba(51,65,85,0.28)' }, ticks: { color: '#94a3b8', font: { size: 9 }, callback: v => `${v}W` } }
+                }
+              }
+            });
+          }
+        }
+      }
+
+      function selectRoom(ruang) {
+        const obj = roomObjects.get(ruang);
+        if (!obj) return;
+        selectedRoom = ruang;
+        const [x, , z] = obj.cfg.position;
+        const offX = x >= 0 ? 5.4 : -5.4;
+        const offZ = z >= 0 ? 6.4 : 6.8;
+        flyCameraTo(
+          new THREE.Vector3(x + offX * 0.62, 6.2, z + offZ),
+          new THREE.Vector3(x, 1.3, z),
+          0.85
+        );
+        drawerEl.classList.remove('en3d-drawer-closed');
+        stageEl.querySelectorAll('.en3d-room-pill').forEach(p => p.classList.toggle('active', p.dataset.en3dRoom === ruang));
+        if (currentRoomsMap.has(ruang)) renderDrawer(currentRoomsMap.get(ruang));
+      }
+
+      function closeDrawer(resetCam = false) {
+        selectedRoom = null;
+        drawerEl.classList.add('en3d-drawer-closed');
+        stageEl.querySelectorAll('.en3d-room-pill').forEach(p => p.classList.remove('active'));
+        if (resetCam) setCameraPreset('overview');
+      }
+
+      function updateData(payload) {
+        if (!payload) return;
+        const { rooms = [], bill, alerts = [], telemetry = [], baseline = [], roomFilter = 'all', windowLabel = '1 Jam Terakhir', previewMode = false } = payload;
+        currentWindowLabel = windowLabel;
+
+        const modePill = document.getElementById('en3d-mode-pill');
+        if (modePill) {
+          modePill.textContent = previewMode ? 'Preview Data Contoh' : 'Live FastAPI';
+          modePill.className = previewMode
+            ? 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/35'
+            : 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30';
+        }
+
+        const roomApiMap = new Map(rooms.map(r => [r.ruang, r]));
+        const billMap = new Map((bill?.per_ruang || []).map(b => [b.ruang, b]));
+        const baseMap = new Map((baseline || []).map(b => [b.ruang, b]));
+
+        // Group sorted telemetry series per room
+        const seriesByRoom = new Map();
+        const powerRows = (telemetry || [])
+          .filter(t => t.field === 'power_w')
+          .map(t => ({ ...t, _ms: new Date(t.time).getTime() }))
+          .filter(t => !Number.isNaN(t._ms))
+          .sort((a, b) => a._ms - b._ms);
+        for (const row of powerRows) {
+          const k = row.ruang || row.device_id;
+          if (!seriesByRoom.has(k)) seriesByRoom.set(k, []);
+          seriesByRoom.get(k).push(row);
+        }
+
+        currentRoomsMap.clear();
+        for (const cfg of ROOM_LAYOUT) {
+          const rApi = roomApiMap.get(cfg.ruang) || {};
+          const bApi = billMap.get(cfg.ruang) || {};
+          const bsApi = baseMap.get(cfg.ruang) || {};
+          const rAlerts = alerts.filter(a => a.device_id === cfg.device_id || a.ruang === cfg.ruang);
+          const unackedAlerts = rAlerts.filter(a => !a.ts_acked);
+
+          const online = rApi.status === 'online' || Boolean(rApi.online);
+          const pw = Number(rApi.power_w || 0);
+          let visualStatus = 'normal';
+          if (!online) visualStatus = 'offline';
+          else if (pw > 3000 || unackedAlerts.some(a => (a.code || a.type) === 'HIGH_LOAD')) visualStatus = 'high_load';
+          else if (unackedAlerts.some(a => (a.code || a.type) === 'WASTE_AFTER_HOURS')) visualStatus = 'waste';
+
+          const pts = (seriesByRoom.get(cfg.ruang) || []).slice(-16);
+          const seriesLabels = pts.map(p => new Date(p._ms).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' }));
+          const seriesVals = pts.map(p => Number(p.value || 0));
+
+          const merged = {
+            ...cfg,
+            online,
+            visualStatus,
+            power_w: pw,
+            energy_kwh: Number(bApi.energy_kwh ?? rApi.energy_kwh ?? 0),
+            bill_idr: Number(bApi.estimasi_tagihan_idr ?? 0),
+            avg_work_w: bsApi.avg_work_hours_w ?? null,
+            avg_after_w: bsApi.avg_after_hours_w ?? null,
+            alerts: rAlerts,
+            seriesLabels,
+            seriesVals
+          };
+          currentRoomsMap.set(cfg.ruang, merged);
+
+          const pal = STATUS_PALETTE[visualStatus] || STATUS_PALETTE.offline;
+          const pill = stageEl.querySelector(`.en3d-room-pill[data-en3d-room="${cfg.ruang}"]`);
+          if (pill) {
+            const dot = pill.querySelector('.en3d-dot');
+            if (dot) dot.className = `en3d-dot w-2 h-2 rounded-full ${pal.dot}`;
+          }
+
+          const obj = roomObjects.get(cfg.ruang);
+          if (obj) {
+            const focusedByFilter = roomFilter === 'all' || roomFilter === cfg.ruang;
+            const targetH = online ? Math.min(4.2, Math.max(0.4, 0.35 + (pw / 3500) * 3.75)) : 0.24;
+            obj.targetHeight = focusedByFilter ? targetH : 0.22;
+            obj.targetColor.setHex(focusedByFilter ? pal.color : 0x334155);
+            obj.targetOpacity = focusedByFilter ? 1.0 : 0.26;
+            obj.flowSpeed = (!online || !focusedByFilter) ? 0 : Math.min(0.65, 0.1 + (pw / 3400) * 0.5);
+
+            const pwText = online ? `${Math.round(pw).toLocaleString('id-ID')} W` : 'OFFLINE';
+            const lKey = `${pwText}|${pal.hex}|${focusedByFilter}`;
+            if (obj.lastLabelKey !== lKey) {
+              obj.labelObj.redraw(cfg.ruang, cfg.device_id, pwText, focusedByFilter ? pal.hex : '#475569');
+              obj.lastLabelKey = lKey;
+            }
+          }
+        }
+
+        // Only fly camera when user actively changed #en-room-filter (not on 5s refresh)
+        if (initialized && roomFilter !== lastRoomFilter) {
+          lastRoomFilter = roomFilter;
+          if (roomFilter !== 'all' && roomObjects.has(roomFilter)) {
+            selectRoom(roomFilter);
+          } else if (roomFilter === 'all') {
+            closeDrawer(true);
+          }
+        } else {
+          lastRoomFilter = roomFilter;
+        }
+
+        if (selectedRoom && currentRoomsMap.has(selectedRoom)) {
+          renderDrawer(currentRoomsMap.get(selectedRoom));
+        }
+      }
+
+      let fpsFrames = 0;
+      let fpsTimer = 0;
+
+      function animateLoop() {
+        if (!isActive || !initialized) return;
+        rafId = requestAnimationFrame(animateLoop);
+
+        const dt = Math.min(clock.getDelta(), 0.05);
+        const elapsed = clock.getElapsedTime();
+
+        fpsFrames++;
+        fpsTimer += dt;
+        if (fpsTimer >= 0.6) {
+          const fpsEl = document.getElementById('en3d-fps');
+          if (fpsEl) fpsEl.textContent = `${Math.round(fpsFrames / fpsTimer)} FPS`;
+          fpsFrames = 0;
+          fpsTimer = 0;
+        }
+
+        if (camTransition.active) {
+          camTransition.progress += dt / camTransition.duration;
+          const t = Math.min(1, camTransition.progress);
+          const ease = 1 - Math.pow(1 - t, 3);
+          camera.position.lerpVectors(camTransition.startPos, camTransition.endPos, ease);
+          controls.target.lerpVectors(camTransition.startTarget, camTransition.endTarget, ease);
+          if (t >= 1) camTransition.active = false;
+        }
+
+        mdpCore.rotation.y += dt * 1.1;
+        mdpCore.position.y = 1.15 + Math.sin(elapsed * 2.2) * 0.1;
+        mdpRing.rotation.z -= dt * 0.6;
+
+        const alpha = Math.min(1, dt * 6.5);
+        for (const [ruang, obj] of roomObjects.entries()) {
+          const isHover = hoveredRoom === ruang;
+          const isSel = selectedRoom === ruang;
+          const rData = currentRoomsMap.get(ruang);
+          const isAlert = rData && (rData.visualStatus === 'waste' || rData.visualStatus === 'high_load');
+
+          obj.currentHeight += (obj.targetHeight - obj.currentHeight) * alpha;
+          obj.currentColor.lerp(obj.targetColor, alpha);
+          obj.currentOpacity += (obj.targetOpacity - obj.currentOpacity) * alpha;
+
+          const tScale = isHover ? 1.035 : isSel ? 1.02 : 1.0;
+          obj.currentScale += (tScale - obj.currentScale) * alpha;
+          obj.group.scale.set(obj.currentScale, 1, obj.currentScale);
+
+          const breathe = rData && rData.online ? Math.sin(elapsed * 2.4 + obj.cfg.position[0]) * 0.04 : 0;
+          const hVal = Math.max(0.2, obj.currentHeight + breathe);
+          obj.pillar.scale.set(1, hVal, 1);
+          obj.pillarShell.scale.set(1, hVal * 1.04, 1);
+          obj.pillarShell.rotation.y += dt * (isAlert ? 1.4 : 0.45);
+          obj.statusRing.rotation.z += dt * (isAlert ? 1.8 : 0.6);
+
+          const alertPulse = isAlert ? (0.5 + 0.5 * Math.sin(elapsed * 6)) * 0.8 : 0;
+          const boost = isHover ? 0.6 : isSel ? 0.38 : 0;
+
+          obj.pillarMat.color.copy(obj.currentColor);
+          obj.pillarMat.emissive.copy(obj.currentColor);
+          obj.pillarMat.emissiveIntensity = (0.75 + boost + alertPulse) * obj.currentOpacity;
+          obj.pillarMat.opacity = 0.85 * obj.currentOpacity;
+
+          obj.pillarShellMat.color.copy(obj.currentColor);
+          obj.pillarShellMat.opacity = (0.22 + (isHover || isSel ? 0.2 : 0)) * obj.currentOpacity;
+
+          obj.wallMat.emissive.copy(obj.currentColor);
+          obj.wallMat.emissiveIntensity = (0.1 + (isHover ? 0.24 : isSel ? 0.16 : 0) + alertPulse * 0.16) * obj.currentOpacity;
+          obj.wallMat.opacity = (0.22 + (isHover || isSel ? 0.1 : 0)) * obj.currentOpacity;
+
+          obj.edgeMat.color.copy(obj.currentColor);
+          obj.edgeMat.opacity = (isHover || isSel ? 1.0 : 0.68) * obj.currentOpacity;
+
+          obj.statusRingMat.color.copy(obj.currentColor);
+          obj.statusRingMat.opacity = (0.7 + alertPulse * 0.25) * obj.currentOpacity;
+
+          obj.roomLight.color.copy(obj.currentColor);
+          obj.roomLight.intensity = (1.8 + boost * 1.5 + alertPulse * 1.4) * obj.currentOpacity;
+
+          obj.tubeMat.emissive.copy(obj.currentColor);
+          obj.tubeMat.emissiveIntensity = (0.5 + boost * 0.5) * obj.currentOpacity;
+
+          obj.labelObj.sprite.position.y = Math.max(2.55, hVal + 1.1);
+        }
+
+        for (const p of energyParticles) {
+          const obj = roomObjects.get(p.ruang);
+          if (!obj || obj.flowSpeed <= 0.001) {
+            p.mesh.visible = false;
+            continue;
+          }
+          p.mesh.visible = true;
+          p.t = (p.t + dt * obj.flowSpeed) % 1;
+          p.curve.getPointAt(p.t, p.mesh.position);
+          p.mesh.position.y += 0.08;
+          p.mesh.material.color.copy(obj.currentColor);
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      // Bind HUD controls
+      stageEl.querySelectorAll('.en3d-cam-btn').forEach(btn => {
+        btn.addEventListener('click', () => setCameraPreset(btn.dataset.en3dCam));
+      });
+      document.getElementById('en3d-btn-reset')?.addEventListener('click', () => closeDrawer(true));
+      document.getElementById('en3d-btn-close-drawer')?.addEventListener('click', () => closeDrawer(false));
+      document.getElementById('en3d-btn-orbit')?.addEventListener('click', (e) => {
+        autoOrbit = !autoOrbit;
+        if (controls) {
+          controls.autoRotate = autoOrbit;
+          controls.autoRotateSpeed = 0.85;
+        }
+        e.currentTarget.classList.toggle('active', autoOrbit);
+      });
+      document.getElementById('en3d-btn-fullscreen')?.addEventListener('click', () => {
+        if (document.fullscreenElement === stageEl) {
+          document.exitFullscreen?.();
+        } else {
+          stageEl.requestFullscreen?.();
+        }
+      });
+      document.getElementById('en3d-btn-sync-filter')?.addEventListener('click', () => {
+        if (!selectedRoom) return;
+        const sel = document.getElementById('en-room-filter');
+        if (sel) {
+          sel.value = selectedRoom;
+          lastRoomFilter = selectedRoom;
+          if (typeof window.fetchEnergyRooms === 'function') window.fetchEnergyRooms();
+        }
+      });
+      stageEl.querySelectorAll('.en3d-room-pill').forEach(btn => {
+        btn.addEventListener('click', () => selectRoom(btn.dataset.en3dRoom));
+      });
+
+      function setActive(active) {
+        isActive = Boolean(active);
+        if (isActive) {
+          if (!initialized) initThreeScene();
+          if (clock) clock.getDelta();
+          if (rafId) cancelAnimationFrame(rafId);
+          animateLoop();
+        } else if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+      }
+
+      window.en3d = { setActive, updateData, selectRoom, setCameraPreset };
+      const energyTabEl = document.getElementById('content-energy');
+      if (energyTabEl && !energyTabEl.classList.contains('hidden')) {
+        setActive(true);
+      }
+    }
   </script>
 </body>
 </html>
