@@ -1131,18 +1131,25 @@
       if (!canvas || typeof Chart === 'undefined') return;
 
       const byRoom = {};
-      const timeLabelSet = new Set();
+      const timeMap = new Map();
       for (const row of (rows || [])) {
         if (row.field !== 'power_w') continue;
         const ruang = row.ruang || row.device_id || 'unknown';
         if (roomFilter !== 'all' && ruang !== roomFilter) continue;
+        const ms = new Date(row.time).getTime();
+        if (Number.isNaN(ms)) continue;
         const label = formatEnTimeWib(row.time).replace(' WIB', '');
-        timeLabelSet.add(label);
+        if (!timeMap.has(label) || ms < timeMap.get(label)) {
+          timeMap.set(label, ms);
+        }
         if (!byRoom[ruang]) byRoom[ruang] = {};
         byRoom[ruang][label] = Number(row.value || 0);
       }
 
-      const labels = Array.from(timeLabelSet);
+      // Urutkan sumbu-X secara kronologis berdasarkan epoch ms
+      const labels = Array.from(timeMap.entries())
+        .sort((a, b) => a[1] - b[1])
+        .map(([label]) => label);
       const roomNames = Object.keys(byRoom).sort();
 
       if (labels.length === 0 || roomNames.length === 0) {
@@ -1176,7 +1183,13 @@
         };
       });
 
-      if (enState.charts.power) enState.charts.power.destroy();
+      if (enState.charts.power) {
+        enState.charts.power.data.labels = labels;
+        enState.charts.power.data.datasets = datasets;
+        enState.charts.power.update('none');
+        return;
+      }
+
       enState.charts.power = new Chart(ctx, {
         type: 'line',
         data: { labels, datasets },
@@ -1238,9 +1251,18 @@
       const values = filtered.map(r => Number(r.estimasi_tagihan_idr || 0));
       const kwhs = filtered.map(r => Number(r.energy_kwh || 0));
       const colors = labels.map(r => ENERGY_ROOM_COLORS[r] || '#38bdf8');
+      const meta = { labels, values, kwhs, totalVal };
 
-      if (enState.charts.donut) enState.charts.donut.destroy();
-      enState.charts.donut = new Chart(canvas.getContext('2d'), {
+      if (enState.charts.donut) {
+        enState.charts.donut.$enMeta = meta;
+        enState.charts.donut.data.labels = labels;
+        enState.charts.donut.data.datasets[0].data = values;
+        enState.charts.donut.data.datasets[0].backgroundColor = colors;
+        enState.charts.donut.update('none');
+        return;
+      }
+
+      const donutChart = new Chart(canvas.getContext('2d'), {
         type: 'doughnut',
         data: {
           labels,
@@ -1269,17 +1291,20 @@
               padding: 10,
               callbacks: {
                 label: (ctxItem) => {
+                  const m = ctxItem.chart.$enMeta || meta;
                   const idx = ctxItem.dataIndex;
-                  const rp = values[idx];
-                  const kwh = kwhs[idx];
-                  const pct = ((kwh / totalVal) * 100).toFixed(1);
-                  return ` ${labels[idx]}: ${formatEnIdr(rp)} (${kwh.toFixed(2)} kWh · ${pct}%)`;
+                  const rp = m.values[idx] || 0;
+                  const kwh = m.kwhs[idx] || 0;
+                  const pct = m.totalVal > 0 ? ((kwh / m.totalVal) * 100).toFixed(1) : '0.0';
+                  return ` ${m.labels[idx]}: ${formatEnIdr(rp)} (${kwh.toFixed(2)} kWh · ${pct}%)`;
                 }
               }
             }
           }
         }
       });
+      donutChart.$enMeta = meta;
+      enState.charts.donut = donutChart;
     }
 
     function renderEnergyBaselineChart(items, roomFilter) {
@@ -1299,15 +1324,26 @@
       }
       emptyBox.classList.add('hidden');
 
-      if (enState.charts.baseline) enState.charts.baseline.destroy();
+      const labels = filtered.map(b => b.ruang);
+      const workData = filtered.map(b => Number(b.avg_work_hours_w || 0));
+      const afterData = filtered.map(b => Number(b.avg_after_hours_w || 0));
+
+      if (enState.charts.baseline) {
+        enState.charts.baseline.data.labels = labels;
+        enState.charts.baseline.data.datasets[0].data = workData;
+        enState.charts.baseline.data.datasets[1].data = afterData;
+        enState.charts.baseline.update('none');
+        return;
+      }
+
       enState.charts.baseline = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-          labels: filtered.map(b => b.ruang),
+          labels,
           datasets: [
             {
               label: 'Jam Kerja (07–18 WIB)',
-              data: filtered.map(b => Number(b.avg_work_hours_w || 0)),
+              data: workData,
               backgroundColor: 'rgba(56, 189, 248, 0.78)',
               borderColor: '#38bdf8',
               borderWidth: 1,
@@ -1315,7 +1351,7 @@
             },
             {
               label: 'Luar Jam Kerja (Malam/Libur)',
-              data: filtered.map(b => Number(b.avg_after_hours_w || 0)),
+              data: afterData,
               backgroundColor: 'rgba(245, 158, 11, 0.78)',
               borderColor: '#f59e0b',
               borderWidth: 1,
