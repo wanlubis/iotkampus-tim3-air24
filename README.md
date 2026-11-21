@@ -27,7 +27,7 @@ Platform berjalan secara lokal dan gratis menggunakan Docker Compose pada laptop
 | **postgres** | 5432 | `localhost:5432` | PostgreSQL 16 (DB: `kampus`) untuk data master `devices` & `alert_events` |
 | **api** | 8000 | `http://localhost:8000` | FastAPI Backend & REST API (OpenAPI docs di `/docs`) |
 | **dashboard** | 8080 | `http://localhost:8080` | Dashboard HTML/CSS/JS Pusat Lintas 3 Domain |
-| **grafana** | 3000 | `http://localhost:3000` | Observability & visualisasi operasional (admin/admin) |
+| **grafana** | 3000 | `http://localhost:3000` | Observability & visualisasi operasional (gunakan GRAFANA_ADMIN_USER dan GRAFANA_ADMIN_PASSWORD dari .env) |
 | **air-simulator** | - | Background Service | Simulator node `aq-01`, `aq-02`, `aq-03` |
 
 ---
@@ -93,14 +93,14 @@ Channel yang digunakan: `telemetry` (QoS 1), `status` (QoS 1, retain + LWT), `he
    ```bash
    cp .env.example .env
    ```
-3. Bangun dan jalankan semua container sekaligus:
+3. Isi seluruh variabel secret yang masih kosong di file `.env`, lalu bangun dan jalankan service default:
    ```bash
    docker compose up --build -d
    ```
 4. Buka browser:
    - **Dashboard Pusat**: [http://localhost:8080](http://localhost:8080)
    - **REST API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-   - **Grafana**: [http://localhost:3000](http://localhost:3000) (User/Pass: `admin`/`admin`)
+   - **Grafana**: [http://localhost:3000](http://localhost:3000) (Gunakan GRAFANA_ADMIN_USER dan GRAFANA_ADMIN_PASSWORD dari .env)
    - **Node-RED**: [http://localhost:1880](http://localhost:1880)
 
 ### C. Menguji API dengan cURL / PowerShell
@@ -115,18 +115,16 @@ Channel yang digunakan: `telemetry` (QoS 1), `status` (QoS 1, retain + LWT), `he
    ```
 3. Uji **Kontrak Ringkasan Lintas Domain** (Dengan API Key yang benar):
    ```bash
-   curl -i -H "X-API-Key: wanganteng" http://localhost:8000/api/v1/summary
+   curl -i -H "X-API-Key: YOUR_API_KEY" http://localhost:8000/api/v1/summary
    ```
 
 ### D. Perintah Menghentikan & Mereset Data
-- Menghentikan container:
-  ```bash
-  docker compose down
-  ```
-- Mereset volume jika data korup atau ingin demo bersih dari awal:
-  ```bash
-  docker compose down -v
-  ```
+- Menghentikan container tanpa menghapus data persisten:
+
+docker compose down
+
+- Peringatan: Hindari penggunaan docker compose down -v karena perintah tersebut dapat menghapus volume Docker dan seluruh data persisten
+yang tersimpan di dalamnya. Jangan gunakan perintah penghapusan volume pada lingkungan proyek yang berisi data penting.
 
 ---
 

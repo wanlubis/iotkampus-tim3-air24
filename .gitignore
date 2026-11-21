@@ -35,3 +35,7 @@ mosquitto/data/
 # Operating system
 .DS_Store
 Thumbs.db
+
+# Local backup files containing credentials
+mosquitto/config/passwordfile.backup
+nodered/data/flows_cred.json.backup

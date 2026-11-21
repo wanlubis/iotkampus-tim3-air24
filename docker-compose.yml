@@ -10,12 +10,21 @@ services:
     restart: unless-stopped
 
   nodered:
-    image: nodered/node-red:latest
+    build:
+      context: ./nodered
     container_name: air24-nodered
     ports:
       - "1880:1880"
     volumes:
       - ./nodered/data:/data
+    environment:
+      MQTT_USER: ${MQTT_NODERED_USER}
+      MQTT_PASSWORD: ${MQTT_NODERED_PASSWORD}
+      NODE_RED_CREDENTIAL_SECRET: ${NODE_RED_CREDENTIAL_SECRET}
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
+      INFLUXDB_ORG: ${INFLUXDB_ORG}
+      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET}
+      API_KEY: ${API_KEY}
     depends_on:
       - mosquitto
       - influxdb
@@ -79,10 +88,13 @@ services:
     container_name: air24-dashboard
     ports:
       - "8080:80"
+    environment:
+      API_KEY: ${API_KEY}
+      NGINX_ENVSUBST_FILTER: '^API_KEY$'
     volumes:
       - ./dashboard:/usr/share/nginx/html:ro
+      - ./dashboard/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
     restart: unless-stopped
-
   grafana:
     image: grafana/grafana:11.5.2
     container_name: air24-grafana
@@ -94,6 +106,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
     depends_on:
       - influxdb
     restart: unless-stopped

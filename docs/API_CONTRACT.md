@@ -1,4 +1,4 @@
-# API Integration Contract — Mini IoT Platform Kampus (AIR24)
+# API Integration Contract â€” Mini IoT Platform Kampus (AIR24)
 **Wali Integrasi: Tim 3**
 
 Dokumen ini mendefinisikan kontrak REST API resmi untuk antarmuka dashboard, integrasi lintas domain, dan evaluasi pengujian.
@@ -24,7 +24,7 @@ Dokumen ini mendefinisikan kontrak REST API resmi untuk antarmuka dashboard, int
 ## 2. Autentikasi
 Seluruh endpoint di bawah `/api/v1/` wajib menyertakan HTTP Header:
 ```http
-X-API-Key: air24-secret-key-demo
+X-API-Key: YOUR_API_KEY
 ```
 *Catatan:* Jika header tidak dikirim atau nilainya salah, API menjawab status `401 Unauthorized` dengan error code `UNAUTHORIZED`. Endpoint `GET /health` adalah satu-satunya rute publik yang tidak memerlukan header token.
 
@@ -57,7 +57,7 @@ X-API-Key: air24-secret-key-demo
     "alerts_active": { "warning": 0, "critical": 0, "escalated": 0 },
     "domains": {
       "energy": { "devices_online": 4, "devices_total": 4, "kpi": { "name": "power_w_total", "value": 4120.0, "unit": "W" }, "alerts_active": 0 },
-      "coldchain": { "devices_online": 3, "devices_total": 3, "kpi": { "name": "temp_c_max", "value": 3.8, "unit": "°C" }, "alerts_active": 0 },
+      "coldchain": { "devices_online": 3, "devices_total": 3, "kpi": { "name": "temp_c_max", "value": 3.8, "unit": "Â°C" }, "alerts_active": 0 },
       "air": { "devices_online": 3, "devices_total": 3, "kpi": { "name": "co2_ppm_max", "value": 650.0, "unit": "ppm" }, "alerts_active": 0 }
     }
   }
