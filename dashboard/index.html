@@ -25,6 +25,8 @@
       }
     }
   </script>
+  <!-- Chart.js CDN (untuk grafik interaktif Smart Energy) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
     .pulse-dot {
       animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -32,6 +34,25 @@
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: .4; }
+    }
+    .en-glass {
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.78), rgba(15, 23, 42, 0.88));
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      box-shadow: 0 10px 30px -12px rgba(2, 6, 23, 0.65);
+    }
+    .en-glass-card {
+      background: linear-gradient(160deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.85));
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .en-glass-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(56, 189, 248, 0.35);
+      box-shadow: 0 12px 28px -10px rgba(14, 165, 233, 0.18);
     }
   </style>
 </head>
@@ -344,159 +365,240 @@
     </div>
 
     <!-- ============================================================== -->
-    <!-- TAB 4: SMART ENERGY (TIM 1) -->
+    <!-- TAB 4: SMART ENERGY (TIM 1) — DARK GLASSMORPHISM + CHART.JS -->
     <!-- ============================================================== -->
     <div id="content-energy" class="hidden space-y-6">
-      <!-- Header & Asumsi Terbuka (Bagian 5.3 & 5.4) -->
-      <div class="bg-gradient-to-r from-blue-900/40 to-slate-800 border border-blue-500/30 rounded-2xl p-5 space-y-3">
-        <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+      <!-- Header, Filter Bar & Asumsi Terbuka (Bagian 5.3 & 5.4) -->
+      <div class="en-glass rounded-2xl p-5 space-y-4">
+        <div class="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
           <div>
-            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-              <span>⚡ Domain Smart Energy (Monitoring Daya &amp; Pemborosan)</span>
-              <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/30">Owner: Tim 1</span>
-            </h2>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-lg font-bold text-white tracking-tight">⚡ Smart Energy Analytics</h2>
+              <span class="text-[11px] bg-sky-500/15 text-sky-300 px-2.5 py-0.5 rounded-full border border-sky-400/30 font-semibold">Owner: Tim 1</span>
+              <span id="en-source-badge" class="text-[11px] bg-emerald-500/15 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-400/30 font-semibold">Live FastAPI</span>
+            </div>
             <p class="text-xs text-slate-300 mt-1">
-              Simulasi 4 kWh meter per ruang (<code>kwh-01</code> s.d. <code>kwh-04</code>), deteksi pemborosan di luar jam kerja, lonjakan beban, dan estimasi tagihan.
+              Pemantauan daya instan, energi kumulatif 4 kWh meter (<code>kwh-01</code>–<code>kwh-04</code>), deteksi pemborosan di luar jam kerja, dan estimasi tagihan.
             </p>
           </div>
-          <div class="flex flex-wrap gap-2 text-[11px]">
-            <div class="px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
-              WASTE: <strong class="text-amber-400">&gt;200 W</strong> (luar jam kerja, 2 mnt)
-            </div>
-            <div class="px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
-              HIGH_LOAD: <strong class="text-rose-400">&gt;3000 W</strong> (1 mnt)
-            </div>
-            <div class="px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
-              OFFLINE: <strong class="text-rose-400">60 dtk</strong> / LWT
-            </div>
-          </div>
-        </div>
-        <div id="en-assumptions-banner" class="bg-blue-950/50 border border-blue-500/30 rounded-xl px-3.5 py-2 text-xs text-blue-100">
-          <strong>Asumsi Simulasi:</strong> Tarif <strong class="text-emerald-300">Rp 1.500 / kWh</strong> (asumsi internal kampus, bukan tarif resmi PLN) · Jam kerja: <strong>Senin–Jumat, 07.00–18.00 WIB</strong>.
-        </div>
-      </div>
 
-      <!-- 4 Kartu KPI Smart Energy (Bagian 5.4) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
-          <div class="text-xs text-slate-400 font-medium">Daya Total Saat Ini</div>
-          <div id="en-kpi-power" class="text-2xl font-extrabold text-white mt-2">-- W</div>
-          <div id="en-kpi-online" class="text-[11px] text-slate-400 mt-1">Meter online: - / 4</div>
-        </div>
-
-        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
-          <div class="text-xs text-slate-400 font-medium">Energi Periode Berjalan</div>
-          <div id="en-kpi-kwh" class="text-2xl font-extrabold text-sky-400 mt-2">-- kWh</div>
-          <div id="en-kpi-period-note" class="text-[11px] text-slate-400 mt-1">Periode: Harian</div>
-        </div>
-
-        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-xs text-slate-400 font-medium">Estimasi Tagihan</span>
-            <select id="en-bill-period" onchange="fetchEnergyRooms()" class="bg-slate-700 border border-slate-600 rounded-md px-2 py-0.5 text-[11px] text-slate-200 focus:outline-none">
-              <option value="daily">Harian</option>
-              <option value="weekly">Mingguan</option>
-            </select>
-          </div>
-          <div id="en-kpi-bill" class="text-2xl font-extrabold text-emerald-400 mt-2">Rp 0</div>
-          <div id="en-kpi-tariff" class="text-[11px] text-slate-400 mt-1">Asumsi Rp 1.500/kWh</div>
-        </div>
-
-        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
-          <div class="text-xs text-slate-400 font-medium">Kejadian Boros Belum Di-ACK</div>
-          <div id="en-kpi-waste-unacked" class="text-2xl font-extrabold text-amber-400 mt-2">0</div>
-          <div id="en-kpi-waste-total" class="text-[11px] text-slate-400 mt-1">Total kejadian boros: 0</div>
-        </div>
-      </div>
-
-      <!-- Grafik Daya Per Ruang + Ekspor CSV -->
-      <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 class="text-base font-bold text-white">Grafik Daya Instan per Ruang (W)</h3>
-            <p class="text-xs text-slate-400">Profil daya <code>power_w</code> tiap kWh meter berdasarkan jendela waktu pilihan</p>
-          </div>
+          <!-- Filter Interaktif (Memperbarui KPI, 3 Grafik & Tabel) -->
           <div class="flex flex-wrap items-center gap-2">
-            <select id="en-window-select" onchange="fetchEnergyRooms()" class="bg-slate-700 border border-slate-600 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none">
-              <option value="-15m" data-mins="15">15 menit terakhir</option>
-              <option value="-1h" data-mins="60" selected>1 jam terakhir</option>
-              <option value="-6h" data-mins="360">6 jam terakhir</option>
-              <option value="-24h" data-mins="1440">24 jam terakhir</option>
+            <select id="en-window-select" onchange="fetchEnergyRooms()" class="bg-slate-900/80 border border-slate-600/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-400">
+              <option value="-15m" data-mins="15">15 Menit Terakhir</option>
+              <option value="-1h" data-mins="60" selected>1 Jam Terakhir</option>
+              <option value="-6h" data-mins="360">6 Jam Terakhir</option>
+              <option value="-24h" data-mins="1440">24 Jam Terakhir</option>
             </select>
-            <select id="en-export-room" class="bg-slate-700 border border-slate-600 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none">
+
+            <select id="en-bill-period" onchange="fetchEnergyRooms()" class="bg-slate-900/80 border border-slate-600/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-400">
+              <option value="daily">Tagihan: Harian</option>
+              <option value="weekly">Tagihan: Mingguan</option>
+            </select>
+
+            <select id="en-room-filter" onchange="fetchEnergyRooms()" class="bg-slate-900/80 border border-slate-600/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-400">
+              <option value="all">Semua Ruang (4 Meter)</option>
               <option value="r3012">r3012 (kwh-01)</option>
               <option value="r3013">r3013 (kwh-02)</option>
               <option value="r3017">r3017 (kwh-03)</option>
               <option value="lab-iot">lab-iot (kwh-04)</option>
             </select>
-            <button onclick="exportEnergyCsv()" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white transition">
+
+            <button id="en-mode-toggle" onclick="toggleEnergyPreviewMode()" type="button" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600/80 text-xs font-semibold text-slate-200 transition">
+              Preview Data Contoh
+            </button>
+
+            <button onclick="exportEnergyCsv()" type="button" class="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white shadow-lg shadow-sky-600/20 transition">
               Ekspor CSV
             </button>
           </div>
         </div>
-        <div id="en-chart-legend" class="flex flex-wrap gap-4 text-xs text-slate-300"></div>
-        <div class="w-full h-64 bg-slate-900/70 border border-slate-700/70 rounded-xl p-2">
-          <svg id="en-power-chart" viewBox="0 0 900 260" preserveAspectRatio="none" class="w-full h-full block"></svg>
+
+        <!-- Banner Peringatan Mode Preview (Hanya tampil saat mode preview aktif) -->
+        <div id="en-preview-notice" class="hidden bg-amber-500/15 border border-amber-400/40 rounded-xl px-3.5 py-2 text-xs text-amber-200 flex items-center justify-between gap-2">
+          <span><strong>MODE PREVIEW DATA CONTOH:</strong> Menampilkan dataset simulasi JSON lokal agar seluruh grafik &amp; filter bisa diuji sebelum simulator Anggota 1 aktif. Klik <em>Kembali ke Live API</em> untuk data nyata.</span>
+          <button onclick="toggleEnergyPreviewMode()" class="underline font-semibold text-amber-100 whitespace-nowrap">Kembali ke Live API</button>
+        </div>
+
+        <!-- Banner Asumsi Terbuka & Ambang Batas (Wajib Bagian 5.3 & 5.4) -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 bg-sky-950/40 border border-sky-400/20 rounded-xl px-3.5 py-2.5 text-xs text-sky-100">
+          <div id="en-assumptions-banner">
+            <strong>Asumsi Terbuka:</strong> Tarif <strong class="text-emerald-300">Rp 1.500 / kWh</strong> (simulasi internal kampus, bukan tarif resmi PLN) · Jam kerja: <strong>Senin–Jumat, 07.00–18.00 WIB</strong>.
+          </div>
+          <div class="flex flex-wrap gap-1.5 text-[11px]">
+            <span class="px-2 py-0.5 rounded-md bg-slate-900/70 border border-amber-500/30 text-amber-300">WASTE &gt;200 W (luar jam, 2m)</span>
+            <span class="px-2 py-0.5 rounded-md bg-slate-900/70 border border-rose-500/30 text-rose-300">HIGH_LOAD &gt;3000 W (1m)</span>
+            <span class="px-2 py-0.5 rounded-md bg-slate-900/70 border border-slate-600 text-slate-300">OFFLINE 60s / LWT</span>
+          </div>
         </div>
       </div>
 
-      <!-- Status kWh Meter + Daftar Alert Energy -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
-          <div>
-            <h3 class="text-base font-bold text-white">Status per kWh Meter</h3>
-            <p class="text-xs text-slate-400">Status <code>online/offline</code> nyata (LWT &amp; no-data 60 dtk), daya terakhir, dan energi kumulatif</p>
+      <!-- 4 KPI SUMMARY CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1: Daya Total -->
+        <div class="en-glass-card rounded-2xl p-5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">Daya Total Saat Ini</span>
+            <span class="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-400/25 flex items-center justify-center text-sky-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </span>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-slate-700/50 text-slate-300 font-semibold border-b border-slate-600">
-                <tr>
-                  <th class="py-2.5 px-3">Meter / Ruang</th>
-                  <th class="py-2.5 px-3">Status</th>
-                  <th class="py-2.5 px-3">Daya Terakhir</th>
-                  <th class="py-2.5 px-3">Energi Kumulatif</th>
-                  <th class="py-2.5 px-3">Update (WIB)</th>
-                </tr>
-              </thead>
-              <tbody id="energy-container" class="divide-y divide-slate-700/50">
-                <tr><td colspan="5" class="py-4 text-center text-slate-400">Memuat data kWh meter...</td></tr>
-              </tbody>
-            </table>
+          <div class="mt-3 flex items-baseline justify-between gap-2">
+            <div id="en-kpi-power" class="text-2xl font-extrabold text-white tracking-tight">-- W</div>
+            <span id="en-kpi-power-delta" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300">0.0%</span>
+          </div>
+          <div id="en-kpi-online" class="text-[11px] text-slate-400 mt-2">Meter online: - / 4</div>
+        </div>
+
+        <!-- KPI 2: Energi Periode Berjalan -->
+        <div class="en-glass-card rounded-2xl p-5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">Energi Periode Berjalan</span>
+            <span class="w-8 h-8 rounded-xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </span>
+          </div>
+          <div class="mt-3 flex items-baseline justify-between gap-2">
+            <div id="en-kpi-kwh" class="text-2xl font-extrabold text-sky-300 tracking-tight">-- kWh</div>
+            <span id="en-kpi-kwh-delta" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300">Harian</span>
+          </div>
+          <div id="en-kpi-period-note" class="text-[11px] text-slate-400 mt-2">Rentang WIB aktif</div>
+        </div>
+
+        <!-- KPI 3: Estimasi Tagihan -->
+        <div class="en-glass-card rounded-2xl p-5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">Estimasi Tagihan</span>
+            <span class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-emerald-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
+          </div>
+          <div class="mt-3 flex items-baseline justify-between gap-2">
+            <div id="en-kpi-bill" class="text-2xl font-extrabold text-emerald-400 tracking-tight">Rp 0</div>
+            <span id="en-kpi-bill-delta" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">Asumsi</span>
+          </div>
+          <div id="en-kpi-tariff" class="text-[11px] text-slate-400 mt-2">Rp 1.500 / kWh (simulasi)</div>
+        </div>
+
+        <!-- KPI 4: Kejadian Boros Belum Di-ACK -->
+        <div class="en-glass-card rounded-2xl p-5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">Boros Belum Di-ACK</span>
+            <span class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-400/25 flex items-center justify-center text-amber-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </span>
+          </div>
+          <div class="mt-3 flex items-baseline justify-between gap-2">
+            <div id="en-kpi-waste-unacked" class="text-2xl font-extrabold text-amber-400 tracking-tight">0</div>
+            <span id="en-kpi-waste-badge" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">Aman</span>
+          </div>
+          <div id="en-kpi-waste-total" class="text-[11px] text-slate-400 mt-2">Total kejadian boros: 0</div>
+        </div>
+      </div>
+
+      <!-- VISUALISASI UTAMA: 2 GRAFIK BARIS ATAS (LINE/AREA + DOUGHNUT) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Grafik 1: Line/Area Tren Daya -->
+        <div class="lg:col-span-8 en-glass rounded-2xl p-5 space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 class="text-base font-bold text-white">Tren Daya Instan per Ruangan (W)</h3>
+              <p class="text-xs text-slate-400">Area chart interaktif <code>power_w</code> — arahkan kursor untuk detail per ruangan</p>
+            </div>
+            <span id="en-trend-window-pill" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-300 self-start sm:self-auto">
+              1 Jam Terakhir
+            </span>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="en-chart-power"></canvas>
+            <div id="en-chart-power-empty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400 bg-slate-900/50 rounded-xl border border-slate-700/60">
+              Menunggu data telemetry Smart Energy... (atau klik "Preview Data Contoh" di atas untuk melihat grafik)
+            </div>
           </div>
         </div>
 
-        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm flex flex-col">
-          <div class="flex items-center justify-between mb-3">
+        <!-- Grafik 2: Doughnut Distribusi Tagihan & kWh -->
+        <div class="lg:col-span-4 en-glass rounded-2xl p-5 flex flex-col space-y-3">
+          <div>
+            <h3 class="text-base font-bold text-white">Distribusi Tagihan per Ruang</h3>
+            <p class="text-xs text-slate-400">Proporsi konsumsi <code>kWh</code> &amp; estimasi biaya (IDR)</p>
+          </div>
+          <div class="relative flex-1 min-h-[240px] flex items-center justify-center">
+            <canvas id="en-chart-donut"></canvas>
+            <div id="en-chart-donut-empty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400 bg-slate-900/50 rounded-xl border border-slate-700/60 text-center px-4">
+              Belum ada konsumsi kWh pada periode berjalan.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISUALISASI KE-3 (BAR CHART BASELINE) + FEED ALERT ENERGY -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Grafik 3: Bar Chart Baseline Jam Kerja vs Luar Jam Kerja -->
+        <div class="lg:col-span-7 en-glass rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-bold text-white">Baseline: Jam Kerja vs Luar Jam Kerja (W)</h3>
+              <p class="text-xs text-slate-400">Deteksi ruang yang tetap menyedot daya tinggi di luar jam kerja (ambang 200 W)</p>
+            </div>
+            <span class="text-[11px] px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-400/30 text-amber-300">24 Jam</span>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="en-chart-baseline"></canvas>
+            <div id="en-chart-baseline-empty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400 bg-slate-900/50 rounded-xl border border-slate-700/60">
+              Belum ada data baseline jam kerja vs luar jam kerja.
+            </div>
+          </div>
+        </div>
+
+        <!-- Feed Alert Energy dengan Filter & Tombol ACK -->
+        <div class="lg:col-span-5 en-glass rounded-2xl p-5 flex flex-col">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div>
               <h3 class="text-base font-bold text-white">Kejadian Alert Energy</h3>
               <p class="text-xs text-slate-400">WASTE_AFTER_HOURS · HIGH_LOAD · OFFLINE</p>
             </div>
-            <button onclick="fetchEnergyRooms()" class="text-xs text-blue-400 hover:underline">Refresh</button>
+            <div class="flex items-center gap-1 text-[11px]">
+              <select id="en-alert-filter" onchange="renderEnergyAlertsList()" class="bg-slate-900/80 border border-slate-600/80 rounded-lg px-2 py-1 text-slate-200 focus:outline-none">
+                <option value="all">Semua</option>
+                <option value="unacked">Belum Di-ACK</option>
+                <option value="WASTE_AFTER_HOURS">WASTE</option>
+                <option value="HIGH_LOAD">HIGH_LOAD</option>
+              </select>
+            </div>
           </div>
-          <div id="en-alerts-feed" class="flex-1 overflow-y-auto max-h-[340px] space-y-2.5 pr-1">
-            <div class="text-center py-6 text-xs text-slate-400">Memuat kejadian alert energy...</div>
+          <div id="en-alerts-feed" class="flex-1 overflow-y-auto max-h-[295px] space-y-2.5 pr-1">
+            <div class="text-center py-8 text-xs text-slate-400">Memuat kejadian alert energy...</div>
           </div>
         </div>
       </div>
 
-      <!-- Baseline Jam Kerja vs Luar Jam Kerja (Fitur Nilai Tambah 5.7) -->
-      <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-3">
-        <div>
-          <h3 class="text-base font-bold text-white">Perbandingan Baseline: Jam Kerja vs Luar Jam Kerja</h3>
-          <p class="text-xs text-slate-400">Rata-rata <code>power_w</code> per ruang dalam 24 jam terakhir (<code>GET /api/v1/energy/baseline</code>)</p>
+      <!-- TABEL DATA DETAIL kWh METER (SEARCH + SORT + LOAD BAR) -->
+      <div class="en-glass rounded-2xl p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-bold text-white">Detail Status per kWh Meter</h3>
+            <p class="text-xs text-slate-400">Klik judul kolom untuk mengurutkan · Status <code>online/offline</code> nyata (LWT &amp; no-data 60 dtk)</p>
+          </div>
+          <div class="relative w-full sm:w-64">
+            <input id="en-table-search" oninput="renderEnergyMetersTable()" type="text" placeholder="Cari meter, ruang, status..." class="w-full bg-slate-900/80 border border-slate-600/80 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:border-sky-400" />
+            <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
         </div>
+
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
-            <thead class="bg-slate-700/50 text-slate-300 font-semibold border-b border-slate-600">
+            <thead class="bg-slate-900/60 text-slate-300 font-semibold border-b border-slate-700/80 select-none">
               <tr>
-                <th class="py-2 px-3">Ruang</th>
-                <th class="py-2 px-3">Device ID</th>
-                <th class="py-2 px-3">Rata-rata Jam Kerja (W)</th>
-                <th class="py-2 px-3">Rata-rata Luar Jam Kerja (W)</th>
+                <th onclick="sortEnergyTable('device_id')" class="py-3 px-3 cursor-pointer hover:text-sky-300 transition">Meter / Ruang <span id="en-sort-device_id" class="text-[10px]">↕</span></th>
+                <th onclick="sortEnergyTable('status')" class="py-3 px-3 cursor-pointer hover:text-sky-300 transition">Status <span id="en-sort-status" class="text-[10px]">↕</span></th>
+                <th onclick="sortEnergyTable('power_w')" class="py-3 px-3 cursor-pointer hover:text-sky-300 transition">Daya Terakhir &amp; Beban <span id="en-sort-power_w" class="text-[10px]">↕</span></th>
+                <th onclick="sortEnergyTable('energy_kwh')" class="py-3 px-3 cursor-pointer hover:text-sky-300 transition">Energi Kumulatif <span id="en-sort-energy_kwh" class="text-[10px]">↕</span></th>
+                <th class="py-3 px-3">Update Terakhir (WIB)</th>
               </tr>
             </thead>
-            <tbody id="en-baseline-body" class="divide-y divide-slate-700/50">
-              <tr><td colspan="4" class="py-4 text-center text-slate-400">Memuat perbandingan baseline...</td></tr>
+            <tbody id="energy-container" class="divide-y divide-slate-700/50">
+              <tr><td colspan="5" class="py-6 text-center text-slate-400">Memuat data kWh meter...</td></tr>
             </tbody>
           </table>
         </div>
@@ -826,13 +928,27 @@
     }
 
     // ==============================================================
-    // SMART ENERGY (TIM 1) — KPI, GRAFIK, METER, ALERT ACK & BASELINE
+    // SMART ENERGY (TIM 1) — DARK GLASSMORPHISM + CHART.JS ANALYTICS
     // ==============================================================
     const ENERGY_ROOM_COLORS = {
       r3012: '#38bdf8',
       r3013: '#22c55e',
       r3017: '#f59e0b',
       'lab-iot': '#c084fc'
+    };
+
+    const enState = {
+      previewMode: false,
+      rooms: [],
+      alerts: [],
+      sortKey: 'device_id',
+      sortAsc: true,
+      previewAckedIds: {},
+      charts: {
+        power: null,
+        donut: null,
+        baseline: null
+      }
     };
 
     function escapeEnHtml(val) {
@@ -865,72 +981,496 @@
       }) + ' WIB';
     }
 
-    function renderEnergyPowerChart(rows) {
-      const svg = document.getElementById('en-power-chart');
-      const legend = document.getElementById('en-chart-legend');
-      const W = 900, H = 260, padL = 56, padR = 18, padT = 16, padB = 26;
+    function toggleEnergyPreviewMode() {
+      enState.previewMode = !enState.previewMode;
+      const btn = document.getElementById('en-mode-toggle');
+      const notice = document.getElementById('en-preview-notice');
+      const badge = document.getElementById('en-source-badge');
 
-      const byRoom = {};
-      let minT = Infinity, maxT = -Infinity, maxP = 100;
-      for (const row of (rows || [])) {
-        if (row.field !== 'power_w') continue;
-        const t = new Date(row.time).getTime();
-        const pw = Number(row.value);
-        if (Number.isNaN(t) || Number.isNaN(pw)) continue;
-        const key = row.ruang || row.device_id || 'unknown';
-        if (!byRoom[key]) byRoom[key] = [];
-        byRoom[key].push({ t, pw });
-        if (t < minT) minT = t;
-        if (t > maxT) maxT = t;
-        if (pw > maxP) maxP = pw;
+      if (enState.previewMode) {
+        btn.textContent = 'Kembali ke Live API';
+        btn.className = 'px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-xs font-semibold text-amber-200 transition';
+        notice.classList.remove('hidden');
+        badge.textContent = 'Preview Data Contoh';
+        badge.className = 'text-[11px] bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-400/40 font-semibold';
+      } else {
+        btn.textContent = 'Preview Data Contoh';
+        btn.className = 'px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600/80 text-xs font-semibold text-slate-200 transition';
+        notice.classList.add('hidden');
+        badge.textContent = 'Live FastAPI';
+        badge.className = 'text-[11px] bg-emerald-500/15 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-400/30 font-semibold';
+      }
+      fetchEnergyRooms();
+    }
+
+    // Dataset simulasi JSON realistis (hanya dipakai saat user mengaktifkan Mode Preview)
+    function buildEnergyPreviewSnapshot(period, winMins) {
+      const nowMs = Date.now();
+      const scale = period === 'weekly' ? 6.4 : 1.0;
+      const tarif = 1500;
+
+      const rooms = [
+        { device_id: 'kwh-01', display_name: 'KWh Meter Ruang 3012', gedung: 'bsd-a', ruang: 'r3012', status: 'online', online: true, power_w: 785.4, energy_kwh: 18.42, last_seen: new Date(nowMs - 4000).toISOString() },
+        { device_id: 'kwh-02', display_name: 'KWh Meter Ruang 3013', gedung: 'bsd-a', ruang: 'r3013', status: 'online', online: true, power_w: 3180.0, energy_kwh: 29.85, last_seen: new Date(nowMs - 3000).toISOString() },
+        { device_id: 'kwh-03', display_name: 'KWh Meter Ruang 3017', gedung: 'bsd-a', ruang: 'r3017', status: 'online', online: true, power_w: 412.6, energy_kwh: 14.11, last_seen: new Date(nowMs - 5000).toISOString() },
+        { device_id: 'kwh-04', display_name: 'KWh Meter Lab IoT', gedung: 'bsd-a', ruang: 'lab-iot', status: 'offline', online: false, power_w: 0.0, energy_kwh: 34.90, last_seen: new Date(nowMs - 185000).toISOString() }
+      ];
+
+      const perRuang = [
+        { device_id: 'kwh-01', ruang: 'r3012', display_name: 'KWh Meter Ruang 3012', energy_kwh: Number((5.4 * scale).toFixed(3)), estimasi_tagihan_idr: Math.round(5.4 * scale * tarif) },
+        { device_id: 'kwh-02', ruang: 'r3013', display_name: 'KWh Meter Ruang 3013', energy_kwh: Number((8.9 * scale).toFixed(3)), estimasi_tagihan_idr: Math.round(8.9 * scale * tarif) },
+        { device_id: 'kwh-03', ruang: 'r3017', display_name: 'KWh Meter Ruang 3017', energy_kwh: Number((3.6 * scale).toFixed(3)), estimasi_tagihan_idr: Math.round(3.6 * scale * tarif) },
+        { device_id: 'kwh-04', ruang: 'lab-iot', display_name: 'KWh Meter Lab IoT', energy_kwh: Number((6.2 * scale).toFixed(3)), estimasi_tagihan_idr: Math.round(6.2 * scale * tarif) }
+      ];
+      const totalKwh = Number(perRuang.reduce((a, b) => a + b.energy_kwh, 0).toFixed(3));
+
+      const points = 12;
+      const stepMs = (winMins * 60 * 1000) / points;
+      const curves = {
+        r3012: [610, 640, 720, 790, 810, 770, 740, 760, 805, 820, 795, 785],
+        r3013: [890, 940, 1120, 1450, 2200, 2890, 3150, 3240, 3110, 3080, 3210, 3180],
+        r3017: [290, 310, 350, 420, 440, 400, 380, 395, 430, 450, 425, 413],
+        'lab-iot': [980, 1020, 990, 950, 880, 820, 610, 420, 120, 0, 0, 0]
+      };
+      const telemData = [];
+      for (let i = 0; i < points; i++) {
+        const tsIso = new Date(nowMs - (points - 1 - i) * stepMs).toISOString();
+        for (const r of rooms) {
+          telemData.push({
+            time: tsIso,
+            device_id: r.device_id,
+            ruang: r.ruang,
+            field: 'power_w',
+            value: curves[r.ruang][i]
+          });
+        }
       }
 
-      const rooms = Object.keys(byRoom).sort();
-      if (rooms.length === 0) {
-        legend.innerHTML = `<span class="text-slate-400">Belum ada data telemetry <code>power_w</code> pada jendela waktu ini.</span>`;
-        svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" fill="#94a3b8" text-anchor="middle" font-size="13">Menunggu data telemetry Smart Energy...</text>`;
+      const rawAlerts = [
+        {
+          id: 'ALT-PREVIEW-0001',
+          device_id: 'kwh-02',
+          domain: 'energy',
+          code: 'HIGH_LOAD',
+          severity: 'critical',
+          message: 'Lonjakan beban di r3013 (kwh-02): 3180.0 W (> 3000 W selama 1 menit)',
+          value: 3180.0,
+          ts_raised: new Date(nowMs - 140000).toISOString(),
+          ts_acked: enState.previewAckedIds['ALT-PREVIEW-0001'] || null,
+          acked_by: enState.previewAckedIds['ALT-PREVIEW-0001'] ? 'Tim 1 Energy Operator' : null
+        },
+        {
+          id: 'ALT-PREVIEW-0002',
+          device_id: 'kwh-01',
+          domain: 'energy',
+          code: 'WASTE_AFTER_HOURS',
+          severity: 'warning',
+          message: 'Indikasi pemborosan di r3012 (kwh-01): 785.4 W di luar jam kerja (> 200 W)',
+          value: 785.4,
+          ts_raised: new Date(nowMs - 480000).toISOString(),
+          ts_acked: enState.previewAckedIds['ALT-PREVIEW-0002'] || null,
+          acked_by: enState.previewAckedIds['ALT-PREVIEW-0002'] ? 'Tim 1 Energy Operator' : null
+        },
+        {
+          id: 'ALT-PREVIEW-0003',
+          device_id: 'kwh-04',
+          domain: 'energy',
+          code: 'OFFLINE',
+          severity: 'critical',
+          message: 'Perangkat kwh-04 (lab-iot) berstatus offline (LWT / no-data > 60 detik)',
+          value: 0.0,
+          ts_raised: new Date(nowMs - 185000).toISOString(),
+          ts_acked: enState.previewAckedIds['ALT-PREVIEW-0003'] || null,
+          acked_by: enState.previewAckedIds['ALT-PREVIEW-0003'] ? 'Tim 1 Energy Operator' : null
+        }
+      ];
+
+      const wasteAlerts = rawAlerts.filter(a => a.code === 'WASTE_AFTER_HOURS');
+      const unackedWaste = wasteAlerts.filter(a => !a.ts_acked).length;
+
+      return {
+        rooms,
+        bill: {
+          periode: {
+            jenis: period,
+            from: new Date(nowMs - (period === 'weekly' ? 6 : 0.5) * 86400000).toISOString(),
+            to: new Date(nowMs).toISOString()
+          },
+          tarif_asumsi: {
+            tarif_per_kwh_idr: tarif,
+            satuan: 'IDR/kWh',
+            catatan: 'Asumsi tarif simulasi internal kampus (bukan tarif resmi PLN).',
+            jam_kerja_wib: 'Senin-Jumat pukul 07:00-18:00 WIB'
+          },
+          total_kwh: totalKwh,
+          estimasi_tagihan_total_idr: Math.round(totalKwh * tarif),
+          per_ruang: perRuang
+        },
+        waste: {
+          summary: {
+            total_events: wasteAlerts.length,
+            unacked_count: unackedWaste,
+            acked_count: wasteAlerts.length - unackedWaste
+          },
+          items: wasteAlerts
+        },
+        alerts: rawAlerts,
+        telemetry: telemData,
+        baseline: [
+          { ruang: 'r3012', device_id: 'kwh-01', avg_work_hours_w: 790.5, avg_after_hours_w: 410.2, samples_work_hours: 120, samples_after_hours: 48 },
+          { ruang: 'r3013', device_id: 'kwh-02', avg_work_hours_w: 1420.0, avg_after_hours_w: 185.0, samples_work_hours: 118, samples_after_hours: 50 },
+          { ruang: 'r3017', device_id: 'kwh-03', avg_work_hours_w: 520.3, avg_after_hours_w: 92.4, samples_work_hours: 120, samples_after_hours: 52 },
+          { ruang: 'lab-iot', device_id: 'kwh-04', avg_work_hours_w: 1080.0, avg_after_hours_w: 115.6, samples_work_hours: 96, samples_after_hours: 40 }
+        ]
+      };
+    }
+
+    function renderEnergyPowerChart(rows, roomFilter) {
+      const canvas = document.getElementById('en-chart-power');
+      const emptyBox = document.getElementById('en-chart-power-empty');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      const byRoom = {};
+      const timeLabelSet = new Set();
+      for (const row of (rows || [])) {
+        if (row.field !== 'power_w') continue;
+        const ruang = row.ruang || row.device_id || 'unknown';
+        if (roomFilter !== 'all' && ruang !== roomFilter) continue;
+        const label = formatEnTimeWib(row.time).replace(' WIB', '');
+        timeLabelSet.add(label);
+        if (!byRoom[ruang]) byRoom[ruang] = {};
+        byRoom[ruang][label] = Number(row.value || 0);
+      }
+
+      const labels = Array.from(timeLabelSet);
+      const roomNames = Object.keys(byRoom).sort();
+
+      if (labels.length === 0 || roomNames.length === 0) {
+        emptyBox.classList.remove('hidden');
+        if (enState.charts.power) {
+          enState.charts.power.destroy();
+          enState.charts.power = null;
+        }
+        return;
+      }
+      emptyBox.classList.add('hidden');
+
+      const ctx = canvas.getContext('2d');
+      const fallbackColors = ['#fb7185', '#2dd4bf', '#a3e635', '#facc15'];
+      const datasets = roomNames.map((ruang, idx) => {
+        const color = ENERGY_ROOM_COLORS[ruang] || fallbackColors[idx % fallbackColors.length];
+        const grad = ctx.createLinearGradient(0, 0, 0, 260);
+        grad.addColorStop(0, color + '44');
+        grad.addColorStop(1, color + '04');
+        return {
+          label: ruang,
+          data: labels.map(l => (byRoom[ruang][l] !== undefined ? byRoom[ruang][l] : null)),
+          borderColor: color,
+          backgroundColor: grad,
+          fill: true,
+          tension: 0.35,
+          borderWidth: 2.2,
+          pointRadius: 2.5,
+          pointHoverRadius: 6,
+          spanGaps: true
+        };
+      });
+
+      if (enState.charts.power) enState.charts.power.destroy();
+      enState.charts.power = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          animation: { duration: 300 },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { color: '#cbd5e1', usePointStyle: true, boxWidth: 8, font: { size: 11 } }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.94)',
+              borderColor: 'rgba(56, 189, 248, 0.4)',
+              borderWidth: 1,
+              titleColor: '#f8fafc',
+              bodyColor: '#e2e8f0',
+              padding: 10,
+              callbacks: {
+                label: (ctxItem) => ` ${ctxItem.dataset.label}: ${Number(ctxItem.parsed.y || 0).toFixed(1)} W`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(51, 65, 85, 0.35)' },
+              ticks: { color: '#94a3b8', maxTicksLimit: 8, font: { size: 10 } }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(51, 65, 85, 0.35)' },
+              ticks: { color: '#94a3b8', font: { size: 10 }, callback: (v) => `${v} W` }
+            }
+          }
+        }
+      });
+    }
+
+    function renderEnergyDonutChart(perRuang, roomFilter) {
+      const canvas = document.getElementById('en-chart-donut');
+      const emptyBox = document.getElementById('en-chart-donut-empty');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      const filtered = (perRuang || []).filter(r => roomFilter === 'all' || r.ruang === roomFilter);
+      const totalVal = filtered.reduce((s, r) => s + Number(r.energy_kwh || 0), 0);
+      if (totalVal <= 0) {
+        emptyBox.classList.remove('hidden');
+        if (enState.charts.donut) {
+          enState.charts.donut.destroy();
+          enState.charts.donut = null;
+        }
+        return;
+      }
+      emptyBox.classList.add('hidden');
+
+      const labels = filtered.map(r => r.ruang);
+      const values = filtered.map(r => Number(r.estimasi_tagihan_idr || 0));
+      const kwhs = filtered.map(r => Number(r.energy_kwh || 0));
+      const colors = labels.map(r => ENERGY_ROOM_COLORS[r] || '#38bdf8');
+
+      if (enState.charts.donut) enState.charts.donut.destroy();
+      enState.charts.donut = new Chart(canvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            backgroundColor: colors,
+            borderColor: '#0f172a',
+            borderWidth: 2,
+            hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '64%',
+          animation: { duration: 300 },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#cbd5e1', usePointStyle: true, padding: 14, font: { size: 11 } }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.94)',
+              borderColor: 'rgba(56, 189, 248, 0.4)',
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: (ctxItem) => {
+                  const idx = ctxItem.dataIndex;
+                  const rp = values[idx];
+                  const kwh = kwhs[idx];
+                  const pct = ((kwh / totalVal) * 100).toFixed(1);
+                  return ` ${labels[idx]}: ${formatEnIdr(rp)} (${kwh.toFixed(2)} kWh · ${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderEnergyBaselineChart(items, roomFilter) {
+      const canvas = document.getElementById('en-chart-baseline');
+      const emptyBox = document.getElementById('en-chart-baseline-empty');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      const filtered = (items || []).filter(b => roomFilter === 'all' || b.ruang === roomFilter);
+      const hasData = filtered.some(b => b.avg_work_hours_w !== null || b.avg_after_hours_w !== null);
+      if (!hasData) {
+        emptyBox.classList.remove('hidden');
+        if (enState.charts.baseline) {
+          enState.charts.baseline.destroy();
+          enState.charts.baseline = null;
+        }
+        return;
+      }
+      emptyBox.classList.add('hidden');
+
+      if (enState.charts.baseline) enState.charts.baseline.destroy();
+      enState.charts.baseline = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: filtered.map(b => b.ruang),
+          datasets: [
+            {
+              label: 'Jam Kerja (07–18 WIB)',
+              data: filtered.map(b => Number(b.avg_work_hours_w || 0)),
+              backgroundColor: 'rgba(56, 189, 248, 0.78)',
+              borderColor: '#38bdf8',
+              borderWidth: 1,
+              borderRadius: 6
+            },
+            {
+              label: 'Luar Jam Kerja (Malam/Libur)',
+              data: filtered.map(b => Number(b.avg_after_hours_w || 0)),
+              backgroundColor: 'rgba(245, 158, 11, 0.78)',
+              borderColor: '#f59e0b',
+              borderWidth: 1,
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 300 },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { color: '#cbd5e1', usePointStyle: true, boxWidth: 8, font: { size: 11 } }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.94)',
+              borderColor: 'rgba(245, 158, 11, 0.4)',
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: (ctxItem) => ` ${ctxItem.dataset.label}: ${Number(ctxItem.parsed.y || 0).toFixed(1)} W`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#cbd5e1', font: { size: 11 } } },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(51, 65, 85, 0.35)' },
+              ticks: { color: '#94a3b8', font: { size: 10 }, callback: (v) => `${v} W` }
+            }
+          }
+        }
+      });
+    }
+
+    function sortEnergyTable(key) {
+      if (enState.sortKey === key) {
+        enState.sortAsc = !enState.sortAsc;
+      } else {
+        enState.sortKey = key;
+        enState.sortAsc = true;
+      }
+      ['device_id', 'status', 'power_w', 'energy_kwh'].forEach(k => {
+        const ind = document.getElementById(`en-sort-${k}`);
+        if (ind) ind.textContent = k === enState.sortKey ? (enState.sortAsc ? '↑' : '↓') : '↕';
+      });
+      renderEnergyMetersTable();
+    }
+
+    function renderEnergyMetersTable() {
+      const tbody = document.getElementById('energy-container');
+      const query = (document.getElementById('en-table-search')?.value || '').trim().toLowerCase();
+      const roomFilter = document.getElementById('en-room-filter')?.value || 'all';
+
+      let rows = (enState.rooms || []).filter(r => {
+        if (roomFilter !== 'all' && r.ruang !== roomFilter) return false;
+        if (!query) return true;
+        return `${r.device_id} ${r.display_name} ${r.ruang} ${r.status}`.toLowerCase().includes(query);
+      });
+
+      const key = enState.sortKey;
+      const dir = enState.sortAsc ? 1 : -1;
+      rows.sort((a, b) => {
+        const va = a[key] ?? '';
+        const vb = b[key] ?? '';
+        if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+        return String(va).localeCompare(String(vb)) * dir;
+      });
+
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Tidak ada kWh meter yang cocok dengan filter.</td></tr>`;
         return;
       }
 
-      if (maxT <= minT) maxT = minT + 60000;
-      maxP = Math.ceil((maxP * 1.15) / 100) * 100;
+      tbody.innerHTML = rows.map(r => {
+        const isOn = r.status === 'online';
+        const pw = Number(r.power_w || 0);
+        const loadPct = Math.min(100, Math.round((pw / 3500) * 100));
+        const barColor = pw > 3000 ? 'bg-rose-500' : (pw > 200 ? 'bg-amber-400' : 'bg-emerald-400');
+        const badge = isOn
+          ? `<span class="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span>Online</span></span>`
+          : `<span class="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span><span>Offline</span></span>`;
+        return `
+          <tr class="hover:bg-slate-700/30 transition">
+            <td class="py-3 px-3">
+              <div class="font-mono font-bold text-slate-100">${escapeEnHtml(r.device_id)}</div>
+              <div class="text-[11px] text-slate-400">${escapeEnHtml(r.display_name)} · <span class="text-sky-300">${escapeEnHtml(r.ruang)}</span></div>
+            </td>
+            <td class="py-3 px-3">${badge}</td>
+            <td class="py-3 px-3 min-w-[170px]">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <strong class="text-white">${pw.toFixed(1)} W</strong>
+                <span class="text-[10px] text-slate-400">${loadPct}% kapasitas</span>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                <div class="h-1.5 rounded-full ${barColor} transition-all duration-300" style="width:${loadPct}%"></div>
+              </div>
+            </td>
+            <td class="py-3 px-3 text-slate-200 font-mono font-semibold">${Number(r.energy_kwh || 0).toFixed(4)} kWh</td>
+            <td class="py-3 px-3 text-slate-400">${escapeEnHtml(formatEnTimeWib(r.last_seen))}</td>
+          </tr>
+        `;
+      }).join('');
+    }
 
-      const plotW = W - padL - padR;
-      const plotH = H - padT - padB;
-      const xOf = (t) => padL + ((t - minT) / (maxT - minT)) * plotW;
-      const yOf = (p) => padT + plotH - (p / maxP) * plotH;
+    function renderEnergyAlertsList() {
+      const feed = document.getElementById('en-alerts-feed');
+      const filter = document.getElementById('en-alert-filter')?.value || 'all';
+      const roomFilter = document.getElementById('en-room-filter')?.value || 'all';
 
-      let gridSvg = '';
-      for (let i = 0; i <= 4; i++) {
-        const val = Math.round((maxP / 4) * i);
-        const y = yOf(val);
-        gridSvg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#334155" stroke-dasharray="3,3" />`;
-        gridSvg += `<text x="${padL - 8}" y="${y + 4}" fill="#94a3b8" font-size="11" text-anchor="end">${val} W</text>`;
-      }
-
-      const fallbackColors = ['#fb7185', '#2dd4bf', '#a3e635', '#facc15'];
-      let linesSvg = '';
-      let legendHtml = '';
-      rooms.forEach((ruang, idx) => {
-        const color = ENERGY_ROOM_COLORS[ruang] || fallbackColors[idx % fallbackColors.length];
-        const pts = byRoom[ruang].sort((a, b) => a.t - b.t);
-        const pathD = pts.map((pt, i) => `${i === 0 ? 'M' : 'L'}${xOf(pt.t).toFixed(1)},${yOf(pt.pw).toFixed(1)}`).join(' ');
-        const last = pts[pts.length - 1];
-        linesSvg += `<path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.2" />`;
-        linesSvg += `<circle cx="${xOf(last.t).toFixed(1)}" cy="${yOf(last.pw).toFixed(1)}" r="3.5" fill="${color}" />`;
-        legendHtml += `<span class="inline-flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:${color}"></span><span>${escapeEnHtml(ruang)} (${last.pw.toFixed(0)} W)</span></span>`;
+      const filtered = (enState.alerts || []).filter(a => {
+        if (filter === 'unacked' && a.ts_acked) return false;
+        if ((filter === 'WASTE_AFTER_HOURS' || filter === 'HIGH_LOAD') && a.code !== filter) return false;
+        if (roomFilter !== 'all' && a.context?.ruang && a.context.ruang !== roomFilter) return false;
+        return true;
       });
 
-      const xAxisSvg = `
-        <text x="${padL}" y="${H - 6}" fill="#94a3b8" font-size="11">${escapeEnHtml(formatEnTimeWib(new Date(minT).toISOString()))}</text>
-        <text x="${W - padR}" y="${H - 6}" fill="#94a3b8" font-size="11" text-anchor="end">${escapeEnHtml(formatEnTimeWib(new Date(maxT).toISOString()))}</text>
-      `;
+      if (!filtered.length) {
+        feed.innerHTML = `<div class="text-center py-8 text-xs text-slate-400">Tidak ada kejadian alert yang cocok dengan filter.</div>`;
+        return;
+      }
 
-      legend.innerHTML = legendHtml;
-      svg.innerHTML = gridSvg + linesSvg + xAxisSvg;
+      feed.innerHTML = filtered.map(a => {
+        const isAcked = Boolean(a.ts_acked);
+        const sevClass = a.severity === 'critical'
+          ? 'border-rose-500/40 bg-rose-500/10 text-rose-300'
+          : 'border-amber-500/40 bg-amber-500/10 text-amber-300';
+        return `
+          <div class="border rounded-xl p-3 text-xs ${sevClass}">
+            <div class="flex items-center justify-between font-semibold">
+              <span class="font-mono text-[11px]">[${escapeEnHtml(a.code)}] ${escapeEnHtml(a.device_id)}</span>
+              <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-900/50">${escapeEnHtml(a.severity)}</span>
+            </div>
+            <p class="mt-1 text-slate-200 text-[11px] leading-relaxed">${escapeEnHtml(a.message)}</p>
+            <div class="mt-2 pt-2 border-t border-slate-700/40 flex items-center justify-between text-[10px] text-slate-400">
+              <span>${escapeEnHtml(formatEnTimeWib(a.ts_raised))}</span>
+              ${isAcked
+                ? `<span class="text-emerald-400 font-semibold">✓ Di-ACK oleh ${escapeEnHtml(a.acked_by || 'operator')}</span>`
+                : `<button onclick="ackEnergyAlert('${escapeEnHtml(a.id)}')" class="px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-700 text-slate-100 font-semibold border border-slate-600 transition">Tandai ACK</button>`
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     async function ackEnergyAlert(alertId) {
+      if (enState.previewMode) {
+        enState.previewAckedIds[alertId] = new Date().toISOString();
+        fetchEnergyRooms();
+        return;
+      }
       try {
         const res = await fetch(`/api/v1/alerts/${encodeURIComponent(alertId)}/ack`, {
           method: 'POST',
@@ -948,18 +1488,36 @@
     }
 
     async function exportEnergyCsv() {
-      const ruang = document.getElementById('en-export-room').value;
+      const roomFilter = document.getElementById('en-room-filter')?.value || 'all';
+      const targetRuang = roomFilter === 'all' ? 'r3012' : roomFilter;
       const winSel = document.getElementById('en-window-select');
       const mins = Number(winSel.options[winSel.selectedIndex]?.dataset?.mins || 60);
+
+      if (enState.previewMode) {
+        const snap = buildEnergyPreviewSnapshot('daily', mins);
+        const rows = snap.telemetry.filter(r => r.ruang === targetRuang);
+        const csvLines = ['ts_wib,ruang,device_id,power_w', ...rows.map(r => `${r.time},${r.ruang},${r.device_id},${r.value}`)];
+        const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `energy_${targetRuang}_preview.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        return;
+      }
+
       const fromIso = new Date(Date.now() - mins * 60 * 1000).toISOString();
       try {
-        const res = await fetch(`/api/v1/energy/rooms/${encodeURIComponent(ruang)}/usage/export?from=${encodeURIComponent(fromIso)}`);
+        const res = await fetch(`/api/v1/energy/rooms/${encodeURIComponent(targetRuang)}/usage/export?from=${encodeURIComponent(fromIso)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `energy_${ruang}.csv`;
+        a.download = `energy_${targetRuang}.csv`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -969,10 +1527,79 @@
       }
     }
 
+    function applyEnergyDashboardData({ rooms, bill, waste, alerts, telemetry, baseline }) {
+      const period = document.getElementById('en-bill-period')?.value || 'daily';
+      const roomFilter = document.getElementById('en-room-filter')?.value || 'all';
+      const winSel = document.getElementById('en-window-select');
+      const winLabel = winSel.options[winSel.selectedIndex]?.textContent || '1 Jam Terakhir';
+      document.getElementById('en-trend-window-pill').textContent = `${winLabel}${roomFilter === 'all' ? '' : ' · ' + roomFilter}`;
+
+      enState.rooms = rooms || [];
+      enState.alerts = alerts || [];
+
+      const scopedRooms = enState.rooms.filter(r => roomFilter === 'all' || r.ruang === roomFilter);
+      const totalPower = scopedRooms.reduce((sum, r) => sum + Number(r.power_w || 0), 0);
+      const onlineCnt = scopedRooms.filter(r => r.status === 'online').length;
+      const capMax = Math.max(1, scopedRooms.length * 3000);
+      const utilPct = ((totalPower / capMax) * 100).toFixed(1);
+
+      document.getElementById('en-kpi-power').textContent = `${totalPower.toFixed(1)} W`;
+      document.getElementById('en-kpi-online').textContent = `Meter online: ${onlineCnt} / ${scopedRooms.length}`;
+      const powerDeltaEl = document.getElementById('en-kpi-power-delta');
+      powerDeltaEl.textContent = `${utilPct}% beban`;
+      powerDeltaEl.className = Number(utilPct) > 70
+        ? 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300'
+        : (Number(utilPct) > 25
+            ? 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300'
+            : 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300');
+
+      const scopedPerRuang = (bill?.per_ruang || []).filter(r => roomFilter === 'all' || r.ruang === roomFilter);
+      const scopedKwh = scopedPerRuang.reduce((s, r) => s + Number(r.energy_kwh || 0), 0);
+      const scopedBill = scopedPerRuang.reduce((s, r) => s + Number(r.estimasi_tagihan_idr || 0), 0);
+      const tarif = bill?.tarif_asumsi?.tarif_per_kwh_idr ?? 1500;
+
+      document.getElementById('en-kpi-kwh').textContent = `${scopedKwh.toFixed(3)} kWh`;
+      document.getElementById('en-kpi-kwh-delta').textContent = period === 'daily' ? 'Harian' : 'Mingguan';
+      document.getElementById('en-kpi-period-note').textContent =
+        `${formatEnTimeWib(bill?.periode?.from)} – ${formatEnTimeWib(bill?.periode?.to)}`;
+      document.getElementById('en-kpi-bill').textContent = formatEnIdr(scopedBill);
+      document.getElementById('en-kpi-tariff').textContent = `Tarif asumsi Rp ${Number(tarif).toLocaleString('id-ID')}/kWh`;
+
+      if (bill?.tarif_asumsi) {
+        document.getElementById('en-assumptions-banner').innerHTML =
+          `<strong>Asumsi Terbuka:</strong> Tarif <strong class="text-emerald-300">Rp ${Number(tarif).toLocaleString('id-ID')} / kWh</strong> (${escapeEnHtml(bill.tarif_asumsi.catatan)}) · Jam kerja: <strong>${escapeEnHtml(bill.tarif_asumsi.jam_kerja_wib)}</strong>.`;
+      }
+
+      const unackedWaste = Number(waste?.summary?.unacked_count ?? 0);
+      document.getElementById('en-kpi-waste-unacked').textContent = String(unackedWaste);
+      document.getElementById('en-kpi-waste-total').textContent = `Total kejadian boros: ${waste?.summary?.total_events ?? 0}`;
+      const wasteBadge = document.getElementById('en-kpi-waste-badge');
+      if (unackedWaste > 0) {
+        wasteBadge.textContent = 'Perlu ACK';
+        wasteBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300';
+      } else {
+        wasteBadge.textContent = 'Aman';
+        wasteBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300';
+      }
+
+      renderEnergyPowerChart(telemetry, roomFilter);
+      renderEnergyDonutChart(bill?.per_ruang || [], roomFilter);
+      renderEnergyBaselineChart(baseline, roomFilter);
+      renderEnergyMetersTable();
+      renderEnergyAlertsList();
+    }
+
     // Fetch Energy Rooms, Bill, Waste, Alerts, Telemetry & Baseline (Tim 1 Domain Tab)
     async function fetchEnergyRooms() {
       const period = document.getElementById('en-bill-period')?.value || 'daily';
-      const winRel = document.getElementById('en-window-select')?.value || '-1h';
+      const winSel = document.getElementById('en-window-select');
+      const winRel = winSel?.value || '-1h';
+      const winMins = Number(winSel?.options[winSel.selectedIndex]?.dataset?.mins || 60);
+
+      if (enState.previewMode) {
+        applyEnergyDashboardData(buildEnergyPreviewSnapshot(period, winMins));
+        return;
+      }
 
       try {
         const [roomsRes, billRes, wasteRes, alertsRes, telemRes, baseRes] = await Promise.all([
@@ -984,118 +1611,23 @@
           fetch(`/api/v1/energy/baseline`)
         ]);
 
-        // 1. Rooms & Meter Status Table
-        if (roomsRes.ok) {
-          const rooms = await roomsRes.json();
-          const totalPower = rooms.reduce((sum, r) => sum + Number(r.power_w || 0), 0);
-          const onlineCnt = rooms.filter(r => r.status === 'online').length;
-          document.getElementById('en-kpi-power').textContent = `${totalPower.toFixed(1)} W`;
-          document.getElementById('en-kpi-online').textContent = `Meter online: ${onlineCnt} / ${rooms.length}`;
+        const [rooms, bill, waste, alerts, telem, base] = await Promise.all([
+          roomsRes.ok ? roomsRes.json() : [],
+          billRes.ok ? billRes.json() : null,
+          wasteRes.ok ? wasteRes.json() : null,
+          alertsRes.ok ? alertsRes.json() : [],
+          telemRes.ok ? telemRes.json() : { data: [] },
+          baseRes.ok ? baseRes.json() : { items: [] }
+        ]);
 
-          const tbody = document.getElementById('energy-container');
-          if (!rooms.length) {
-            tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400">Belum ada kWh meter terdaftar.</td></tr>`;
-          } else {
-            tbody.innerHTML = rooms.map(r => {
-              const isOn = r.status === 'online';
-              const badge = isOn
-                ? `<span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span>Online</span></span>`
-                : `<span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/20 text-rose-400"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span><span>Offline</span></span>`;
-              return `
-                <tr class="hover:bg-slate-700/30 transition">
-                  <td class="py-2.5 px-3">
-                    <div class="font-mono font-bold text-slate-200">${escapeEnHtml(r.device_id)}</div>
-                    <div class="text-[11px] text-slate-400">${escapeEnHtml(r.display_name)} · ${escapeEnHtml(r.ruang)}</div>
-                  </td>
-                  <td class="py-2.5 px-3">${badge}</td>
-                  <td class="py-2.5 px-3 font-bold text-white">${Number(r.power_w || 0).toFixed(1)} W</td>
-                  <td class="py-2.5 px-3 text-slate-300 font-mono">${Number(r.energy_kwh || 0).toFixed(4)} kWh</td>
-                  <td class="py-2.5 px-3 text-slate-400">${escapeEnHtml(formatEnTimeWib(r.last_seen))}</td>
-                </tr>
-              `;
-            }).join('');
-          }
-        }
-
-        // 2. Billing & Tariff Assumptions
-        if (billRes.ok) {
-          const bill = await billRes.json();
-          const tarif = bill.tarif_asumsi?.tarif_per_kwh_idr ?? 1500;
-          document.getElementById('en-kpi-kwh').textContent = `${Number(bill.total_kwh || 0).toFixed(3)} kWh`;
-          document.getElementById('en-kpi-period-note').textContent =
-            `Periode ${period === 'daily' ? 'Harian' : 'Mingguan'} (${formatEnTimeWib(bill.periode?.from)} - ${formatEnTimeWib(bill.periode?.to)})`;
-          document.getElementById('en-kpi-bill').textContent = formatEnIdr(bill.estimasi_tagihan_total_idr);
-          document.getElementById('en-kpi-tariff').textContent = `Tarif asumsi Rp ${Number(tarif).toLocaleString('id-ID')}/kWh`;
-
-          if (bill.tarif_asumsi) {
-            document.getElementById('en-assumptions-banner').innerHTML =
-              `<strong>Asumsi Simulasi:</strong> Tarif <strong class="text-emerald-300">Rp ${Number(tarif).toLocaleString('id-ID')} / kWh</strong> (${escapeEnHtml(bill.tarif_asumsi.catatan)}) · Jam kerja: <strong>${escapeEnHtml(bill.tarif_asumsi.jam_kerja_wib)}</strong>.`;
-          }
-        }
-
-        // 3. Waste Summary KPI
-        if (wasteRes.ok) {
-          const waste = await wasteRes.json();
-          document.getElementById('en-kpi-waste-unacked').textContent = String(waste.summary?.unacked_count ?? 0);
-          document.getElementById('en-kpi-waste-total').textContent = `Total kejadian boros: ${waste.summary?.total_events ?? 0}`;
-        }
-
-        // 4. Energy Alerts Feed with ACK
-        if (alertsRes.ok) {
-          const alerts = await alertsRes.json();
-          const feed = document.getElementById('en-alerts-feed');
-          if (!alerts || alerts.length === 0) {
-            feed.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">Belum ada kejadian WASTE_AFTER_HOURS, HIGH_LOAD, atau OFFLINE.</div>`;
-          } else {
-            feed.innerHTML = alerts.map(a => {
-              const isAcked = Boolean(a.ts_acked);
-              const sevClass = a.severity === 'critical'
-                ? 'border-rose-500/50 bg-rose-500/10 text-rose-300'
-                : 'border-amber-500/50 bg-amber-500/10 text-amber-300';
-              return `
-                <div class="border rounded-xl p-3 text-xs ${sevClass}">
-                  <div class="flex items-center justify-between font-semibold">
-                    <span class="font-mono text-[11px]">[${escapeEnHtml(a.code)}] ${escapeEnHtml(a.device_id)}</span>
-                    <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-900/40">${escapeEnHtml(a.severity)}</span>
-                  </div>
-                  <p class="mt-1 text-slate-200 text-[11px] leading-relaxed">${escapeEnHtml(a.message)}</p>
-                  <div class="mt-2 pt-2 border-t border-slate-700/40 flex items-center justify-between text-[10px] text-slate-400">
-                    <span>${escapeEnHtml(formatEnTimeWib(a.ts_raised))}</span>
-                    ${isAcked
-                      ? `<span class="text-emerald-400 font-semibold">✓ Di-ACK oleh ${escapeEnHtml(a.acked_by || 'operator')}</span>`
-                      : `<button onclick="ackEnergyAlert('${escapeEnHtml(a.id)}')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium border border-slate-600 transition">Tandai ACK</button>`
-                    }
-                  </div>
-                </div>
-              `;
-            }).join('');
-          }
-        }
-
-        // 5. Power Chart
-        if (telemRes.ok) {
-          const telem = await telemRes.json();
-          renderEnergyPowerChart(telem.data || []);
-        }
-
-        // 6. Baseline Table
-        if (baseRes.ok) {
-          const base = await baseRes.json();
-          const bBody = document.getElementById('en-baseline-body');
-          const items = base.items || [];
-          if (!items.length) {
-            bBody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400">Belum ada data baseline.</td></tr>`;
-          } else {
-            bBody.innerHTML = items.map(b => `
-              <tr class="hover:bg-slate-700/30 transition">
-                <td class="py-2 px-3 font-medium text-slate-200">${escapeEnHtml(b.ruang)}</td>
-                <td class="py-2 px-3 font-mono text-slate-400">${escapeEnHtml(b.device_id)}</td>
-                <td class="py-2 px-3 text-sky-300">${b.avg_work_hours_w !== null ? `${b.avg_work_hours_w} W (${b.samples_work_hours} sampel)` : '-'}</td>
-                <td class="py-2 px-3 text-amber-300">${b.avg_after_hours_w !== null ? `${b.avg_after_hours_w} W (${b.samples_after_hours} sampel)` : '-'}</td>
-              </tr>
-            `).join('');
-          }
-        }
+        applyEnergyDashboardData({
+          rooms,
+          bill,
+          waste,
+          alerts,
+          telemetry: telem.data || [],
+          baseline: base.items || []
+        });
       } catch (e) {
         console.error("Energy fetch error:", e);
       }
