@@ -9,8 +9,8 @@ class AppException(HTTPException):
         self.message = message
 
 def verify_api_key(x_api_key: str = Header(None, alias="X-API-Key")):
-    expected_key = os.getenv("API_KEY", "air24-secret-key-demo")
-    if not x_api_key or x_api_key != expected_key:
+    expected_key = os.getenv("API_KEY")
+    if not expected_key or not x_api_key or x_api_key != expected_key:
         raise AppException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             code="UNAUTHORIZED",

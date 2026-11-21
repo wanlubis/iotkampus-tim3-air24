@@ -1,5 +1,5 @@
-# Naskah Skenario Demo UAS (Runbook) — Tim 3 (AIR24)
-**CSEB3073 IoT Cloud & Backend · Durasi: 25–30 Menit**
+# Naskah Skenario Demo UAS (Runbook) â€” Tim 3 (AIR24)
+**CSEB3073 IoT Cloud & Backend Â· Durasi: 25â€“30 Menit**
 
 Gunakan panduan ini saat sesi live demo bersama dosen penguji (Syafrudi, M.Eng.).
 
@@ -22,7 +22,7 @@ Gunakan panduan ini saat sesi live demo bersama dosen penguji (Syafrudi, M.Eng.)
 
 ## Alur Naskah Demo (Bagian 11)
 
-### 1. Menit 0–2: Berdiri di Arsitektur
+### 1. Menit 0â€“2: Berdiri di Arsitektur
 - **Juru Bicara Tim 3**: Memperkenalkan anggota tim dan menjelaskan peran Tim 3 (Smart Environment + Wali Integrasi).
 - **Penjelasan**: Tunjukkan diagram arsitektur:
   - 10 sensor mengirim ke **Mosquitto** (port 1883) dengan user/password.
@@ -31,7 +31,7 @@ Gunakan panduan ini saat sesi live demo bersama dosen penguji (Syafrudi, M.Eng.)
   - **FastAPI** (port 8000) menyediakan endpoint REST dengan pengamanan `X-API-Key`.
   - Satu **Dashboard Pusat** (port 8080) dan **Grafana** (port 3000) menampilkan operasi sistem.
 
-### 2. Menit 2–6: Jalur Bahagia (Happy Path)
+### 2. Menit 2â€“6: Jalur Bahagia (Happy Path)
 - Buka **Dashboard Pusat (port 8080)**:
   - Tunjukkan **10 perangkat terdaftar dan status ONLINE**.
   - Tunjukkan data telemetri bergerak otomatis (auto-refresh 5 detik tanpa reload halaman).
@@ -39,7 +39,7 @@ Gunakan panduan ini saat sesi live demo bersama dosen penguji (Syafrudi, M.Eng.)
   - Tunjukkan tab **Cold-Chain** dan **Smart Energy**.
 - Buka **Grafana (port 3000)**: Tunjukkan laju pesan MQTT dan timeline status hidup.
 
-### 3. Menit 6–8: Pembuktian Keamanan API
+### 3. Menit 6â€“8: Pembuktian Keamanan API
 Buka terminal PowerShell dan jalankan:
 1. Panggil API tanpa header token:
    ```bash
@@ -49,15 +49,15 @@ Buka terminal PowerShell dan jalankan:
    `{"error": {"code": "UNAUTHORIZED", "message": "X-API-Key tidak valid"}}`
 2. Panggil API dengan header token yang benar:
    ```bash
-   curl -i -H "X-API-Key: air24-secret-key-demo" http://localhost:8000/api/v1/summary
+   curl -i -H "X-API-Key: YOUR_API_KEY" http://localhost:8000/api/v1/summary
    ```
    *Ekspektasi:* HTTP Status **200 OK**, data ringkasan 3 domain lengkap sesuai kontrak Bagian 7.5.
 
-### 4. Menit 8–12: Gangguan Tim 1 (Energy)
+### 4. Menit 8â€“12: Gangguan Tim 1 (Energy)
 - Picu simulasi boros atau beban tinggi di domain energy.
 - Perhatikan alert muncul di feed gabungan dasbor pusat. Tekan tombol **ACK** di dashboard.
 
-### 5. Menit 12–17: Gangguan Tim 2 (Cold-Chain)
+### 5. Menit 12â€“17: Gangguan Tim 2 (Cold-Chain)
 - Uji kenaikan suhu chamber hingga `TEMP_HIGH`.
 - Uji **CRASH** satu chamber:
   - Putus socket MQTT secara mendadak.
@@ -65,7 +65,7 @@ Buka terminal PowerShell dan jalankan:
   - State chamber berubah menjadi Offline di dashboard dan InfluxDB.
   - Hubungkan kembali (Reconnect) untuk memulihkan.
 
-### 6. Menit 17–20: Gangguan Tim 3 (Smart Environment) & Uji Ketahanan Lintas Domain
+### 6. Menit 17â€“20: Gangguan Tim 3 (Smart Environment) & Uji Ketahanan Lintas Domain
 Jalankan di terminal simulator Tim 3:
 1. **Picu Lonjakan CO2 (CO2_SPIKE)**:
    ```bash
@@ -77,10 +77,10 @@ Jalankan di terminal simulator Tim 3:
 3. **Lakukan ACK**:
    - Klik tombol **Tandai ACK** di feed alert dasbor pusat. Status alert berubah menjadi "Di-ACK oleh operator".
 
-### 7. Menit 20–22: Penutup Teknis
+### 7. Menit 20â€“22: Penutup Teknis
 - Tunjukkan struktur repositori monorepo di VS Code / file explorer.
 - Tunjukkan berkas `.env.example` dan tegaskan bahwa `.env` tidak pernah di-commit ke Git.
 - Tunjukkan berkas kontrak `docs/MQTT_CONTRACT.md` dan `docs/API_CONTRACT.md`.
 
-### 8. Menit 22–30: Tanya Jawab Individu (Q&A)
+### 8. Menit 22â€“30: Tanya Jawab Individu (Q&A)
 - Setiap anggota menjawab pertanyaan teknis seputar peran dan folder tanggung jawabnya.
