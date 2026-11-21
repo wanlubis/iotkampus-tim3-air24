@@ -13,6 +13,13 @@ Repository monorepo resmi untuk **Mini IoT Platform Kampus**, dikelola oleh **Ti
 | **Marina Evelin** | `marinaevelin02@gmail.com` | Router FastAPI Domain Air, Integrasi API, Visualisasi Metrik Ruang | `api/app/routers/air.py`, `dashboard/` |
 | **Alwan Aqthin** | `alwanatqhinlubis18@gmail.com` | **Koordinator Integrasi**: Compose, Keamanan, Registry Master, Core API (`/summary`), Dashboard Pusat | `docker-compose.yml`, `postgres/`, `api/app/routers/core.py`, `dashboard/` |
 
+### Pembagian Peran Anggota Tim 1 (Smart Energy)
+
+| Nama Anggota | Kontak GitHub | Peran Utama | Folder Tanggung Jawab |
+|---|---|---|---|
+| **<Isi Nama Anggota 1>** | `<email/github-anggota-1>` | Owner Simulator 4 kWh Meter, Injektor Gangguan, & Rule Engine Energy Node-RED | `simulators/energy/`, `nodered/` (tab Energy) |
+| **Aldy (`Aldy-create`)** | `aldypasaribu59@gmail.com` | Owner REST API Smart Energy (`/api/v1/energy/*`), Tab Dashboard Smart Energy, Panel Grafana, & Unit Test | `api/app/routers/energy.py`, `api/tests/test_energy_api.py`, `dashboard/` (`#content-energy`), `grafana/` |
+
 ---
 
 ## 2. Arsitektur & Daftar Layanan (Docker Compose)
@@ -69,9 +76,12 @@ Channel yang digunakan: `telemetry` (QoS 1), `status` (QoS 1, retain + LWT), `he
    - `TEMP_HIGH`: Critical jika `temp_c > 8.0 °C`.
    - `TEMP_ESCALATED`: Escalated jika `TEMP_HIGH` tidak di-ACK dalam 5 menit.
 3. **Smart Energy (Tim 1)**:
-   - Tarif simulasi: **Rp 1.500 / kWh** (Asumsi internal kampus, bukan tarif resmi PLN).
+   - Tarif simulasi: **Rp 1.500 / kWh** (Asumsi internal kampus, **bukan tarif resmi PLN**).
    - Jam kerja acuan: Senin–Jumat, 07.00–18.00 WIB.
-   - `WASTE_AFTER_HOURS`: Warning jika `power_w > 200 W` di luar jam kerja.
+   - `WASTE_AFTER_HOURS`: Warning jika `power_w > 200 W` di luar jam kerja selama 2 menit.
+   - `HIGH_LOAD`: Critical jika `power_w > 3000 W` selama 1 menit (dalam/luar jam kerja).
+   - `OFFLINE`: Critical jika telemetry/heartbeat hilang 60 detik atau status LWT `offline`.
+   - Endpoint API Tim 1 (`/api/v1/energy/*`): `GET /rooms`, `GET /rooms/{ruang}/usage?from=&to=`, `GET /rooms/{ruang}/usage/export`, `GET /waste?from=&to=`, `GET /bill?period=daily|weekly`, dan `GET /baseline`.
 
 > **Pernyataan Secret & Keamanan**: File `.env` sungguhan dan secret tidak pernah di-commit ke repositori Git. Kredensial lab dikonfigurasi melalui berkas template `.env.example`.
 
