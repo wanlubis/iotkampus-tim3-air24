@@ -63,59 +63,134 @@
       border-color: rgba(56, 189, 248, 0.35);
       box-shadow: 0 12px 28px -10px rgba(14, 165, 233, 0.18);
     }
-    /* 3D Digital Twin Viewport & Glass HUD */
+    /* 3D Digital Twin Full-Viewport Spatial Command Center (Scoped ONLY to Smart Energy Tab) */
+    :root {
+      --navbar-height: 112px;
+    }
+    body.en-spatial-mode {
+      overflow: hidden !important;
+      height: 100vh !important;
+    }
+    body.en-spatial-mode > main {
+      max-width: none !important;
+      width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      flex: 1 1 auto !important;
+    }
+    body.en-spatial-mode #global-kpi-bar,
+    body.en-spatial-mode > footer {
+      display: none !important;
+    }
+    body.en-spatial-mode #content-energy {
+      position: relative;
+      width: 100%;
+      height: calc(100vh - var(--navbar-height, 112px));
+      overflow: hidden;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
     #en3d-stage {
       background: radial-gradient(circle at 50% 35%, #0c1930 0%, #050b18 60%, #02050d 100%);
     }
     #en3d-stage:fullscreen {
-      width: 100vw;
-      height: 100vh;
+      width: 100vw !important;
+      height: 100vh !important;
       border-radius: 0;
       border: none;
     }
     .en3d-hud {
-      background: linear-gradient(145deg, rgba(15, 23, 42, 0.74), rgba(7, 13, 28, 0.86));
+      background: rgba(10, 18, 32, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      box-shadow: 0 8px 28px -8px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .en3d-hud-strong {
+      background: rgba(10, 18, 32, 0.88);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(56, 189, 248, 0.18);
-      box-shadow: 0 8px 28px -8px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.24);
+      box-shadow: 0 14px 40px -10px rgba(0, 0, 0, 0.78), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
     .en3d-btn {
-      background: rgba(15, 23, 42, 0.72);
-      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(15, 23, 42, 0.74);
+      border: 1px solid rgba(148, 163, 184, 0.22);
       color: #cbd5e1;
       transition: all 0.18s ease;
     }
     .en3d-btn:hover {
-      background: rgba(30, 41, 59, 0.92);
-      border-color: rgba(56, 189, 248, 0.48);
+      background: rgba(30, 41, 59, 0.94);
+      border-color: rgba(56, 189, 248, 0.5);
       color: #f8fafc;
     }
     .en3d-btn.active {
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(56, 189, 248, 0.16));
-      border-color: rgba(56, 189, 248, 0.72);
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.32), rgba(56, 189, 248, 0.16));
+      border-color: rgba(56, 189, 248, 0.75);
       color: #e0f2fe;
-      box-shadow: 0 0 14px -4px rgba(56, 189, 248, 0.5);
+      box-shadow: 0 0 14px -4px rgba(56, 189, 248, 0.52);
+    }
+    #en3d-cam-toolbar {
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    #en3d-cam-toolbar.shifted-left {
+      transform: translateX(-352px);
+    }
+    @media (max-width: 768px) {
+      #en3d-cam-toolbar.shifted-left {
+        transform: translateX(0);
+        opacity: 0;
+        pointer-events: none;
+      }
     }
     #en3d-drawer {
       transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease;
     }
     #en3d-drawer.en3d-drawer-closed {
-      transform: translateX(calc(100% + 24px));
+      transform: translateX(calc(100% + 28px));
+      opacity: 0;
+      pointer-events: none;
+    }
+    #en-bottom-drawer {
+      transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease;
+    }
+    #en-bottom-drawer.en-bottom-closed {
+      transform: translateY(calc(100% + 24px));
       opacity: 0;
       pointer-events: none;
     }
     #en3d-tooltip {
       position: absolute;
-      z-index: 30;
+      z-index: 35;
       pointer-events: none;
       opacity: 0;
       transform: translate(-50%, -115%) scale(0.96);
-      transition: opacity 0.14s ease, transform 0.14s ease;
+      transition: opacity 0.12s ease, transform 0.12s ease;
     }
     #en3d-tooltip.visible {
       opacity: 1;
       transform: translate(-50%, -115%) scale(1);
+    }
+    /* Custom Dark/Cyan Scrollbar (WebKit + Firefox) */
+    .en-dark-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(56, 189, 248, 0.36) rgba(15, 23, 42, 0.45);
+    }
+    .en-dark-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .en-dark-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.45);
+      border-radius: 999px;
+    }
+    .en-dark-scroll::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.32);
+      border-radius: 999px;
+    }
+    .en-dark-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.58);
     }
   </style>
 </head>
@@ -190,7 +265,7 @@
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
     <!-- KPI BAR LINTAS DOMAIN (Bagian 7.4) -->
-    <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    <section id="global-kpi-bar" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
       
       <!-- Total Perangkat -->
       <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
@@ -428,144 +503,16 @@
     </div>
 
     <!-- ============================================================== -->
-    <!-- TAB 4: SMART ENERGY (TIM 1) — DARK GLASSMORPHISM + CHART.JS -->
+    <!-- TAB 4: SMART ENERGY (TIM 1) — FULL-VIEWPORT 3D COMMAND CENTER  -->
     <!-- ============================================================== -->
-    <div id="content-energy" class="hidden space-y-6">
-      <!-- Header, Filter Bar & Asumsi Terbuka (Bagian 5.3 & 5.4) -->
-      <div class="en-glass rounded-2xl p-5 space-y-4">
-        <div class="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
-          <div>
-            <div class="flex flex-wrap items-center gap-2">
-              <h2 class="text-lg font-bold text-white tracking-tight">⚡ Smart Energy Analytics</h2>
-              <span class="text-[11px] bg-sky-500/15 text-sky-300 px-2.5 py-0.5 rounded-full border border-sky-400/30 font-semibold">Owner: Tim 1</span>
-              <span id="en-source-badge" class="text-[11px] bg-emerald-500/15 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-400/30 font-semibold">Live FastAPI</span>
-            </div>
-            <p class="text-xs text-slate-300 mt-1">
-              Pemantauan daya instan, energi kumulatif 4 kWh meter (<code>kwh-01</code>–<code>kwh-04</code>), deteksi pemborosan di luar jam kerja, dan estimasi tagihan.
-            </p>
-          </div>
-
-          <!-- Filter Interaktif (Memperbarui KPI, 3 Grafik & Tabel) -->
-          <div class="flex flex-wrap items-center gap-2">
-            <select id="en-window-select" onchange="fetchEnergyRooms()" class="bg-slate-900/80 border border-slate-600/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-400">
-              <option value="-15m" data-mins="15">15 Menit Terakhir</option>
-              <option value="-1h" data-mins="60" selected>1 Jam Terakhir</option>
-              <option value="-6h" data-mins="360">6 Jam Terakhir</option>
-              <option value="-24h" data-mins="1440">24 Jam Terakhir</option>
-            </select>
-
-            <select id="en-bill-period" onchange="fetchEnergyRooms()" class="bg-slate-900/80 border border-slate-600/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-400">
-              <option value="daily">Tagihan: Harian</option>
-              <option value="weekly">Tagihan: Mingguan</option>
-            </select>
-
-            <select id="en-room-filter" onchange="fetchEnergyRooms()" class="bg-slate-900/80 border border-slate-600/80 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-400">
-              <option value="all">Semua Ruang (4 Meter)</option>
-              <option value="r3012">r3012 (kwh-01)</option>
-              <option value="r3013">r3013 (kwh-02)</option>
-              <option value="r3017">r3017 (kwh-03)</option>
-              <option value="lab-iot">lab-iot (kwh-04)</option>
-            </select>
-
-            <button id="en-mode-toggle" onclick="toggleEnergyPreviewMode()" type="button" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600/80 text-xs font-semibold text-slate-200 transition">
-              Preview Data Contoh
-            </button>
-
-            <button onclick="exportEnergyCsv()" type="button" class="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white shadow-lg shadow-sky-600/20 transition">
-              Ekspor CSV
-            </button>
-          </div>
-        </div>
-
-        <!-- Banner Peringatan Mode Preview (Hanya tampil saat mode preview aktif) -->
-        <div id="en-preview-notice" class="hidden bg-amber-500/15 border border-amber-400/40 rounded-xl px-3.5 py-2 text-xs text-amber-200 flex items-center justify-between gap-2">
-          <span><strong>MODE PREVIEW DATA CONTOH:</strong> Menampilkan dataset simulasi JSON lokal agar seluruh grafik &amp; filter bisa diuji sebelum simulator Anggota 1 aktif. Klik <em>Kembali ke Live API</em> untuk data nyata.</span>
-          <button onclick="toggleEnergyPreviewMode()" class="underline font-semibold text-amber-100 whitespace-nowrap">Kembali ke Live API</button>
-        </div>
-
-        <!-- Banner Asumsi Terbuka & Ambang Batas (Wajib Bagian 5.3 & 5.4) -->
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 bg-sky-950/40 border border-sky-400/20 rounded-xl px-3.5 py-2.5 text-xs text-sky-100">
-          <div id="en-assumptions-banner">
-            <strong>Asumsi Terbuka:</strong> Tarif <strong class="text-emerald-300">Rp 1.500 / kWh</strong> (simulasi internal kampus, bukan tarif resmi PLN) · Jam kerja: <strong>Senin–Jumat, 07.00–18.00 WIB</strong>.
-          </div>
-          <div class="flex flex-wrap gap-1.5 text-[11px]">
-            <span class="px-2 py-0.5 rounded-md bg-slate-900/70 border border-amber-500/30 text-amber-300">WASTE &gt;200 W (luar jam, 2m)</span>
-            <span class="px-2 py-0.5 rounded-md bg-slate-900/70 border border-rose-500/30 text-rose-300">HIGH_LOAD &gt;3000 W (1m)</span>
-            <span class="px-2 py-0.5 rounded-md bg-slate-900/70 border border-slate-600 text-slate-300">OFFLINE 60s / LWT</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4 KPI SUMMARY CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- KPI 1: Daya Total -->
-        <div class="en-glass-card rounded-2xl p-5">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-slate-400">Daya Total Saat Ini</span>
-            <span class="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-400/25 flex items-center justify-center text-sky-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            </span>
-          </div>
-          <div class="mt-3 flex items-baseline justify-between gap-2">
-            <div id="en-kpi-power" class="text-2xl font-extrabold text-white tracking-tight">-- W</div>
-            <span id="en-kpi-power-delta" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300">0.0%</span>
-          </div>
-          <div id="en-kpi-online" class="text-[11px] text-slate-400 mt-2">Meter online: - / 4</div>
-        </div>
-
-        <!-- KPI 2: Energi Periode Berjalan -->
-        <div class="en-glass-card rounded-2xl p-5">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-slate-400">Energi Periode Berjalan</span>
-            <span class="w-8 h-8 rounded-xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-            </span>
-          </div>
-          <div class="mt-3 flex items-baseline justify-between gap-2">
-            <div id="en-kpi-kwh" class="text-2xl font-extrabold text-sky-300 tracking-tight">-- kWh</div>
-            <span id="en-kpi-kwh-delta" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300">Harian</span>
-          </div>
-          <div id="en-kpi-period-note" class="text-[11px] text-slate-400 mt-2">Rentang WIB aktif</div>
-        </div>
-
-        <!-- KPI 3: Estimasi Tagihan -->
-        <div class="en-glass-card rounded-2xl p-5">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-slate-400">Estimasi Tagihan</span>
-            <span class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-emerald-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </span>
-          </div>
-          <div class="mt-3 flex items-baseline justify-between gap-2">
-            <div id="en-kpi-bill" class="text-2xl font-extrabold text-emerald-400 tracking-tight">Rp 0</div>
-            <span id="en-kpi-bill-delta" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">Asumsi</span>
-          </div>
-          <div id="en-kpi-tariff" class="text-[11px] text-slate-400 mt-2">Rp 1.500 / kWh (simulasi)</div>
-        </div>
-
-        <!-- KPI 4: Kejadian Boros Belum Di-ACK -->
-        <div class="en-glass-card rounded-2xl p-5">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-slate-400">Boros Belum Di-ACK</span>
-            <span class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-400/25 flex items-center justify-center text-amber-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-            </span>
-          </div>
-          <div class="mt-3 flex items-baseline justify-between gap-2">
-            <div id="en-kpi-waste-unacked" class="text-2xl font-extrabold text-amber-400 tracking-tight">0</div>
-            <span id="en-kpi-waste-badge" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">Aman</span>
-          </div>
-          <div id="en-kpi-waste-total" class="text-[11px] text-slate-400 mt-2">Total kejadian boros: 0</div>
-        </div>
-      </div>
-
-      <!-- INTERACTIVE 3D DIGITAL TWIN: GEDUNG BSD-A LANTAI 3 (THREE.JS / WEBGL) -->
-      <div id="en3d-stage" class="relative w-full h-[500px] sm:h-[540px] rounded-2xl overflow-hidden border border-sky-500/25 shadow-2xl shadow-slate-950/80 select-none">
-        <!-- WebGL Canvas Host -->
+    <div id="content-energy" class="hidden relative w-full overflow-hidden">
+      <!-- FULL-VIEWPORT 3D STAGE (100% WIDTH x 100% HEIGHT) -->
+      <div id="en3d-stage" class="relative w-full h-full overflow-hidden select-none">
+        <!-- WebGL Background Canvas Host -->
         <div id="en3d-canvas-host" class="absolute inset-0 w-full h-full"></div>
 
-        <!-- Floating Hover Tooltip (relative to 3D stage) -->
-        <div id="en3d-tooltip" class="en3d-hud rounded-xl px-3.5 py-2.5 min-w-[210px]">
+        <!-- Floating Hover Tooltip (auto-hidden when dragging or hovering selected room) -->
+        <div id="en3d-tooltip" class="en3d-hud rounded-xl px-3.5 py-2.5 min-w-[215px]">
           <div class="flex items-center justify-between gap-2 mb-1.5">
             <div>
               <div id="en3d-tt-room" class="text-xs font-bold text-white">r3012</div>
@@ -586,78 +533,211 @@
           <div class="mt-1 text-[10px] text-sky-300/80">Klik ruangan untuk fokus kamera &amp; detail</div>
         </div>
 
-        <!-- 3D HUD Overlay -->
-        <div class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-3">
-          <!-- 3D Top Bar: Title + Camera Presets -->
-          <div class="pointer-events-auto en3d-hud rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5">
-              <span class="w-2 h-2 rounded-full bg-cyan-400 pulse-dot"></span>
-              <div>
-                <div class="text-xs sm:text-sm font-bold text-white leading-tight flex items-center gap-2">
-                  <span>3D Digital Twin · Lantai 3 Gedung BSD-A</span>
-                  <span id="en3d-mode-pill" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">Live API</span>
+        <!-- FLOATING HUD OVERLAY LAYER (pointer-events: none agar area kosong bebas orbit) -->
+        <div class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-2.5 sm:p-3 gap-2">
+
+          <!-- TOP FLOATING HUD: Compact Toolbar + 4 Compact KPI Strip -->
+          <div class="flex flex-col gap-2 shrink-0">
+            <!-- Row 1: Title, Info Popover (ⓘ), Mode Badge & Interactive Filters -->
+            <div class="pointer-events-auto en3d-hud rounded-xl px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 relative">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="w-2 h-2 rounded-full bg-cyan-400 pulse-dot"></span>
+                <h2 class="text-xs sm:text-sm font-bold text-white tracking-tight">⚡ Smart Energy Digital Twin</h2>
+                <span class="hidden sm:inline-block text-[10px] bg-sky-500/15 text-sky-300 px-2 py-0.5 rounded-full border border-sky-400/30 font-semibold">Gedung BSD-A · Tim 1</span>
+                <span id="en-source-badge" class="text-[10px] bg-emerald-500/15 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 font-semibold">Live FastAPI</span>
+
+                <!-- Info Icon (ⓘ) for Open Assumptions & Alert Thresholds (Bagian 5.3 & 5.4) -->
+                <button id="en-info-btn-title" onclick="toggleEnergyInfoPopover(event)" type="button" class="en3d-btn w-6 h-6 rounded-full inline-flex items-center justify-center text-[11px] font-bold text-sky-300" title="Asumsi Tarif, Jam Kerja & Ambang Alert (Panduan PDF)">
+                  ⓘ
+                </button>
+
+                <!-- Compact Preview Mode Pill (only visible in preview mode) -->
+                <div id="en-preview-notice" class="hidden inline-flex items-center gap-1.5 bg-amber-500/15 border border-amber-400/40 rounded-lg px-2 py-0.5 text-[10px] text-amber-200">
+                  <span><strong>Preview Simulasi</strong> (JSON lokal)</span>
+                  <button onclick="toggleEnergyPreviewMode()" type="button" class="underline font-semibold text-amber-100">Live API</button>
                 </div>
-                <div class="text-[10px] text-slate-400">Sinkron otomatis dengan filter &amp; data Smart Energy · Drag untuk putar, klik ruang untuk fokus</div>
+              </div>
+
+              <!-- Filter Controls -->
+              <div class="flex flex-wrap items-center gap-1.5">
+                <select id="en-window-select" onchange="fetchEnergyRooms()" class="en3d-btn rounded-lg px-2 py-1 text-[11px] text-slate-100 focus:outline-none focus:border-sky-400">
+                  <option value="-15m" data-mins="15">15 Menit</option>
+                  <option value="-1h" data-mins="60" selected>1 Jam Terakhir</option>
+                  <option value="-6h" data-mins="360">6 Jam Terakhir</option>
+                  <option value="-24h" data-mins="1440">24 Jam Terakhir</option>
+                </select>
+
+                <select id="en-bill-period" onchange="fetchEnergyRooms()" class="en3d-btn rounded-lg px-2 py-1 text-[11px] text-slate-100 focus:outline-none focus:border-sky-400">
+                  <option value="daily">Tagihan: Harian</option>
+                  <option value="weekly">Tagihan: Mingguan</option>
+                </select>
+
+                <select id="en-room-filter" onchange="fetchEnergyRooms()" class="en3d-btn rounded-lg px-2 py-1 text-[11px] text-slate-100 focus:outline-none focus:border-sky-400">
+                  <option value="all">Semua Ruang (4 Meter)</option>
+                  <option value="r3012">r3012 (kwh-01)</option>
+                  <option value="r3013">r3013 (kwh-02)</option>
+                  <option value="r3017">r3017 (kwh-03)</option>
+                  <option value="lab-iot">lab-iot (kwh-04)</option>
+                </select>
+
+                <button id="en-mode-toggle" onclick="toggleEnergyPreviewMode()" type="button" class="en3d-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold">
+                  Preview Data Contoh
+                </button>
+
+                <button onclick="exportEnergyCsv()" type="button" class="px-2.5 py-1 rounded-lg bg-sky-600/90 hover:bg-sky-500 text-[11px] font-semibold text-white shadow shadow-sky-600/25 transition">
+                  Ekspor CSV
+                </button>
+              </div>
+
+              <!-- Info Popover: Asumsi Terbuka & Ambang Batas (Bagian 5.3 & 5.4) -->
+              <div id="en-info-popover" class="hidden pointer-events-auto en3d-hud-strong rounded-xl p-3.5 w-[320px] sm:w-[370px] absolute left-3 top-[calc(100%+8px)] z-40 text-xs text-slate-200 space-y-2.5">
+                <div class="flex items-center justify-between border-b border-slate-700/70 pb-1.5">
+                  <span class="font-bold text-sky-300 flex items-center gap-1.5"><span>ⓘ</span> Asumsi Terbuka &amp; Aturan Alert</span>
+                  <button onclick="closeEnergyInfoPopover()" type="button" class="text-slate-400 hover:text-white text-xs px-1">✕</button>
+                </div>
+                <div id="en-assumptions-banner" class="text-[11px] leading-relaxed text-slate-300">
+                  <strong>Tarif Simulasi:</strong> <strong class="text-emerald-300">Rp 1.500 / kWh</strong> (asumsi internal kampus, bukan tarif resmi PLN).<br/>
+                  <strong>Jam Kerja Kampus:</strong> Senin–Jumat, 07:00–18:00 WIB.
+                </div>
+                <div class="grid grid-cols-1 gap-1.5 text-[10px] pt-1 border-t border-slate-700/60">
+                  <div class="flex items-center justify-between px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-200">
+                    <span class="font-mono font-semibold">WASTE_AFTER_HOURS</span>
+                    <span>&gt;200 W luar jam kerja (2 mnt)</span>
+                  </div>
+                  <div class="flex items-center justify-between px-2 py-1 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-200">
+                    <span class="font-mono font-semibold">HIGH_LOAD</span>
+                    <span>&gt;3000 W terus-menerus (1 mnt)</span>
+                  </div>
+                  <div class="flex items-center justify-between px-2 py-1 rounded-md bg-slate-800/80 border border-slate-600/60 text-slate-300">
+                    <span class="font-mono font-semibold">OFFLINE (LWT / No-Data)</span>
+                    <span>&gt;60 detik tanpa telemetry</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-1.5">
-              <button data-en3d-cam="overview" type="button" class="en3d-cam-btn en3d-btn active text-[11px] font-medium px-2.5 py-1 rounded-lg">Overview</button>
-              <button data-en3d-cam="top" type="button" class="en3d-cam-btn en3d-btn text-[11px] font-medium px-2.5 py-1 rounded-lg">Top View</button>
-              <button data-en3d-cam="corridor" type="button" class="en3d-cam-btn en3d-btn text-[11px] font-medium px-2.5 py-1 rounded-lg">Corridor</button>
-              <button id="en3d-btn-reset" type="button" class="en3d-btn text-[11px] font-medium px-2.5 py-1 rounded-lg">Reset</button>
-              <button id="en3d-btn-orbit" type="button" class="en3d-btn text-[11px] font-medium px-2.5 py-1 rounded-lg">Auto Orbit</button>
-              <button id="en3d-btn-fullscreen" type="button" class="en3d-btn text-[11px] font-semibold px-2.5 py-1 rounded-lg border-sky-400/40 text-sky-200" title="Tampilkan 3D layar penuh">Layar Penuh</button>
+            <!-- Row 2: Compact 4 KPI Strip + Floating Camera Toolbar Alignment -->
+            <div class="flex flex-col xl:flex-row xl:items-start justify-between gap-2">
+              <!-- 4 Compact Floating KPI Cards -->
+              <div class="pointer-events-auto grid grid-cols-2 lg:grid-cols-4 gap-2 flex-1 max-w-4xl">
+                <!-- KPI 1: Daya Total -->
+                <div class="en3d-hud rounded-xl px-3 py-2 flex flex-col justify-between">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-[10px] font-medium text-slate-400 truncate">Daya Total Saat Ini</span>
+                    <span id="en-kpi-power-delta" class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-slate-700/70 text-slate-300">0.0%</span>
+                  </div>
+                  <div class="mt-0.5 flex items-baseline justify-between gap-2">
+                    <span id="en-kpi-power" class="text-base sm:text-lg font-extrabold font-mono text-white leading-tight">-- W</span>
+                    <span id="en-kpi-online" class="text-[10px] text-slate-400 truncate">Meter: -/4</span>
+                  </div>
+                </div>
+
+                <!-- KPI 2: Energi Periode -->
+                <div class="en3d-hud rounded-xl px-3 py-2 flex flex-col justify-between">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-[10px] font-medium text-slate-400 truncate">Energi Periode Berjalan</span>
+                    <span id="en-kpi-kwh-delta" class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-slate-700/70 text-slate-300">Harian</span>
+                  </div>
+                  <div class="mt-0.5 flex items-baseline justify-between gap-2">
+                    <span id="en-kpi-kwh" class="text-base sm:text-lg font-extrabold font-mono text-sky-300 leading-tight">-- kWh</span>
+                    <span id="en-kpi-period-note" class="text-[10px] text-slate-400 truncate max-w-[110px]" title="Rentang WIB aktif">WIB aktif</span>
+                  </div>
+                </div>
+
+                <!-- KPI 3: Estimasi Tagihan + Info Icon (ⓘ) -->
+                <div class="en3d-hud rounded-xl px-3 py-2 flex flex-col justify-between">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-[10px] font-medium text-slate-400 truncate flex items-center gap-1">
+                      <span>Estimasi Tagihan</span>
+                      <button id="en-info-btn-bill" onclick="toggleEnergyInfoPopover(event)" type="button" class="text-sky-300 hover:text-sky-200 font-bold" title="Lihat asumsi tarif & jam kerja">ⓘ</button>
+                    </span>
+                    <span id="en-kpi-bill-delta" class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-300">Asumsi</span>
+                  </div>
+                  <div class="mt-0.5 flex items-baseline justify-between gap-2">
+                    <span id="en-kpi-bill" class="text-base sm:text-lg font-extrabold font-mono text-emerald-400 leading-tight">Rp 0</span>
+                    <span id="en-kpi-tariff" class="text-[10px] text-slate-400 truncate">Rp 1.500/kWh</span>
+                  </div>
+                </div>
+
+                <!-- KPI 4: Boros Belum Di-ACK -->
+                <div class="en3d-hud rounded-xl px-3 py-2 flex flex-col justify-between">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-[10px] font-medium text-slate-400 truncate">Boros Belum Di-ACK</span>
+                    <span id="en-kpi-waste-badge" class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-300">Aman</span>
+                  </div>
+                  <div class="mt-0.5 flex items-baseline justify-between gap-2">
+                    <span id="en-kpi-waste-unacked" class="text-base sm:text-lg font-extrabold font-mono text-amber-400 leading-tight">0</span>
+                    <span id="en-kpi-waste-total" class="text-[10px] text-slate-400 truncate">Total boros: 0</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Floating 3D Camera Controls Toolbar (smoothly shifts left when right drawer opens) -->
+              <div id="en3d-cam-toolbar" class="pointer-events-auto en3d-hud rounded-xl px-2 py-1.5 flex flex-wrap items-center gap-1 self-start xl:self-center shrink-0">
+                <button data-en3d-cam="overview" type="button" class="en3d-cam-btn en3d-btn active text-[11px] font-medium px-2 py-1 rounded-lg">Overview</button>
+                <button data-en3d-cam="top" type="button" class="en3d-cam-btn en3d-btn text-[11px] font-medium px-2 py-1 rounded-lg">Top View</button>
+                <button data-en3d-cam="corridor" type="button" class="en3d-cam-btn en3d-btn text-[11px] font-medium px-2 py-1 rounded-lg">Corridor</button>
+                <button id="en3d-btn-reset" type="button" class="en3d-btn text-[11px] font-medium px-2 py-1 rounded-lg">Reset</button>
+                <button id="en3d-btn-orbit" type="button" class="en3d-btn text-[11px] font-medium px-2 py-1 rounded-lg">Auto Orbit</button>
+                <button id="en3d-btn-fullscreen" type="button" class="en3d-btn text-[11px] font-semibold px-2 py-1 rounded-lg border-sky-400/40 text-sky-200" title="Tampilkan 3D layar penuh">Layar Penuh</button>
+              </div>
             </div>
           </div>
 
-          <!-- Middle Area: Slide-In Room Detail Drawer (Right) -->
-          <div class="flex-1 relative my-2 flex justify-end items-start min-h-0">
-            <aside id="en3d-drawer" class="pointer-events-auto en3d-drawer-closed en3d-hud rounded-xl w-[290px] sm:w-[330px] max-h-full flex flex-col overflow-hidden">
-              <div class="px-3.5 py-2.5 border-b border-slate-700/60 flex items-start justify-between gap-2">
-                <div>
+          <!-- MIDDLE SPATIAL AREA: Right Slide-In Room Detail Drawer (Sticky Header + Custom Dark Scrollbar) -->
+          <div class="flex-1 relative flex justify-end items-start min-h-0">
+            <aside id="en3d-drawer" class="pointer-events-auto en3d-drawer-closed en3d-hud-strong rounded-2xl w-[305px] sm:w-[340px] max-h-full overflow-y-auto en-dark-scroll">
+              <!-- Sticky Room Header -->
+              <div class="sticky top-0 z-20 px-3.5 py-2.5 border-b border-slate-700/70 flex items-start justify-between gap-2 bg-[#0a1220]/95 backdrop-blur-md">
+                <div class="min-w-0">
                   <div class="flex items-center gap-1.5 flex-wrap">
-                    <h4 id="en3d-dr-title" class="text-sm font-bold text-white">r3012</h4>
+                    <h4 id="en3d-dr-title" class="text-sm font-bold text-white truncate">r3012</h4>
                     <span id="en3d-dr-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/35">NORMAL</span>
                   </div>
-                  <div id="en3d-dr-sub" class="text-[10px] font-mono text-slate-400 mt-0.5">kwh-01 · Gedung BSD-A</div>
+                  <div id="en3d-dr-sub" class="text-[10px] font-mono text-slate-400 mt-0.5 truncate">kwh-01 · Gedung BSD-A</div>
                 </div>
-                <button id="en3d-btn-close-drawer" type="button" class="en3d-btn w-6 h-6 rounded-md flex items-center justify-center text-xs" title="Tutup detail">✕</button>
+                <button id="en3d-btn-close-drawer" type="button" class="en3d-btn w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0" title="Tutup panel detail (ESC)">×</button>
               </div>
 
-              <div class="p-3 overflow-y-auto space-y-2.5 text-xs">
+              <!-- Scrollable Drawer Content -->
+              <div class="p-3.5 space-y-3 text-xs">
                 <div class="grid grid-cols-2 gap-2">
-                  <div class="rounded-lg bg-slate-900/75 border border-slate-700/50 p-2">
+                  <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5">
                     <div class="text-[10px] text-slate-400">Daya Instan</div>
-                    <div id="en3d-dr-power" class="text-base font-bold font-mono text-cyan-300">0 W</div>
+                    <div id="en3d-dr-power" class="text-base font-bold font-mono text-cyan-300 mt-0.5">0 W</div>
                   </div>
-                  <div class="rounded-lg bg-slate-900/75 border border-slate-700/50 p-2">
+                  <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5">
                     <div class="text-[10px] text-slate-400">Energi Periode</div>
-                    <div id="en3d-dr-energy" class="text-base font-bold font-mono text-white">0.00 kWh</div>
+                    <div id="en3d-dr-energy" class="text-base font-bold font-mono text-white mt-0.5">0.00 kWh</div>
                   </div>
-                  <div class="rounded-lg bg-slate-900/75 border border-slate-700/50 p-2">
+                  <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5">
                     <div class="text-[10px] text-slate-400">Estimasi Tagihan</div>
                     <div id="en3d-dr-bill" class="text-xs font-bold font-mono text-emerald-300 mt-0.5">Rp 0</div>
                   </div>
-                  <div class="rounded-lg bg-slate-900/75 border border-slate-700/50 p-2">
+                  <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5">
                     <div class="text-[10px] text-slate-400">Beban vs 3000W</div>
                     <div id="en3d-dr-load" class="text-xs font-bold font-mono text-sky-300 mt-0.5">0%</div>
                   </div>
                 </div>
 
-                <!-- Mini 2D Trend Chart inside 3D Drawer -->
-                <div class="rounded-lg bg-slate-950/65 border border-slate-700/50 p-2.5">
+                <!-- Mini 2D Trend Chart inside Right Drawer with OFFLINE Empty State -->
+                <div class="rounded-xl bg-slate-950/75 border border-slate-700/60 p-2.5">
                   <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[10px] font-semibold text-slate-300">Tren Daya Ruang (power_w)</span>
-                    <span id="en3d-dr-window" class="text-[10px] font-mono text-slate-400">1h</span>
+                    <span class="text-[10px] font-semibold text-slate-200">Tren Daya Ruang (power_w)</span>
+                    <span id="en3d-dr-window" class="text-[10px] font-mono text-slate-400">1 Jam Terakhir</span>
                   </div>
-                  <div class="h-[108px] relative">
+                  <div class="h-[116px] relative">
                     <canvas id="en3d-drawer-chart"></canvas>
+                    <div id="en3d-drawer-chart-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-3 bg-slate-900/85 rounded-lg border border-slate-700/60 gap-1.5">
+                      <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                      <p class="text-[10px] text-slate-400 leading-snug">Belum ada data aktif (meter OFFLINE) — klik Preview Data Contoh untuk melihat simulasi.</p>
+                      <button onclick="if(!enState.previewMode) toggleEnergyPreviewMode()" type="button" class="en-empty-preview-btn px-2 py-0.5 rounded-md bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/40 text-[10px] font-semibold text-sky-200 transition">Preview Data Contoh</button>
+                    </div>
                   </div>
                 </div>
 
                 <!-- Baseline Comparison -->
-                <div class="rounded-lg bg-slate-900/65 border border-slate-700/50 p-2.5 space-y-1.5 text-[10px]">
+                <div class="rounded-xl bg-slate-900/70 border border-slate-700/60 p-2.5 space-y-2 text-[10px]">
                   <div class="font-semibold text-slate-200">Baseline Jam Kerja vs Luar Jam Kerja</div>
                   <div>
                     <div class="flex justify-between text-slate-400 mb-0.5">
@@ -680,7 +760,7 @@
                 </div>
 
                 <!-- Active Room Alerts + ACK -->
-                <div class="rounded-lg bg-slate-900/65 border border-slate-700/50 p-2.5">
+                <div class="rounded-xl bg-slate-900/70 border border-slate-700/60 p-2.5">
                   <div class="flex items-center justify-between mb-1.5">
                     <span class="text-[10px] font-semibold text-slate-200">Alert Ruangan</span>
                     <span id="en3d-dr-alert-cnt" class="text-[10px] font-mono text-slate-400">0</span>
@@ -690,150 +770,196 @@
                   </div>
                 </div>
 
-                <!-- Action: Sync 2D Charts to This Room -->
-                <button id="en3d-btn-sync-filter" type="button" class="w-full py-1.5 rounded-lg bg-sky-600/85 hover:bg-sky-500 text-white text-[11px] font-semibold transition">
+                <!-- Sync 2D Charts to Room -->
+                <button id="en3d-btn-sync-filter" type="button" class="w-full py-2 rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white text-[11px] font-semibold transition">
                   Filter Grafik 2D ke Ruang Ini
                 </button>
               </div>
             </aside>
           </div>
 
-          <!-- 3D Bottom Dock: Quick Room Focus + Status Legend -->
-          <div class="pointer-events-auto flex flex-wrap items-center justify-between gap-2">
-            <div class="en3d-hud rounded-xl px-2 py-1 flex flex-wrap items-center gap-1">
-              <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 px-1.5">Fokus:</span>
-              <button data-en3d-room="r3012" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1.5">
-                <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>r3012
+          <!-- BOTTOM ROW: Collapsible Bottom-Left Dock + Centered Expandable 2D Analytics Trigger -->
+          <div class="relative flex items-end justify-between gap-2 shrink-0">
+            <!-- Collapsible Bottom-Left Dock (Fokus Ruang + Legenda + FPS) -->
+            <div id="en3d-bottom-dock" class="pointer-events-auto en3d-hud rounded-xl px-2 py-1.5 flex items-center gap-2 max-w-full overflow-hidden">
+              <button id="en3d-dock-toggle" type="button" class="en3d-btn px-2 py-1 rounded-lg text-[10px] font-semibold text-sky-200 flex items-center gap-1 shrink-0" title="Sembunyikan / tampilkan dock fokus & legenda">
+                <span id="en3d-dock-chevron">◀</span>
+                <span class="hidden sm:inline">Fokus</span>
               </button>
-              <button data-en3d-room="r3013" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1.5">
-                <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>r3013
+
+              <div id="en3d-dock-body" class="flex flex-wrap items-center gap-2">
+                <div class="flex items-center gap-1">
+                  <button data-en3d-room="r3012" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1">
+                    <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>#r3012
+                  </button>
+                  <button data-en3d-room="r3013" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1">
+                    <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>#r3013
+                  </button>
+                  <button data-en3d-room="r3017" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1">
+                    <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>#r3017
+                  </button>
+                  <button data-en3d-room="lab-iot" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1">
+                    <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>#lab-iot
+                  </button>
+                </div>
+
+                <span class="hidden lg:inline text-slate-700">|</span>
+
+                <div class="hidden md:flex items-center gap-2 text-[10px] text-slate-300">
+                  <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-400"></span>Normal</span>
+                  <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span>Waste</span>
+                  <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span>High Load</span>
+                  <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-500"></span>Offline</span>
+                </div>
+
+                <span class="text-slate-700">|</span>
+                <span id="en3d-fps" class="font-mono text-[10px] text-cyan-300/85 pr-1">60 FPS</span>
+              </div>
+            </div>
+
+            <!-- Centered Bottom Trigger Pill for Expandable 2D Analytics Drawer -->
+            <button id="en-bottom-drawer-toggle" onclick="toggleEnergyBottomDrawer()" type="button" class="pointer-events-auto en3d-hud-strong hover:border-sky-400/60 rounded-full px-4 py-2 text-xs font-semibold text-sky-100 flex items-center gap-2 shadow-xl shadow-slate-950/80 transition lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:bottom-0">
+              <span class="text-sky-400">▲</span>
+              <span>Analitik &amp; Grafik 2D</span>
+              <span id="en-bottom-alert-dot" class="hidden w-2 h-2 rounded-full bg-amber-400 pulse-dot"></span>
+            </button>
+
+            <div class="hidden lg:block w-1"></div>
+          </div>
+        </div>
+
+        <!-- EXPANDABLE BOTTOM 2D ANALYTICS DRAWER (Slides up ~42vh, default collapsed) -->
+        <section id="en-bottom-drawer" class="en-bottom-closed pointer-events-auto en3d-hud-strong rounded-2xl absolute left-2.5 right-2.5 bottom-2.5 z-30 h-[43vh] min-h-[300px] max-h-[440px] flex flex-col overflow-hidden">
+          <!-- Bottom Drawer Header & Sub-Tabs -->
+          <div class="px-4 py-2.5 border-b border-slate-700/70 flex flex-wrap items-center justify-between gap-2 bg-[#0a1220]/90 shrink-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span class="text-sky-400">📊</span> Analitik 2D Smart Energy
+              </span>
+              <div class="flex items-center gap-1 bg-slate-900/80 border border-slate-700/70 rounded-lg p-0.5 text-[11px]">
+                <button data-en-dtab="charts" onclick="switchEnergyDrawerTab('charts')" type="button" class="en-drawer-tab-btn en3d-btn active px-2.5 py-0.5 rounded-md font-medium">Grafik Utama</button>
+                <button data-en-dtab="baseline" onclick="switchEnergyDrawerTab('baseline')" type="button" class="en-drawer-tab-btn en3d-btn px-2.5 py-0.5 rounded-md font-medium">Baseline &amp; Alert</button>
+                <button data-en-dtab="table" onclick="switchEnergyDrawerTab('table')" type="button" class="en-drawer-tab-btn en3d-btn px-2.5 py-0.5 rounded-md font-medium">Tabel kWh Meter</button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span id="en-trend-window-pill" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-900/80 border border-slate-700 text-slate-300">1 Jam Terakhir</span>
+              <button id="en-bottom-drawer-close" onclick="toggleEnergyBottomDrawer(false)" type="button" class="en3d-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-200 flex items-center gap-1">
+                <span>▼</span> Tutup Analitik
               </button>
-              <button data-en3d-room="r3017" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1.5">
-                <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>r3017
-              </button>
-              <button data-en3d-room="lab-iot" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1.5">
-                <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>lab-iot
-              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Drawer Content Area -->
+          <div class="flex-1 min-h-0 p-3.5 overflow-y-auto en-dark-scroll">
+            <!-- SUB-TAB 1 (DEFAULT): 2 COLUMNS SIDE-BY-SIDE (TREN DAYA + DISTRIBUSI TAGIHAN) -->
+            <div id="en-drawer-pane-charts" class="grid grid-cols-1 md:grid-cols-12 gap-4 h-full">
+              <!-- Grafik 1: Line/Area Tren Daya -->
+              <div class="md:col-span-8 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex flex-col min-h-[210px]">
+                <div class="flex items-center justify-between mb-2 shrink-0">
+                  <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-white">Tren Daya Instan per Ruangan (W)</h3>
+                    <p class="text-[10px] text-slate-400">Area chart interaktif <code>power_w</code> — arahkan kursor untuk detail per ruangan</p>
+                  </div>
+                </div>
+                <div class="relative flex-1 min-h-[160px] w-full">
+                  <canvas id="en-chart-power"></canvas>
+                  <div id="en-chart-power-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-950/80 rounded-lg border border-slate-700/60 gap-2">
+                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <p class="text-xs text-slate-400 max-w-md">Belum ada data aktif (meter OFFLINE) — klik <strong>Preview Data Contoh</strong> untuk melihat simulasi.</p>
+                    <button onclick="if(!enState.previewMode) toggleEnergyPreviewMode()" type="button" class="en-empty-preview-btn px-3 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/40 text-[11px] font-semibold text-sky-200 transition">Preview Data Contoh</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Grafik 2: Doughnut Distribusi Tagihan & kWh -->
+              <div class="md:col-span-4 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex flex-col min-h-[210px]">
+                <div class="mb-2 shrink-0">
+                  <h3 class="text-xs sm:text-sm font-bold text-white">Distribusi Tagihan per Ruang</h3>
+                  <p class="text-[10px] text-slate-400">Proporsi konsumsi <code>kWh</code> &amp; estimasi biaya (IDR)</p>
+                </div>
+                <div class="relative flex-1 min-h-[160px] flex items-center justify-center">
+                  <canvas id="en-chart-donut"></canvas>
+                  <div id="en-chart-donut-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-950/80 rounded-lg border border-slate-700/60 gap-2">
+                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+                    <p class="text-xs text-slate-400">Belum ada data aktif (meter OFFLINE) — klik <strong>Preview Data Contoh</strong> untuk melihat simulasi.</p>
+                    <button onclick="if(!enState.previewMode) toggleEnergyPreviewMode()" type="button" class="en-empty-preview-btn px-3 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/40 text-[11px] font-semibold text-sky-200 transition">Preview Data Contoh</button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div class="en3d-hud rounded-xl px-3 py-1.5 flex flex-wrap items-center gap-2.5 text-[10px] text-slate-300">
-              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-400"></span>Normal</span>
-              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span>Waste (&gt;200W)</span>
-              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span>High Load (&gt;3000W)</span>
-              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-500"></span>Offline</span>
-              <span class="text-slate-600">|</span>
-              <span id="en3d-fps" class="font-mono text-cyan-300/80">60 FPS</span>
-            </div>
-          </div>
-        </div>
-      </div>
+            <!-- SUB-TAB 2: BASELINE BAR CHART + FEED ALERT ENERGY -->
+            <div id="en-drawer-pane-baseline" class="hidden grid grid-cols-1 md:grid-cols-12 gap-4 h-full">
+              <div class="md:col-span-7 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex flex-col min-h-[210px]">
+                <div class="flex items-center justify-between mb-2 shrink-0">
+                  <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-white">Baseline: Jam Kerja vs Luar Jam Kerja (W)</h3>
+                    <p class="text-[10px] text-slate-400">Deteksi pemborosan di luar jam kerja (ambang 200 W)</p>
+                  </div>
+                  <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-400/30 text-amber-300">24 Jam</span>
+                </div>
+                <div class="relative flex-1 min-h-[160px] w-full">
+                  <canvas id="en-chart-baseline"></canvas>
+                  <div id="en-chart-baseline-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-950/80 rounded-lg border border-slate-700/60 gap-2">
+                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    <p class="text-xs text-slate-400">Belum ada data baseline (meter OFFLINE) — klik <strong>Preview Data Contoh</strong> untuk simulasi.</p>
+                    <button onclick="if(!enState.previewMode) toggleEnergyPreviewMode()" type="button" class="en-empty-preview-btn px-3 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/40 text-[11px] font-semibold text-sky-200 transition">Preview Data Contoh</button>
+                  </div>
+                </div>
+              </div>
 
-      <!-- VISUALISASI UTAMA: 2 GRAFIK BARIS ATAS (LINE/AREA + DOUGHNUT) -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Grafik 1: Line/Area Tren Daya -->
-        <div class="lg:col-span-8 en-glass rounded-2xl p-5 space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 class="text-base font-bold text-white">Tren Daya Instan per Ruangan (W)</h3>
-              <p class="text-xs text-slate-400">Area chart interaktif <code>power_w</code> — arahkan kursor untuk detail per ruangan</p>
+              <div class="md:col-span-5 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex flex-col min-h-[210px]">
+                <div class="flex items-center justify-between gap-2 mb-2 shrink-0">
+                  <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-white">Kejadian Alert Energy</h3>
+                    <p class="text-[10px] text-slate-400">WASTE_AFTER_HOURS · HIGH_LOAD · OFFLINE</p>
+                  </div>
+                  <select id="en-alert-filter" onchange="renderEnergyAlertsList()" class="bg-slate-900 border border-slate-600/80 rounded-lg px-2 py-0.5 text-[11px] text-slate-200 focus:outline-none">
+                    <option value="all">Semua</option>
+                    <option value="unacked">Belum Di-ACK</option>
+                    <option value="WASTE_AFTER_HOURS">WASTE</option>
+                    <option value="HIGH_LOAD">HIGH_LOAD</option>
+                  </select>
+                </div>
+                <div id="en-alerts-feed" class="flex-1 overflow-y-auto en-dark-scroll space-y-2 pr-1">
+                  <div class="text-center py-6 text-xs text-slate-400">Memuat kejadian alert energy...</div>
+                </div>
+              </div>
             </div>
-            <span id="en-trend-window-pill" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-300 self-start sm:self-auto">
-              1 Jam Terakhir
-            </span>
-          </div>
-          <div class="relative h-72 w-full">
-            <canvas id="en-chart-power"></canvas>
-            <div id="en-chart-power-empty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400 bg-slate-900/50 rounded-xl border border-slate-700/60">
-              Menunggu data telemetry Smart Energy... (atau klik "Preview Data Contoh" di atas untuk melihat grafik)
-            </div>
-          </div>
-        </div>
 
-        <!-- Grafik 2: Doughnut Distribusi Tagihan & kWh -->
-        <div class="lg:col-span-4 en-glass rounded-2xl p-5 flex flex-col space-y-3">
-          <div>
-            <h3 class="text-base font-bold text-white">Distribusi Tagihan per Ruang</h3>
-            <p class="text-xs text-slate-400">Proporsi konsumsi <code>kWh</code> &amp; estimasi biaya (IDR)</p>
-          </div>
-          <div class="relative flex-1 min-h-[240px] flex items-center justify-center">
-            <canvas id="en-chart-donut"></canvas>
-            <div id="en-chart-donut-empty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400 bg-slate-900/50 rounded-xl border border-slate-700/60 text-center px-4">
-              Belum ada konsumsi kWh pada periode berjalan.
+            <!-- SUB-TAB 3: SEARCHABLE & SORTABLE kWh METER TABLE -->
+            <div id="en-drawer-pane-table" class="hidden bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex flex-col gap-2.5">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 class="text-xs sm:text-sm font-bold text-white">Detail Status per kWh Meter</h3>
+                  <p class="text-[10px] text-slate-400">Klik judul kolom untuk urutkan · Status <code>online/offline</code> nyata (LWT &amp; no-data 60 dtk)</p>
+                </div>
+                <div class="relative w-full sm:w-60">
+                  <input id="en-table-search" oninput="renderEnergyMetersTable()" type="text" placeholder="Cari meter, ruang, status..." class="w-full bg-slate-950/80 border border-slate-600/80 rounded-lg pl-7 pr-2.5 py-1 text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:border-sky-400" />
+                  <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+              </div>
+              <div class="overflow-x-auto en-dark-scroll">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-950/70 text-slate-300 font-semibold border-b border-slate-700/80 select-none">
+                    <tr>
+                      <th onclick="sortEnergyTable('device_id')" class="py-2 px-3 cursor-pointer hover:text-sky-300 transition">Meter / Ruang <span id="en-sort-device_id" class="text-[10px]">↕</span></th>
+                      <th onclick="sortEnergyTable('status')" class="py-2 px-3 cursor-pointer hover:text-sky-300 transition">Status <span id="en-sort-status" class="text-[10px]">↕</span></th>
+                      <th onclick="sortEnergyTable('power_w')" class="py-2 px-3 cursor-pointer hover:text-sky-300 transition">Daya Terakhir &amp; Beban <span id="en-sort-power_w" class="text-[10px]">↕</span></th>
+                      <th onclick="sortEnergyTable('energy_kwh')" class="py-2 px-3 cursor-pointer hover:text-sky-300 transition">Energi Kumulatif <span id="en-sort-energy_kwh" class="text-[10px]">↕</span></th>
+                      <th class="py-2 px-3">Update Terakhir (WIB)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="energy-container" class="divide-y divide-slate-700/50">
+                    <tr><td colspan="5" class="py-4 text-center text-slate-400">Memuat data kWh meter...</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- VISUALISASI KE-3 (BAR CHART BASELINE) + FEED ALERT ENERGY -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Grafik 3: Bar Chart Baseline Jam Kerja vs Luar Jam Kerja -->
-        <div class="lg:col-span-7 en-glass rounded-2xl p-5 space-y-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-base font-bold text-white">Baseline: Jam Kerja vs Luar Jam Kerja (W)</h3>
-              <p class="text-xs text-slate-400">Deteksi ruang yang tetap menyedot daya tinggi di luar jam kerja (ambang 200 W)</p>
-            </div>
-            <span class="text-[11px] px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-400/30 text-amber-300">24 Jam</span>
-          </div>
-          <div class="relative h-72 w-full">
-            <canvas id="en-chart-baseline"></canvas>
-            <div id="en-chart-baseline-empty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400 bg-slate-900/50 rounded-xl border border-slate-700/60">
-              Belum ada data baseline jam kerja vs luar jam kerja.
-            </div>
-          </div>
-        </div>
-
-        <!-- Feed Alert Energy dengan Filter & Tombol ACK -->
-        <div class="lg:col-span-5 en-glass rounded-2xl p-5 flex flex-col">
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <div>
-              <h3 class="text-base font-bold text-white">Kejadian Alert Energy</h3>
-              <p class="text-xs text-slate-400">WASTE_AFTER_HOURS · HIGH_LOAD · OFFLINE</p>
-            </div>
-            <div class="flex items-center gap-1 text-[11px]">
-              <select id="en-alert-filter" onchange="renderEnergyAlertsList()" class="bg-slate-900/80 border border-slate-600/80 rounded-lg px-2 py-1 text-slate-200 focus:outline-none">
-                <option value="all">Semua</option>
-                <option value="unacked">Belum Di-ACK</option>
-                <option value="WASTE_AFTER_HOURS">WASTE</option>
-                <option value="HIGH_LOAD">HIGH_LOAD</option>
-              </select>
-            </div>
-          </div>
-          <div id="en-alerts-feed" class="flex-1 overflow-y-auto max-h-[295px] space-y-2.5 pr-1">
-            <div class="text-center py-8 text-xs text-slate-400">Memuat kejadian alert energy...</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TABEL DATA DETAIL kWh METER (SEARCH + SORT + LOAD BAR) -->
-      <div class="en-glass rounded-2xl p-5 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 class="text-base font-bold text-white">Detail Status per kWh Meter</h3>
-            <p class="text-xs text-slate-400">Klik judul kolom untuk mengurutkan · Status <code>online/offline</code> nyata (LWT &amp; no-data 60 dtk)</p>
-          </div>
-          <div class="relative w-full sm:w-64">
-            <input id="en-table-search" oninput="renderEnergyMetersTable()" type="text" placeholder="Cari meter, ruang, status..." class="w-full bg-slate-900/80 border border-slate-600/80 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:border-sky-400" />
-            <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          </div>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-900/60 text-slate-300 font-semibold border-b border-slate-700/80 select-none">
-              <tr>
-                <th onclick="sortEnergyTable('device_id')" class="py-3 px-3 cursor-pointer hover:text-sky-300 transition">Meter / Ruang <span id="en-sort-device_id" class="text-[10px]">↕</span></th>
-                <th onclick="sortEnergyTable('status')" class="py-3 px-3 cursor-pointer hover:text-sky-300 transition">Status <span id="en-sort-status" class="text-[10px]">↕</span></th>
-                <th onclick="sortEnergyTable('power_w')" class="py-3 px-3 cursor-pointer hover:text-sky-300 transition">Daya Terakhir &amp; Beban <span id="en-sort-power_w" class="text-[10px]">↕</span></th>
-                <th onclick="sortEnergyTable('energy_kwh')" class="py-3 px-3 cursor-pointer hover:text-sky-300 transition">Energi Kumulatif <span id="en-sort-energy_kwh" class="text-[10px]">↕</span></th>
-                <th class="py-3 px-3">Update Terakhir (WIB)</th>
-              </tr>
-            </thead>
-            <tbody id="energy-container" class="divide-y divide-slate-700/50">
-              <tr><td colspan="5" class="py-6 text-center text-slate-400">Memuat data kWh meter...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        </section>
       </div>
     </div>
 
@@ -867,6 +993,25 @@
     setInterval(updateClock, 1000);
     updateClock();
 
+    function syncSpatialNavbarHeight() {
+      const hdr = document.querySelector('body > header');
+      const errBanner = document.getElementById('api-error-banner');
+      let h = hdr ? hdr.getBoundingClientRect().height : 112;
+      if (errBanner && !errBanner.classList.contains('hidden')) {
+        h += errBanner.getBoundingClientRect().height;
+      }
+      document.documentElement.style.setProperty('--navbar-height', `${Math.ceil(h)}px`);
+    }
+    window.addEventListener('resize', () => {
+      if (currentTab === 'energy') syncSpatialNavbarHeight();
+    });
+    const apiErrBannerEl = document.getElementById('api-error-banner');
+    if (apiErrBannerEl && typeof MutationObserver !== 'undefined') {
+      new MutationObserver(() => {
+        if (currentTab === 'energy') syncSpatialNavbarHeight();
+      }).observe(apiErrBannerEl, { attributes: true, attributeFilter: ['class'] });
+    }
+
     // Tab Navigation
     function switchTab(tabId) {
       currentTab = tabId;
@@ -882,11 +1027,21 @@
           content.classList.add('hidden');
         }
       });
+
+      const isEnergy = tabId === 'energy';
+      document.body.classList.toggle('en-spatial-mode', isEnergy);
+      if (isEnergy) {
+        syncSpatialNavbarHeight();
+        window.scrollTo({ top: 0 });
+      } else {
+        closeEnergyInfoPopover();
+      }
+
       if (tabId === 'air') fetchAirRooms();
       if (tabId === 'coldchain') fetchColdchainChambers();
       if (tabId === 'energy') fetchEnergyRooms();
       if (window.en3d && typeof window.en3d.setActive === 'function') {
-        window.en3d.setActive(tabId === 'energy');
+        window.en3d.setActive(isEnergy);
       }
     }
 
@@ -1224,19 +1379,113 @@
 
       if (enState.previewMode) {
         btn.textContent = 'Kembali ke Live API';
-        btn.className = 'px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-xs font-semibold text-amber-200 transition';
+        btn.className = 'px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-[11px] font-semibold text-amber-200 transition';
         notice.classList.remove('hidden');
-        badge.textContent = 'Preview Data Contoh';
-        badge.className = 'text-[11px] bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-400/40 font-semibold';
+        badge.textContent = 'Preview Simulasi';
+        badge.className = 'text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/40 font-semibold';
       } else {
         btn.textContent = 'Preview Data Contoh';
-        btn.className = 'px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600/80 text-xs font-semibold text-slate-200 transition';
+        btn.className = 'en3d-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold';
         notice.classList.add('hidden');
         badge.textContent = 'Live FastAPI';
-        badge.className = 'text-[11px] bg-emerald-500/15 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-400/30 font-semibold';
+        badge.className = 'text-[10px] bg-emerald-500/15 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 font-semibold';
       }
+      document.querySelectorAll('.en-empty-preview-btn').forEach(el => {
+        el.classList.toggle('hidden', enState.previewMode);
+      });
       fetchEnergyRooms();
     }
+
+    // Popover Info (ⓘ) untuk Asumsi Tarif, Jam Kerja & Ambang Alert
+    function toggleEnergyInfoPopover(ev) {
+      if (ev) ev.stopPropagation();
+      const pop = document.getElementById('en-info-popover');
+      if (!pop) return;
+      pop.classList.toggle('hidden');
+    }
+
+    function closeEnergyInfoPopover() {
+      const pop = document.getElementById('en-info-popover');
+      if (pop) pop.classList.add('hidden');
+    }
+
+    // Bottom Expandable 2D Analytics Drawer
+    let enBottomDrawerOpen = false;
+    function toggleEnergyBottomDrawer(forceState) {
+      const drawer = document.getElementById('en-bottom-drawer');
+      const trigger = document.getElementById('en-bottom-drawer-toggle');
+      if (!drawer || !trigger) return;
+      enBottomDrawerOpen = typeof forceState === 'boolean' ? forceState : !enBottomDrawerOpen;
+      drawer.classList.toggle('en-bottom-closed', !enBottomDrawerOpen);
+      trigger.classList.toggle('hidden', enBottomDrawerOpen);
+      if (window.en3d && typeof window.en3d.setBottomDrawerOpen === 'function') {
+        window.en3d.setBottomDrawerOpen(enBottomDrawerOpen);
+      }
+      if (enBottomDrawerOpen) {
+        setTimeout(() => {
+          enState.charts.power?.resize();
+          enState.charts.donut?.resize();
+          enState.charts.baseline?.resize();
+        }, 120);
+      }
+    }
+
+    function switchEnergyDrawerTab(tabKey) {
+      const panes = {
+        charts: document.getElementById('en-drawer-pane-charts'),
+        baseline: document.getElementById('en-drawer-pane-baseline'),
+        table: document.getElementById('en-drawer-pane-table')
+      };
+      Object.entries(panes).forEach(([k, el]) => {
+        if (!el) return;
+        el.classList.toggle('hidden', k !== tabKey);
+      });
+      document.querySelectorAll('.en-drawer-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.enDtab === tabKey);
+      });
+      setTimeout(() => {
+        if (tabKey === 'charts') {
+          enState.charts.power?.resize();
+          enState.charts.donut?.resize();
+        } else if (tabKey === 'baseline') {
+          enState.charts.baseline?.resize();
+        }
+      }, 60);
+    }
+
+    // Close popover on outside click & ESC handling for Smart Energy drawers
+    document.addEventListener('click', (e) => {
+      const pop = document.getElementById('en-info-popover');
+      if (!pop || pop.classList.contains('hidden')) return;
+      if (pop.contains(e.target)) return;
+      if (e.target.closest('#en-info-btn-title') || e.target.closest('#en-info-btn-bill')) return;
+      pop.classList.add('hidden');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || currentTab !== 'energy') return;
+      const pop = document.getElementById('en-info-popover');
+      if (pop && !pop.classList.contains('hidden')) {
+        pop.classList.add('hidden');
+        return;
+      }
+      if (enBottomDrawerOpen) {
+        toggleEnergyBottomDrawer(false);
+        return;
+      }
+      if (window.en3d && typeof window.en3d.closeDetailDrawer === 'function') {
+        window.en3d.closeDetailDrawer(false);
+      }
+    });
+
+    // Isolasi scroll/wheel/pointer agar tidak tembus ke OrbitControls Three.js
+    ['en-bottom-drawer', 'en3d-drawer', 'en-info-popover'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      ['wheel', 'pointerdown', 'mousedown', 'touchstart'].forEach(evtName => {
+        el.addEventListener(evtName, (ev) => ev.stopPropagation(), { passive: evtName !== 'wheel' ? true : false });
+      });
+    });
 
     // Dataset simulasi JSON realistis (hanya dipakai saat user mengaktifkan Mode Preview)
     function buildEnergyPreviewSnapshot(period, winMins) {
@@ -1815,14 +2064,14 @@
       const utilPct = ((totalPower / capMax) * 100).toFixed(1);
 
       document.getElementById('en-kpi-power').textContent = `${totalPower.toFixed(1)} W`;
-      document.getElementById('en-kpi-online').textContent = `Meter online: ${onlineCnt} / ${scopedRooms.length}`;
+      document.getElementById('en-kpi-online').textContent = `Meter: ${onlineCnt}/${scopedRooms.length}`;
       const powerDeltaEl = document.getElementById('en-kpi-power-delta');
       powerDeltaEl.textContent = `${utilPct}% beban`;
       powerDeltaEl.className = Number(utilPct) > 70
-        ? 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300'
+        ? 'text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300'
         : (Number(utilPct) > 25
-            ? 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300'
-            : 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300');
+            ? 'text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300'
+            : 'text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300');
 
       const scopedPerRuang = (bill?.per_ruang || []).filter(r => roomFilter === 'all' || r.ruang === roomFilter);
       const scopedKwh = scopedPerRuang.reduce((s, r) => s + Number(r.energy_kwh || 0), 0);
@@ -1831,27 +2080,32 @@
 
       document.getElementById('en-kpi-kwh').textContent = `${scopedKwh.toFixed(3)} kWh`;
       document.getElementById('en-kpi-kwh-delta').textContent = period === 'daily' ? 'Harian' : 'Mingguan';
-      document.getElementById('en-kpi-period-note').textContent =
-        `${formatEnTimeWib(bill?.periode?.from)} – ${formatEnTimeWib(bill?.periode?.to)}`;
+      const periodNote = `${formatEnTimeWib(bill?.periode?.from)} – ${formatEnTimeWib(bill?.periode?.to)}`;
+      const periodNoteEl = document.getElementById('en-kpi-period-note');
+      periodNoteEl.textContent = periodNote;
+      periodNoteEl.title = periodNote;
       document.getElementById('en-kpi-bill').textContent = formatEnIdr(scopedBill);
-      document.getElementById('en-kpi-tariff').textContent = `Tarif asumsi Rp ${Number(tarif).toLocaleString('id-ID')}/kWh`;
+      document.getElementById('en-kpi-tariff').textContent = `Rp ${Number(tarif).toLocaleString('id-ID')}/kWh`;
 
       if (bill?.tarif_asumsi) {
         document.getElementById('en-assumptions-banner').innerHTML =
-          `<strong>Asumsi Terbuka:</strong> Tarif <strong class="text-emerald-300">Rp ${Number(tarif).toLocaleString('id-ID')} / kWh</strong> (${escapeEnHtml(bill.tarif_asumsi.catatan)}) · Jam kerja: <strong>${escapeEnHtml(bill.tarif_asumsi.jam_kerja_wib)}</strong>.`;
+          `<strong>Tarif Simulasi:</strong> <strong class="text-emerald-300">Rp ${Number(tarif).toLocaleString('id-ID')} / kWh</strong> (${escapeEnHtml(bill.tarif_asumsi.catatan)})<br/><strong>Jam Kerja Kampus:</strong> ${escapeEnHtml(bill.tarif_asumsi.jam_kerja_wib)}.`;
       }
 
       const unackedWaste = Number(waste?.summary?.unacked_count ?? 0);
       document.getElementById('en-kpi-waste-unacked').textContent = String(unackedWaste);
-      document.getElementById('en-kpi-waste-total').textContent = `Total kejadian boros: ${waste?.summary?.total_events ?? 0}`;
+      document.getElementById('en-kpi-waste-total').textContent = `Total boros: ${waste?.summary?.total_events ?? 0}`;
       const wasteBadge = document.getElementById('en-kpi-waste-badge');
       if (unackedWaste > 0) {
         wasteBadge.textContent = 'Perlu ACK';
-        wasteBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300';
+        wasteBadge.className = 'text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300';
       } else {
         wasteBadge.textContent = 'Aman';
-        wasteBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300';
+        wasteBadge.className = 'text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300';
       }
+
+      const unackedAny = (enState.alerts || []).some(a => !a.ts_acked);
+      document.getElementById('en-bottom-alert-dot')?.classList.toggle('hidden', !unackedAny);
 
       renderEnergyPowerChart(telemetry, roomFilter);
       renderEnergyDonutChart(bill?.per_ruang || [], roomFilter);
@@ -2020,10 +2274,20 @@
       let selectedRoom = null;
       let hoveredRoom = null;
       let autoOrbit = false;
+      let isOrbitDragging = false;
+      let bottomDrawerOpen = false;
+      let dockCollapsed = false;
       let lastRoomFilter = 'all';
       let drawerChart = null;
       let currentRoomsMap = new Map();
       let currentWindowLabel = '1 Jam Terakhir';
+
+      let currentViewOffsetX = 0;
+      let targetViewOffsetX = 0;
+      let currentViewOffsetY = 0;
+      let targetViewOffsetY = 0;
+      const labelWorldPos = new THREE.Vector3();
+      const camToolbarEl = document.getElementById('en3d-cam-toolbar');
 
       const camTransition = {
         active: false,
@@ -2328,7 +2592,14 @@
         controls.maxPolarAngle = Math.PI / 2 - 0.07;
         controls.minPolarAngle = 0.14;
         controls.target.copy(CAMERA_PRESETS.overview.target);
-        controls.addEventListener('start', () => { camTransition.active = false; });
+        controls.addEventListener('start', () => {
+          camTransition.active = false;
+          isOrbitDragging = true;
+          tooltipEl.classList.remove('visible');
+        });
+        controls.addEventListener('end', () => {
+          isOrbitDragging = false;
+        });
 
         scene.add(new THREE.AmbientLight(0x94a3b8, 0.65));
         scene.add(new THREE.HemisphereLight(0x38bdf8, 0x0f172a, 0.7));
@@ -2412,6 +2683,11 @@
 
         // Pointer Raycasting on 3D canvas
         renderer.domElement.addEventListener('pointermove', (e) => {
+          if (isOrbitDragging || e.buttons > 0) {
+            hoveredRoom = null;
+            tooltipEl.classList.remove('visible');
+            return;
+          }
           const rect = renderer.domElement.getBoundingClientRect();
           pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
           pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -2420,14 +2696,25 @@
           const hitRoom = hits.length > 0 ? hits[0].object.userData.ruang : null;
           hoveredRoom = hitRoom;
           renderer.domElement.style.cursor = hitRoom ? 'pointer' : 'grab';
-          updateTooltip(hitRoom, e.clientX - rect.left, e.clientY - rect.top, rect.width);
+          // Auto-disable hover tooltip for the currently selected room (already open in right drawer)
+          if (hitRoom && hitRoom === selectedRoom) {
+            tooltipEl.classList.remove('visible');
+          } else {
+            updateTooltip(hitRoom, e.clientX - rect.left, e.clientY - rect.top, rect.width, rect.height);
+          }
         });
 
         renderer.domElement.addEventListener('pointerdown', (e) => {
           pointerDownPos = { x: e.clientX, y: e.clientY };
+          tooltipEl.classList.remove('visible');
         });
 
+        renderer.domElement.addEventListener('wheel', () => {
+          tooltipEl.classList.remove('visible');
+        }, { passive: true });
+
         renderer.domElement.addEventListener('pointerup', (e) => {
+          isOrbitDragging = false;
           if (Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y) > 6) return;
           const rect = renderer.domElement.getBoundingClientRect();
           pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -2446,9 +2733,11 @@
           if (!renderer || !camera) return;
           const nw = Math.max(hostEl.clientWidth, 1);
           const nh = Math.max(hostEl.clientHeight, 1);
-          camera.aspect = nw / nh;
-          camera.updateProjectionMatrix();
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
           renderer.setSize(nw, nh);
+          camera.aspect = nw / nh;
+          recomputeCameraFramingTargets();
+          applyCameraViewOffset(nw, nh);
         };
         new ResizeObserver(resizeScene).observe(hostEl);
         document.addEventListener('fullscreenchange', () => {
@@ -2465,8 +2754,31 @@
         }
       }
 
-      function updateTooltip(ruang, relX, relY, stageWidth) {
-        if (!ruang || !currentRoomsMap.has(ruang)) {
+      function recomputeCameraFramingTargets() {
+        const nw = Math.max(hostEl.clientWidth, 1);
+        const nh = Math.max(hostEl.clientHeight, 1);
+        if (selectedRoom && nw > 768) {
+          const drawerW = drawerEl ? Math.min(drawerEl.offsetWidth || 340, nw * 0.36) : 340;
+          targetViewOffsetX = Math.round(drawerW * 0.52);
+        } else {
+          targetViewOffsetX = 0;
+        }
+        targetViewOffsetY = bottomDrawerOpen ? Math.round(Math.min(125, nh * 0.16)) : 0;
+      }
+
+      function applyCameraViewOffset(w, h) {
+        if (!camera) return;
+        if (Math.abs(currentViewOffsetX) > 0.35 || Math.abs(currentViewOffsetY) > 0.35) {
+          camera.setViewOffset(w, h, currentViewOffsetX, currentViewOffsetY, w, h);
+        } else {
+          camera.clearViewOffset();
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+        }
+      }
+
+      function updateTooltip(ruang, relX, relY, stageWidth, stageHeight) {
+        if (!ruang || ruang === selectedRoom || isOrbitDragging || !currentRoomsMap.has(ruang)) {
           tooltipEl.classList.remove('visible');
           return;
         }
@@ -2480,8 +2792,12 @@
         document.getElementById('en3d-tt-power').textContent = r.online ? `${r.power_w.toFixed(1)} W` : 'OFFLINE';
         document.getElementById('en3d-tt-energy').textContent = `${r.energy_kwh.toFixed(2)} kWh · ${fmtIdr(r.bill_idr)}`;
 
-        tooltipEl.style.left = `${Math.min(stageWidth - 115, Math.max(115, relX))}px`;
-        tooltipEl.style.top = `${Math.max(88, relY - 10)}px`;
+        // Anti-overlap clamping: avoid top HUD (~120px), right drawer (if open), and bottom dock
+        const rightMargin = selectedRoom && stageWidth > 768 ? 360 + 115 : 120;
+        const clampedX = Math.min(Math.max(120, stageWidth - rightMargin), Math.max(120, relX + 18));
+        const clampedY = Math.min(Math.max(145, stageHeight - 75), Math.max(145, relY - 22));
+        tooltipEl.style.left = `${clampedX}px`;
+        tooltipEl.style.top = `${clampedY}px`;
         tooltipEl.classList.add('visible');
       }
 
@@ -2535,15 +2851,31 @@
           });
         }
 
-        // Mini Chart.js trend inside 3D drawer
+        // Mini Chart.js trend inside right drawer with explicit OFFLINE/no-data empty state
         const canvas = document.getElementById('en3d-drawer-chart');
+        const emptyEl = document.getElementById('en3d-drawer-chart-empty');
+        const hasSeries = r.seriesVals.length > 0 && (r.online || r.seriesVals.some(v => v > 0));
+        if (!hasSeries) {
+          if (emptyEl) {
+            emptyEl.classList.remove('hidden');
+            const pBtn = emptyEl.querySelector('.en-empty-preview-btn');
+            if (pBtn) pBtn.classList.toggle('hidden', Boolean(window.__enLastPayload?.previewMode));
+          }
+          if (drawerChart) {
+            drawerChart.destroy();
+            drawerChart = null;
+          }
+          return;
+        }
+        if (emptyEl) emptyEl.classList.add('hidden');
+
         if (canvas && typeof Chart !== 'undefined') {
           const ctx = canvas.getContext('2d');
-          const grad = ctx.createLinearGradient(0, 0, 0, 108);
+          const grad = ctx.createLinearGradient(0, 0, 0, 112);
           grad.addColorStop(0, `${pal.hex}55`);
           grad.addColorStop(1, `${pal.hex}05`);
-          const labels = r.seriesLabels.length ? r.seriesLabels : ['Now'];
-          const vals = r.seriesVals.length ? r.seriesVals : [r.power_w];
+          const labels = r.seriesLabels;
+          const vals = r.seriesVals;
 
           if (drawerChart) {
             drawerChart.data.labels = labels;
@@ -2595,8 +2927,9 @@
         const obj = roomObjects.get(ruang);
         if (!obj) return;
         selectedRoom = ruang;
+        tooltipEl.classList.remove('visible');
         const [x, , z] = obj.cfg.position;
-        const offX = x >= 0 ? 5.4 : -5.4;
+        const offX = x >= 0 ? 5.2 : -5.2;
         const offZ = z >= 0 ? 6.4 : 6.8;
         flyCameraTo(
           new THREE.Vector3(x + offX * 0.62, 6.2, z + offZ),
@@ -2604,6 +2937,9 @@
           0.85
         );
         drawerEl.classList.remove('en3d-drawer-closed');
+        drawerEl.scrollTop = 0;
+        camToolbarEl?.classList.add('shifted-left');
+        recomputeCameraFramingTargets();
         stageEl.querySelectorAll('.en3d-room-pill').forEach(p => p.classList.toggle('active', p.dataset.en3dRoom === ruang));
         if (currentRoomsMap.has(ruang)) renderDrawer(currentRoomsMap.get(ruang));
       }
@@ -2611,22 +2947,21 @@
       function closeDrawer(resetCam = false) {
         selectedRoom = null;
         drawerEl.classList.add('en3d-drawer-closed');
+        camToolbarEl?.classList.remove('shifted-left');
+        recomputeCameraFramingTargets();
         stageEl.querySelectorAll('.en3d-room-pill').forEach(p => p.classList.remove('active'));
         if (resetCam) setCameraPreset('overview');
       }
 
+      function setBottomDrawerOpen(isOpen) {
+        bottomDrawerOpen = Boolean(isOpen);
+        recomputeCameraFramingTargets();
+      }
+
       function updateData(payload) {
         if (!payload) return;
-        const { rooms = [], bill, alerts = [], telemetry = [], baseline = [], roomFilter = 'all', windowLabel = '1 Jam Terakhir', previewMode = false } = payload;
+        const { rooms = [], bill, alerts = [], telemetry = [], baseline = [], roomFilter = 'all', windowLabel = '1 Jam Terakhir' } = payload;
         currentWindowLabel = windowLabel;
-
-        const modePill = document.getElementById('en3d-mode-pill');
-        if (modePill) {
-          modePill.textContent = previewMode ? 'Preview Data Contoh' : 'Live FastAPI';
-          modePill.className = previewMode
-            ? 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/35'
-            : 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30';
-        }
 
         const roomApiMap = new Map(rooms.map(r => [r.ruang, r]));
         const billMap = new Map((bill?.per_ruang || []).map(b => [b.ruang, b]));
@@ -2749,6 +3084,18 @@
           if (t >= 1) camTransition.active = false;
         }
 
+        // Smooth camera framing offset when right/bottom drawers open or close
+        const offsetLerp = Math.min(1, dt * 8.5);
+        const prevOffX = currentViewOffsetX;
+        const prevOffY = currentViewOffsetY;
+        currentViewOffsetX += (targetViewOffsetX - currentViewOffsetX) * offsetLerp;
+        currentViewOffsetY += (targetViewOffsetY - currentViewOffsetY) * offsetLerp;
+        if (Math.abs(currentViewOffsetX - prevOffX) > 0.05 || Math.abs(currentViewOffsetY - prevOffY) > 0.05) {
+          const nw = Math.max(hostEl.clientWidth, 1);
+          const nh = Math.max(hostEl.clientHeight, 1);
+          applyCameraViewOffset(nw, nh);
+        }
+
         mdpCore.rotation.y += dt * 1.1;
         mdpCore.position.y = 1.15 + Math.sin(elapsed * 2.2) * 0.1;
         mdpRing.rotation.z -= dt * 0.6;
@@ -2802,7 +3149,16 @@
           obj.tubeMat.emissive.copy(obj.currentColor);
           obj.tubeMat.emissiveIntensity = (0.5 + boost * 0.5) * obj.currentOpacity;
 
-          obj.labelObj.sprite.position.y = Math.max(2.55, hVal + 1.1);
+          // Auto-hide 3D label for selected room & clamp label scale by camera distance
+          const sprite = obj.labelObj.sprite;
+          sprite.visible = !isSel;
+          if (sprite.visible) {
+            sprite.position.y = Math.max(2.35, hVal + 0.95);
+            sprite.getWorldPosition(labelWorldPos);
+            const camDist = camera.position.distanceTo(labelWorldPos);
+            const clampedW = THREE.MathUtils.clamp(camDist * 0.135, 1.35, 2.65);
+            sprite.scale.set(clampedW, clampedW * (128 / 360), 1);
+          }
         }
 
         for (const p of energyParticles) {
@@ -2851,9 +3207,21 @@
           lastRoomFilter = selectedRoom;
           if (typeof window.fetchEnergyRooms === 'function') window.fetchEnergyRooms();
         }
+        if (typeof window.toggleEnergyBottomDrawer === 'function') {
+          window.toggleEnergyBottomDrawer(true);
+        }
       });
       stageEl.querySelectorAll('.en3d-room-pill').forEach(btn => {
         btn.addEventListener('click', () => selectRoom(btn.dataset.en3dRoom));
+      });
+
+      // Collapsible Bottom-Left Dock
+      document.getElementById('en3d-dock-toggle')?.addEventListener('click', () => {
+        dockCollapsed = !dockCollapsed;
+        const body = document.getElementById('en3d-dock-body');
+        const chev = document.getElementById('en3d-dock-chevron');
+        if (body) body.classList.toggle('hidden', dockCollapsed);
+        if (chev) chev.textContent = dockCollapsed ? '▶' : '◀';
       });
 
       function setActive(active) {
@@ -2861,6 +3229,7 @@
         if (isActive) {
           if (!initialized) initThreeScene();
           if (clock) clock.getDelta();
+          recomputeCameraFramingTargets();
           if (rafId) cancelAnimationFrame(rafId);
           animateLoop();
         } else if (rafId) {
@@ -2869,7 +3238,14 @@
         }
       }
 
-      window.en3d = { setActive, updateData, selectRoom, setCameraPreset };
+      window.en3d = {
+        setActive,
+        updateData,
+        selectRoom,
+        setCameraPreset,
+        closeDetailDrawer: closeDrawer,
+        setBottomDrawerOpen
+      };
       const energyTabEl = document.getElementById('content-energy');
       if (energyTabEl && !energyTabEl.classList.contains('hidden')) {
         setActive(true);
