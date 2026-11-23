@@ -921,6 +921,7 @@
                     <option value="unacked">Belum Di-ACK</option>
                     <option value="WASTE_AFTER_HOURS">WASTE</option>
                     <option value="HIGH_LOAD">HIGH_LOAD</option>
+                    <option value="OFFLINE">OFFLINE</option>
                   </select>
                 </div>
                 <div id="en-alerts-feed" class="flex-1 overflow-y-auto en-dark-scroll space-y-2 pr-1">
@@ -1539,6 +1540,7 @@
           severity: 'critical',
           message: 'Lonjakan beban di r3013 (kwh-02): 3180.0 W (> 3000 W selama 1 menit)',
           value: 3180.0,
+          context: { ruang: 'r3013', gedung: 'bsd-a' },
           ts_raised: new Date(nowMs - 140000).toISOString(),
           ts_acked: enState.previewAckedIds['ALT-PREVIEW-0001'] || null,
           acked_by: enState.previewAckedIds['ALT-PREVIEW-0001'] ? 'Tim 1 Energy Operator' : null
@@ -1551,6 +1553,7 @@
           severity: 'warning',
           message: 'Indikasi pemborosan di r3012 (kwh-01): 785.4 W di luar jam kerja (> 200 W)',
           value: 785.4,
+          context: { ruang: 'r3012', gedung: 'bsd-a' },
           ts_raised: new Date(nowMs - 480000).toISOString(),
           ts_acked: enState.previewAckedIds['ALT-PREVIEW-0002'] || null,
           acked_by: enState.previewAckedIds['ALT-PREVIEW-0002'] ? 'Tim 1 Energy Operator' : null
@@ -1563,6 +1566,7 @@
           severity: 'critical',
           message: 'Perangkat kwh-04 (lab-iot) berstatus offline (LWT / no-data > 60 detik)',
           value: 0.0,
+          context: { ruang: 'lab-iot', gedung: 'bsd-a' },
           ts_raised: new Date(nowMs - 185000).toISOString(),
           ts_acked: enState.previewAckedIds['ALT-PREVIEW-0003'] || null,
           acked_by: enState.previewAckedIds['ALT-PREVIEW-0003'] ? 'Tim 1 Energy Operator' : null
@@ -1944,6 +1948,13 @@
       }).join('');
     }
 
+    function resolveEnergyAlertRoom(alertObj) {
+      if (alertObj?.context?.ruang) return alertObj.context.ruang;
+      if (alertObj?.ruang) return alertObj.ruang;
+      const dev = (enState.rooms || []).find(r => r.device_id === alertObj?.device_id);
+      return dev ? dev.ruang : null;
+    }
+
     function renderEnergyAlertsList() {
       const feed = document.getElementById('en-alerts-feed');
       const filter = document.getElementById('en-alert-filter')?.value || 'all';
@@ -1951,8 +1962,11 @@
 
       const filtered = (enState.alerts || []).filter(a => {
         if (filter === 'unacked' && a.ts_acked) return false;
-        if ((filter === 'WASTE_AFTER_HOURS' || filter === 'HIGH_LOAD') && a.code !== filter) return false;
-        if (roomFilter !== 'all' && a.context?.ruang && a.context.ruang !== roomFilter) return false;
+        if ((filter === 'WASTE_AFTER_HOURS' || filter === 'HIGH_LOAD' || filter === 'OFFLINE') && a.code !== filter) return false;
+        if (roomFilter !== 'all') {
+          const alertRoom = resolveEnergyAlertRoom(a);
+          if (alertRoom && alertRoom !== roomFilter) return false;
+        }
         return true;
       });
 
@@ -2058,7 +2072,7 @@
       enState.alerts = alerts || [];
 
       const scopedRooms = enState.rooms.filter(r => roomFilter === 'all' || r.ruang === roomFilter);
-      const totalPower = scopedRooms.reduce((sum, r) => sum + Number(r.power_w || 0), 0);
+      const totalPower = scopedRooms.reduce((sum, r) => sum + (r.status === 'online' ? Number(r.power_w || 0) : 0), 0);
       const onlineCnt = scopedRooms.filter(r => r.status === 'online').length;
       const capMax = Math.max(1, scopedRooms.length * 3000);
       const utilPct = ((totalPower / capMax) * 100).toFixed(1);
@@ -2092,9 +2106,19 @@
           `<strong>Tarif Simulasi:</strong> <strong class="text-emerald-300">Rp ${Number(tarif).toLocaleString('id-ID')} / kWh</strong> (${escapeEnHtml(bill.tarif_asumsi.catatan)})<br/><strong>Jam Kerja Kampus:</strong> ${escapeEnHtml(bill.tarif_asumsi.jam_kerja_wib)}.`;
       }
 
-      const unackedWaste = Number(waste?.summary?.unacked_count ?? 0);
+      const scopedWasteItems = (waste?.items || []).filter(item => {
+        if (roomFilter === 'all') return true;
+        const wRoom = resolveEnergyAlertRoom(item);
+        return !wRoom || wRoom === roomFilter;
+      });
+      const unackedWaste = roomFilter === 'all'
+        ? Number(waste?.summary?.unacked_count ?? 0)
+        : scopedWasteItems.filter(item => !item.ts_acked && !item.acked).length;
+      const totalWaste = roomFilter === 'all'
+        ? Number(waste?.summary?.total_events ?? 0)
+        : scopedWasteItems.length;
       document.getElementById('en-kpi-waste-unacked').textContent = String(unackedWaste);
-      document.getElementById('en-kpi-waste-total').textContent = `Total boros: ${waste?.summary?.total_events ?? 0}`;
+      document.getElementById('en-kpi-waste-total').textContent = `Total boros: ${totalWaste}`;
       const wasteBadge = document.getElementById('en-kpi-waste-badge');
       if (unackedWaste > 0) {
         wasteBadge.textContent = 'Perlu ACK';
