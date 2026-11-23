@@ -158,12 +158,17 @@ def _query_energy_series(
     start_utc = start_dt.astimezone(timezone.utc).isoformat()
     stop_utc = end_dt.astimezone(timezone.utc).isoformat()
     ruang_filter = f' and r["ruang"] == "{ruang}"' if ruang else ""
+    downsample = (
+        '  |> aggregateWindow(every: 10m, fn: mean, createEmpty: false)\n'
+        if (ruang is None and (end_dt - start_dt) >= timedelta(hours=6))
+        else ""
+    )
 
     flux = f'''
 from(bucket: "{bucket}")
   |> range(start: {start_utc}, stop: {stop_utc})
-  |> filter(fn: (r) => r["_measurement"] == "telemetry" and r["domain"] == "energy"{ruang_filter})
-  |> pivot(rowKey: ["_time", "device_id"], columnKey: ["_field"], valueColumn: "_value")
+  |> filter(fn: (r) => r["_measurement"] == "telemetry" and r["domain"] == "energy"{ruang_filter} and (r["_field"] == "power_w" or r["_field"] == "energy_kwh"))
+{downsample}  |> pivot(rowKey: ["_time", "device_id"], columnKey: ["_field"], valueColumn: "_value")
   |> group()
   |> sort(columns: ["_time"], desc: true)
   |> limit(n: {int(limit)})
@@ -257,10 +262,13 @@ def get_energy_rooms():
         tel = latest_tel.get(dev_id, {})
         st = latest_status.get(dev_id)
         last_tel_dt = tel.get("ts")
-        no_data = (
-            last_tel_dt is not None
-            and (now_dt - last_tel_dt).total_seconds() > OFFLINE_TIMEOUT_SEC
-        )
+        if last_tel_dt is not None:
+            no_data = (now_dt - last_tel_dt).total_seconds() > OFFLINE_TIMEOUT_SEC
+        else:
+            no_data = (
+                st is None
+                or (now_dt - st["ts"]).total_seconds() > OFFLINE_TIMEOUT_SEC
+            )
         is_online = bool(st and st["online"]) and not no_data
         last_seen_dt = last_tel_dt or (st["ts"] if st else None)
 

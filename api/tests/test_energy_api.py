@@ -33,6 +33,7 @@ SAMPLE_DEVICES = [
     {"device_id": "kwh-01", "display_name": "KWh Meter Ruang 3012", "gedung": "bsd-a", "ruang": "r3012"},
     {"device_id": "kwh-02", "display_name": "KWh Meter Ruang 3013", "gedung": "bsd-a", "ruang": "r3013"},
     {"device_id": "kwh-03", "display_name": "KWh Meter Ruang 3017", "gedung": "bsd-a", "ruang": "r3017"},
+    {"device_id": "kwh-04", "display_name": "KWh Meter Lab IoT", "gedung": "bsd-a", "ruang": "lab-iot"},
 ]
 
 
@@ -133,6 +134,7 @@ def test_get_energy_rooms_distinguishes_online_lwt_and_nodata(monkeypatch: pytes
         FakeInfluxRecord({"device_id": "kwh-01"}, "online", 1, now_utc),
         FakeInfluxRecord({"device_id": "kwh-02"}, "online", 0, now_utc),      # LWT offline (CRASH)
         FakeInfluxRecord({"device_id": "kwh-03"}, "online", 1, now_utc),      # Status online, tapi telemetry basi (STOP)
+        FakeInfluxRecord({"device_id": "kwh-04"}, "online", 1, stale_utc),    # Status online basi >60s & tanpa telemetry
     ]
     tel_recs = [
         FakeInfluxRecord({"device_id": "kwh-01"}, "power_w", 720.5, now_utc),
@@ -156,6 +158,7 @@ def test_get_energy_rooms_distinguishes_online_lwt_and_nodata(monkeypatch: pytes
     assert items["kwh-01"]["energy_kwh"] == 12.3456
     assert items["kwh-02"]["status"] == "offline"
     assert items["kwh-03"]["status"] == "offline"
+    assert items["kwh-04"]["status"] == "offline"
 
 
 def test_get_room_usage_and_csv_export(monkeypatch: pytest.MonkeyPatch) -> None:
