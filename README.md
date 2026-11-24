@@ -17,7 +17,7 @@ Repository monorepo resmi untuk **Mini IoT Platform Kampus**, dikelola oleh **Ti
 
 | Nama Anggota | Kontak GitHub | Peran Utama | Folder Tanggung Jawab |
 |---|---|---|---|
-| **<Isi Nama Anggota 1>** | `<email/github-anggota-1>` | Owner Simulator 4 kWh Meter, Injektor Gangguan, & Rule Engine Energy Node-RED | `simulators/energy/`, `nodered/` (tab Energy) |
+| **Vincent (`VozzyJun`)** | `vincentjunio1@gmail.com` | Owner Simulator 4 kWh Meter, Injektor Gangguan, & Rule Engine Energy Node-RED | `simulators/energy/`, `nodered/` (tab Energy) |
 | **Aldy (`Aldy-create`)** | `aldypasaribu59@gmail.com` | Owner REST API Smart Energy (`/api/v1/energy/*`), Tab Dashboard Smart Energy, Panel Grafana, & Unit Test | `api/app/routers/energy.py`, `api/tests/test_energy_api.py`, `dashboard/` (`#content-energy`), `grafana/` |
 
 ---
@@ -169,3 +169,33 @@ Untuk demonstrasi live di depan dosen penguji, gunakan simulator injektor beriku
    python simulators/air/simulator.py --mode STOP --device aq-01
    ```
    *Hasil:* Koneksi tetap online namun telemetri berhenti dikirim.
+
+### Skenario Demo & Injektor Gangguan Tim 1 — Smart Energy (Menit 8–12)
+
+Jalankan simulator 4 kWh meter (`kwh-01` s.d. `kwh-04`) melalui Docker Compose profile `team-1` atau Python lokal:
+```bash
+docker compose --profile team-1 up --build -d energy-simulator
+```
+
+1. **Uji Pemborosan Luar Jam Kerja (`BOROS` → `WASTE_AFTER_HOURS`)**:
+   ```bash
+   python simulators/energy/inject.py boros --device kwh-02 --via cmd
+   ```
+   *Hasil:* Daya naik >200 W (simulasi luar jam kerja); setelah 2 menit, alert `WASTE_AFTER_HOURS` (`warning`) terbit di feed alert pusat dan `/api/v1/energy/waste`.
+
+2. **Uji Lonjakan Beban Tinggi (`LONJAKAN` → `HIGH_LOAD`)**:
+   ```bash
+   python simulators/energy/inject.py lonjakan --device kwh-03 --via cmd
+   ```
+   *Hasil:* Daya melonjak >3000 W; setelah 1 menit, alert `HIGH_LOAD` (`critical`) terbit di feed alert pusat.
+
+3. **Uji Putus Mendadak / LWT (`CRASH` → `OFFLINE`) & Uji No-Data (`STOP` → `OFFLINE` 60 dtk)**:
+   ```bash
+   python simulators/energy/inject.py crash --device kwh-01 --via cmd
+   python simulators/energy/inject.py stop --device kwh-04 --via cmd
+   ```
+
+4. **Pulihkan Kondisi Normal (*Auto-Resolve*)**:
+   ```bash
+   python simulators/energy/inject.py normal --device all --via cmd
+   ```

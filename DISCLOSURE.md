@@ -51,3 +51,19 @@ AI assistance was used during the development of the Team 1 Smart Energy backend
 ### Human Review and Responsibility
 All AI-assisted code and documentation were reviewed, verified via automated tests (`pytest`, syntax validation), and tested locally before submission. The author remains fully responsible for understanding and defending the implementation.
 
+---
+
+## Tim 1 (Smart Energy — Anggota 1: Vincent / `VozzyJun`)
+
+### AI Tool Used
+- Antigravity (AI Coding Assistant)
+
+### Purpose of Use
+AI assistance was used during the development of the Team 1 Smart Energy 4-meter simulator, fault injector, and Node-RED rule engine:
+- Aligning MQTT topics (`kampus/energy/bsd-a/{ruang}/{device_id}/{channel}`), payload envelopes (`kampus.telemetry.v1`, `kampus.status.v1`), and thresholds against `docs/MQTT_CONTRACT.md` and `api/app/routers/energy.py`.
+- Scaffolding the multi-client Paho MQTT v2 simulator (`simulators/energy/simulator.py`, `devices_config.py`), CLI fault injector (`inject.py`, `inject_event.py`), Dockerfile, and simulator unit tests (`test_simulator.py`).
+- Implementing the self-contained `Rules - Smart Energy` tab in `nodered/data/flows.json` (`WASTE_AFTER_HOURS`, `HIGH_LOAD`, `OFFLINE` LWT & 60s watchdog, deduplication, auto-resolve) along with unit tests (`nodered/tests/test_rules.js`).
+
+### Human Review and Responsibility
+All AI-assisted code, Node-RED flow additions, and documentation were reviewed, tested via automated Python (`test_simulator.py`) and Node.js (`test_rules.js` + embedded `flows.json` cross-tests), and verified not to overwrite other team members' files before pushing to `team-1-energy`. The author remains fully responsible for understanding and explaining the implementation during individual evaluation.
+
