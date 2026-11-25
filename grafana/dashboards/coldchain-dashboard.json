@@ -35,7 +35,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "",
+            "axisLabel": "Suhu",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
@@ -49,7 +49,7 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -62,22 +62,31 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
-            }
+              "mode": "line"
+            },
+            "axisSoftMin": 0,
+            "axisSoftMax": 10
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
-                "value": 0
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 6
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 8
               }
             ]
-          }
+          },
+          "unit": "celsius",
+          "decimals": 2,
+          "displayName": "Perangkat ${__field.labels.device_id}"
         }
       },
       "gridPos": {
@@ -112,7 +121,8 @@
         }
       ],
       "title": "Temperatur",
-      "type": "timeseries"
+      "type": "timeseries",
+      "description": "Monitoring suhu Cold-Chain. Warning: suhu > 6 C selama 60 detik. Critical: suhu > 8 C selama 120 detik. Garis threshold hanya referensi visual; alert aktual diproses oleh rule engine."
     },
     {
       "datasource": {
@@ -128,7 +138,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "",
+            "axisLabel": "Kelembapan",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
@@ -142,7 +152,7 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -170,7 +180,10 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent",
+          "decimals": 2,
+          "displayName": "Perangkat ${__field.labels.device_id}"
         }
       },
       "gridPos": {
@@ -205,7 +218,8 @@
         }
       ],
       "title": "Humidity",
-      "type": "timeseries"
+      "type": "timeseries",
+      "description": "Monitoring kelembapan relatif setiap perangkat Cold-Chain."
     },
     {
       "datasource": {
@@ -402,7 +416,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "fg5bts6cjjqiof"
       },
-      "description": "Daftar alert suhu, tingkat keparahan, dan status penanganan pada seluruh perangkat cold chain.",
+      "description": "Menampilkan maksimal 50 alert terbaru yang masih active atau acknowledged. Alert resolved tersedia pada panel riwayat.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -441,8 +455,8 @@
         "showHeader": true,
         "sortBy": [
           {
-            "desc": false,
-            "displayName": "alert_id"
+            "desc": true,
+            "displayName": "triggered_at"
           }
         ],
         "zebraStriping": false
@@ -458,7 +472,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n    a.alert_id,\n    a.device_id,\n    a.alert_type,\n    a.severity,\n    a.message,\n    a.status,\n    a.triggered_at,\n    a.acknowledged_at,\n    a.resolved_at\nFROM alert_events a\nJOIN devices d ON a.device_id = d.device_id\nWHERE d.domain = 'coldchain'\n  AND a.device_id ~ '${device_id:regex}'\nORDER BY a.triggered_at DESC\nLIMIT 50;",
+          "rawSql": "SELECT\n    a.alert_id,\n    a.device_id,\n    a.alert_type,\n    a.severity,\n    a.message,\n    a.status,\n    a.triggered_at,\n    a.acknowledged_at,\n    a.resolved_at\nFROM alert_events a\nJOIN devices d ON a.device_id = d.device_id\nWHERE d.domain = 'coldchain'\n  AND a.device_id ~ '${device_id:regex}'\n  AND a.status IN ('active', 'acknowledged')\nORDER BY a.triggered_at DESC\nLIMIT 50;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -479,7 +493,7 @@
           }
         }
       ],
-      "title": "Alert Monitoring.",
+      "title": "Alert Monitoring",
       "type": "table"
     },
     {
@@ -525,8 +539,8 @@
         "showHeader": true,
         "sortBy": [
           {
-            "desc": false,
-            "displayName": "alert_id"
+            "desc": true,
+            "displayName": "triggered_at"
           }
         ],
         "zebraStriping": false
@@ -564,7 +578,8 @@
         }
       ],
       "title": "Riwayat Alert Cold Chain",
-      "type": "table"
+      "type": "table",
+      "description": "Riwayat maksimal 50 alert terbaru dari seluruh status lifecycle."
     },
     {
       "datasource": {
@@ -613,8 +628,8 @@
         "showHeader": true,
         "sortBy": [
           {
-            "desc": false,
-            "displayName": "alert_id"
+            "desc": true,
+            "displayName": "triggered_at"
           }
         ],
         "zebraStriping": false
@@ -652,7 +667,8 @@
         }
       ],
       "title": "Escalation Monitoring",
-      "type": "table"
+      "type": "table",
+      "description": "Riwayat maksimal 50 alert TEMP_ESCALATED terbaru dari seluruh status lifecycle."
     },
     {
       "datasource": {
@@ -672,7 +688,54 @@
               "viz": false
             }
           }
-        }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Active"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#E02F44"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Acknowledged"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#EAB839"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Resolved"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 9,
@@ -692,9 +755,11 @@
         },
         "pieType": "pie",
         "reduceOptions": {
-          "calcs": [],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
-          "values": true
+          "values": false
         },
         "sort": "desc",
         "tooltip": {
@@ -714,7 +779,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n    a.status,\n    COUNT(*) AS total\nFROM alert_events a\nJOIN devices d ON a.device_id = d.device_id\nWHERE d.domain = 'coldchain'\n  AND a.device_id ~ '${device_id:regex}'\nGROUP BY a.status\nORDER BY a.status;",
+          "rawSql": "SELECT\n    COUNT(*) FILTER (\n        WHERE a.status = 'active'\n    ) AS \"Active\",\n    COUNT(*) FILTER (\n        WHERE a.status = 'acknowledged'\n    ) AS \"Acknowledged\",\n    COUNT(*) FILTER (\n        WHERE a.status = 'resolved'\n    ) AS \"Resolved\"\nFROM alert_events a\nJOIN devices d ON a.device_id = d.device_id\nWHERE d.domain = 'coldchain'\n  AND a.device_id ~ '${device_id:regex}';",
           "refId": "A",
           "sql": {
             "columns": [
@@ -736,7 +801,8 @@
         }
       ],
       "title": "Alert Status Summary",
-      "type": "piechart"
+      "type": "piechart",
+      "description": "Distribusi status seluruh alert Cold-Chain berdasarkan perangkat yang dipilih. Merah: Active. Kuning: Acknowledged. Hijau: Resolved."
     },
     {
       "datasource": {
@@ -745,23 +811,14 @@
       },
       "fieldConfig": {
         "defaults": {
+          "decimals": 0,
+          "unit": "none",
           "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
+            "mode": "fixed",
+            "fixedColor": "gray"
           }
-        }
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 9,
@@ -771,17 +828,6 @@
       },
       "id": 9,
       "options": {
-        "barShape": "flat",
-        "barWidthFactor": 0.3,
-        "effects": {
-          "barGlow": false,
-          "centerGlow": false,
-          "gradient": true
-        },
-        "endpointMarker": "point",
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -789,14 +835,13 @@
           "fields": "",
           "values": false
         },
-        "segmentCount": 1,
-        "segmentSpacing": 0.3,
-        "shape": "gauge",
-        "showThresholdLabels": false,
-        "showThresholdMarkers": false,
-        "sizing": "auto",
-        "sparkline": false,
-        "textMode": "auto"
+        "orientation": "auto",
+        "textMode": "value",
+        "wideLayout": true,
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "showPercentChange": false
       },
       "pluginVersion": "13.3.2",
       "targets": [
@@ -831,7 +876,260 @@
         }
       ],
       "title": "Total Alert",
-      "type": "gauge"
+      "type": "stat",
+      "description": "Jumlah kumulatif seluruh alert Cold-Chain berdasarkan perangkat yang dipilih, tanpa batas kapasitas atau filter waktu."
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eg5bre8jggm4gc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Pesan per menit",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "axisSoftMin": 0,
+            "axisSoftMax": 15
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "suffix: pesan/min",
+          "decimals": 0,
+          "displayName": "Perangkat ${__field.labels.device_id}"
+        }
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "13.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "eg5bre8jggm4gc"
+          },
+          "query": "from(bucket: \"iot\")\n    |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n    |> filter(fn: (r) =>\n        r._measurement == \"telemetry\" and\n        r.domain == \"coldchain\" and\n        r._field == \"temp_c\"\n    )\n    |> filter(fn: (r) =>\n        r.device_id =~ /^${device_id:regex}$/\n    )\n    |> group(columns: [\"device_id\"])\n    |> aggregateWindow(\n        every: 1m,\n        fn: count,\n        createEmpty: true\n    )\n    |> yield(name: \"message_rate\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Telemetry Message Rate",
+      "type": "timeseries",
+      "description": "Jumlah sampel telemetry tersimpan per menit. Field temp_c digunakan sebagai representasi satu payload. Target normal sekitar 12 pesan per menit per perangkat. Interval pertama dan terakhir dapat bersifat parsial. Tidak mencakup heartbeat, status, atau command MQTT."
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eg5bre8jggm4gc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisPlacement": "auto",
+            "fillOpacity": 70,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineWidth": 0,
+            "spanNulls": false
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "Online": {
+                  "color": "dark-green",
+                  "index": 0,
+                  "text": "Online"
+                },
+                "Offline": {
+                  "color": "dark-red",
+                  "index": 1,
+                  "text": "Offline"
+                },
+                "Unknown": {
+                  "color": "gray",
+                  "index": 2,
+                  "text": "Unknown"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "gray",
+                "value": null
+              }
+            ]
+          },
+          "displayName": "Perangkat ${__field.labels.device_id}"
+        }
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "id": 11,
+      "options": {
+        "alignValue": "left",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "showValue": "auto",
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "13.3.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "eg5bre8jggm4gc"
+          },
+          "query": "from(bucket: \"iot\")\n    |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n    |> filter(fn: (r) =>\n        r._measurement == \"status\" and\n        r.domain == \"coldchain\" and\n        r._field == \"online\"\n    )\n    |> filter(fn: (r) =>\n        r.device_id =~ /^${device_id:regex}$/\n    )\n    |> map(fn: (r) => ({\n        r with\n        _value: if r._value == 1.0 then \"Online\"\n            else if r._value == 0.0 then \"Offline\"\n            else \"Unknown\"\n    }))\n    |> keep(columns: [\"_time\", \"_value\", \"device_id\"])\n    |> group(columns: [\"device_id\"])\n    |> sort(columns: [\"_time\"])\n    |> yield(name: \"device_status\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Device Online/Offline Timeline",
+      "type": "state-timeline",
+      "description": "Riwayat status koneksi perangkat berdasarkan measurement status di InfluxDB. Online = 1, Offline = 0. Status offline berasal dari event status perangkat. Tidak adanya telemetry tidak otomatis berarti offline."
+    },
+    {
+      "id": 12,
+      "title": "InfluxDB Alert Backup Monitoring",
+      "description": "Riwayat pencatatan alert pada InfluxDB sebagai backup PostgreSQL. Menampilkan maksimal 100 alert terbaru sesuai rentang waktu dan perangkat. Tidak merepresentasikan status lifecycle terkini.",
+      "type": "table",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eg5bre8jggm4gc"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "eg5bre8jggm4gc"
+          },
+          "query": "from(bucket: \"iot\")\n    |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n    |> filter(fn: (r) =>\n        r._measurement == \"alerts\" and\n        r.domain == \"coldchain\" and\n        r._field == \"message\"\n    )\n    |> filter(fn: (r) =>\n        r.device_id =~ /^${device_id:regex}$/\n    )\n    |> keep(columns: [\n        \"_time\",\n        \"alert_id\",\n        \"device_id\",\n        \"code\",\n        \"severity\",\n        \"_value\"\n    ])\n    |> group()\n    |> rename(columns: {\n        _time: \"Time\",\n        alert_id: \"Alert ID\",\n        device_id: \"Device\",\n        code: \"Alert Code\",\n        severity: \"Severity\",\n        _value: \"Message\"\n    })\n    |> sort(columns: [\"Time\"], desc: true)\n    |> limit(n: 100)\n    |> yield(name: \"alert_backup\")",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [],
+        "footer": {
+          "show": false
+        }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "Time": 0,
+              "Alert ID": 1,
+              "Device": 2,
+              "Alert Code": 3,
+              "Severity": 4,
+              "Message": 5
+            },
+            "renameByName": {}
+          }
+        }
+      ]
     }
   ],
   "preload": false,
