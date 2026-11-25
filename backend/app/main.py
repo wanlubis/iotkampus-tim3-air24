@@ -1,3 +1,4 @@
+
 from datetime import datetime, timezone, timedelta
 
 from fastapi import FastAPI, Depends, HTTPException, Header
@@ -153,17 +154,29 @@ def get_device(device_id: str):
         )
 
 
+# =========================
+# DEVICE STATUS - INFLUXDB
+# =========================
+
 @app.get(
     "/api/v1/devices/{device_id}/status",
     dependencies=[Depends(verify_api_key)],
 )
 def get_device_status(device_id: str):
     try:
+        if not device_id or not all(
+            c.isalnum() or c in "-_" for c in device_id
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Device ID tidak valid",
+            )
+
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT device_id, status, last_seen
+                    SELECT device_id, domain, status, last_seen
                     FROM devices
                     WHERE device_id = %s
                     """,
@@ -172,13 +185,77 @@ def get_device_status(device_id: str):
 
                 device = cur.fetchone()
 
-                if not device:
-                    raise HTTPException(
-                        status_code=404,
-                        detail="Device tidak ditemukan",
-                    )
+        if not device:
+            raise HTTPException(
+                status_code=404,
+                detail="Device tidak ditemukan",
+            )
 
-                return device
+        domain = device["domain"]
+
+        if domain not in VALID_DOMAINS:
+            raise HTTPException(
+                status_code=500,
+                detail="Domain perangkat tidak valid",
+            )
+
+        flux_query = f'''
+            from(bucket: "{settings.INFLUXDB_BUCKET}")
+                |> range(start: -7d)
+                |> filter(fn: (r) =>
+                    r._measurement == "status" and
+                    r._field == "online" and
+                    r.device_id == "{device_id}" and
+                    r.domain == "{domain}"
+                )
+                |> group(columns: ["device_id"])
+                |> sort(columns: ["_time"], desc: true)
+                |> limit(n: 1)
+        '''
+
+        records = query_influx(flux_query)
+
+        last_seen = device["last_seen"]
+
+        if last_seen is not None:
+            last_seen = last_seen.astimezone(WIB).isoformat()
+
+        if not records:
+            return {
+                "device_id": device_id,
+                "domain": domain,
+                "status": "unknown",
+                "online": None,
+                "last_seen": last_seen,
+                "timestamp": None,
+                "source": "influxdb",
+                "message": "Data status belum tersedia",
+            }
+
+        record = records[0]
+        value = record.get("_value")
+
+        if value not in (0, 1):
+            raise HTTPException(
+                status_code=500,
+                detail="Nilai status InfluxDB tidak valid",
+            )
+
+        online = int(value)
+        timestamp = record.get("_time")
+
+        if timestamp is not None:
+            timestamp = timestamp.astimezone(WIB).isoformat()
+
+        return {
+            "device_id": device_id,
+            "domain": domain,
+            "status": "online" if online == 1 else "offline",
+            "online": online,
+            "last_seen": last_seen,
+            "timestamp": timestamp,
+            "source": "influxdb",
+        }
 
     except HTTPException:
         raise

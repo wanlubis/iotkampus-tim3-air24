@@ -280,8 +280,8 @@
         "type": "function",
         "z": "47f2439dc8f66dc7",
         "name": "Device Status",
-        "func": "\nconst data = msg.payload;\n\nif (!data || !data.device_id || !data.status) {\n    return null;\n}\n\nif (![\"online\", \"offline\"].includes(data.status)) {\n    return null;\n}\n\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"X-API-Key\": env.get(\"API_KEY\")\n};\n\nmsg.payload = {\n    device_id: data.device_id,\n    status: data.status,\n    ts: data.ts || Date.now()\n};\n\nreturn msg;\n",
-        "outputs": 1,
+        "func": "const registry = {\n    \"cc-01\": \"gudang-a\",\n    \"cc-02\": \"gudang-a\",\n    \"cc-03\": \"gudang-b\"\n};\n\nconst data = msg.payload;\n\nfunction reject(reason) {\n    node.warn(\"Status ditolak: \" + reason);\n    return null;\n}\n\n// =========================\n// PAYLOAD VALIDATION\n// =========================\n\nif (!data || typeof data !== \"object\") {\n    return reject(\"Payload tidak valid\");\n}\n\nif (data.schema !== \"kampus.status.v1\") {\n    return reject(\"Schema tidak dikenal\");\n}\n\nif (!Object.prototype.hasOwnProperty.call(\n    registry, data.device_id\n)) {\n    return reject(\"Device tidak terdaftar\");\n}\n\nif (\n    data.domain !== \"coldchain\" ||\n    data.gedung !== \"bsd-a\" ||\n    data.ruang !== registry[data.device_id]\n) {\n    return reject(\"Lokasi tidak sesuai registry\");\n}\n\nconst baseTopic =\n    `kampus/coldchain/bsd-a/${data.ruang}/${data.device_id}`;\n\nif (\n    msg.topic !== `${baseTopic}/status` &&\n    msg.topic !== `${baseTopic}/heartbeat`\n) {\n    return reject(\"MQTT topic tidak sesuai\");\n}\n\nif (![\"online\", \"offline\"].includes(data.status)) {\n    return reject(\"Status tidak valid\");\n}\n\nif (\n    !Number.isSafeInteger(data.ts) ||\n    data.ts <= 0\n) {\n    return reject(\"Timestamp tidak valid\");\n}\n\nif (\n    msg.topic === `${baseTopic}/heartbeat` &&\n    data.status !== \"online\"\n) {\n    return reject(\"Heartbeat harus online\");\n}\n\n// =========================\n// TIMESTAMP HANDLING\n// =========================\n\nconst timestamp = data.status === \"offline\"\n    ? Date.now()\n    : data.ts;\n\n// =========================\n// OUTPUT 1: BACKEND API\n// =========================\n\nconst apiMsg = {\n    headers: {\n        \"Content-Type\": \"application/json\",\n        \"X-API-Key\": env.get(\"API_KEY\")\n    },\n\n    payload: {\n        device_id: data.device_id,\n        status: data.status,\n        ts: timestamp\n    }\n};\n\n// =========================\n// OUTPUT 2: INFLUXDB\n// =========================\n\nconst influxMsg = {\n    measurement: \"status\",\n\n    payload: [\n        {\n            online: data.status === \"online\" ? 1 : 0\n        },\n        {\n            device_id: data.device_id,\n            domain: data.domain,\n            gedung: data.gedung,\n            ruang: data.ruang\n        }\n    ],\n\n    timestamp: timestamp\n};\n\nreturn [apiMsg, influxMsg];",
+        "outputs": 2,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
@@ -292,6 +292,9 @@
         "wires": [
             [
                 "6a7eb9d17fa3f260"
+            ],
+            [
+                "2f95054509950a80"
             ]
         ]
     },
@@ -311,8 +314,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 670,
-        "y": 460,
+        "x": 690,
+        "y": 420,
         "wires": [
             [
                 "0c4da70458184a8c"
@@ -333,7 +336,25 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 870,
-        "y": 460,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "2f95054509950a80",
+        "type": "influxdb out",
+        "z": "47f2439dc8f66dc7",
+        "influxdb": "182f41ed3ee1fb06",
+        "name": "Coldchain Status",
+        "measurement": "status",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "prasmul",
+        "bucket": "iot",
+        "x": 710,
+        "y": 520,
         "wires": []
     },
     {
