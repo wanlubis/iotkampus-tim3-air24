@@ -8,12 +8,11 @@
         "env": []
     },
     {
-        "id": "8876492dfbe5ea33",
+        "id": "c041000000000001",
         "type": "tab",
-        "label": "Flow 2 - Coldchain Alert",
-        "disabled": true,
-        "info": "Deteksi suhu, pemulihan alert, dan eskalasi alert.",
-        "env": []
+        "label": "Coldchain Rule Engine V4",
+        "disabled": false,
+        "info": ""
     },
     {
         "id": "2e59cd7c3ea2e03b",
@@ -24,11 +23,12 @@
         "env": []
     },
     {
-        "id": "c041000000000001",
+        "id": "8876492dfbe5ea33",
         "type": "tab",
-        "label": "Coldchain Rule Engine V4",
-        "disabled": false,
-        "info": ""
+        "label": "Flow 2 - Coldchain Alert",
+        "disabled": true,
+        "info": "Deteksi suhu, pemulihan alert, dan eskalasi alert.",
+        "env": []
     },
     {
         "id": "c84ec86569e1ea20",
@@ -183,7 +183,7 @@
         "z": "47f2439dc8f66dc7",
         "influxdb": "182f41ed3ee1fb06",
         "name": "Coldchain Telemetry",
-        "measurement": "coldchain_telemetry",
+        "measurement": "telemetry",
         "precision": "",
         "retentionPolicy": "",
         "database": "database",
@@ -200,7 +200,7 @@
         "type": "function",
         "z": "47f2439dc8f66dc7",
         "name": "coldchain data",
-        "func": "const data = msg.payload;\n\n// Pastikan payload memiliki struktur telemetry\nif (!data || !data.metrics || !data.device_id) {\n    node.warn(\"Format telemetry tidak valid\");\n    return null;\n}\n\nmsg.measurement = \"coldchain_telemetry\";\n\nmsg.payload = [\n    {\n        temp_c: Number(data.metrics.temp_c),\n        humidity_pct: Number(data.metrics.humidity_pct),\n        door_open: Boolean(data.metrics.door_open),\n        battery_pct: Number(data.metrics.battery_pct),\n        rssi_dbm: Number(data.metrics.rssi_dbm)\n    },\n    {\n        device_id: data.device_id,\n        domain: data.domain,\n        gedung: data.gedung,\n        ruang: data.ruang\n    }\n];\n\nmsg.timestamp = data.ts;\n\nreturn msg;",
+        "func": "const data = msg.payload;\n\nconst registry = {\n    \"cc-01\": \"gudang-a\",\n    \"cc-02\": \"gudang-a\",\n    \"cc-03\": \"gudang-b\"\n};\n\nfunction reject(reason) {\n    node.warn(\"Telemetry ditolak: \" + reason);\n    return null;\n}\n\n// 1. Validasi payload\nif (!data || typeof data !== \"object\") {\n    return reject(\"Payload tidak valid\");\n}\n\n// 2. Validasi schema\nif (data.schema !== \"kampus.telemetry.v1\") {\n    return reject(\"Schema tidak dikenal\");\n}\n\n// 3. Validasi device registry\nif (!Object.prototype.hasOwnProperty.call(\n    registry, data.device_id\n)) {\n    return reject(\"Device tidak terdaftar\");\n}\n\n// 4. Validasi lokasi\nif (\n    data.domain !== \"coldchain\" ||\n    data.gedung !== \"bsd-a\" ||\n    data.ruang !== registry[data.device_id]\n) {\n    return reject(\"Lokasi tidak sesuai registry\");\n}\n\n// 5. Validasi MQTT topic\nconst expectedTopic =\n    `kampus/coldchain/bsd-a/${data.ruang}/${data.device_id}/telemetry`;\n\nif (msg.topic !== expectedTopic) {\n    return reject(\"MQTT topic tidak sesuai\");\n}\n\n// 6. Validasi timestamp\nif (\n    !Number.isSafeInteger(data.ts) ||\n    data.ts <= 0\n) {\n    return reject(\"Timestamp tidak valid\");\n}\n\n// 7. Validasi metrics\nconst m = data.metrics;\n\nif (!m || typeof m !== \"object\") {\n    return reject(\"Metrics tidak tersedia\");\n}\n\nconst numericFields = [\n    \"temp_c\",\n    \"humidity_pct\",\n    \"battery_pct\",\n    \"rssi_dbm\"\n];\n\nfor (const field of numericFields) {\n    if (!Number.isFinite(m[field])) {\n        return reject(\"Metric tidak valid: \" + field);\n    }\n}\n\nif (typeof m.door_open !== \"boolean\") {\n    return reject(\"door_open harus boolean\");\n}\n\n// 8. Siapkan fields InfluxDB\nconst fields = {\n    temp_c: m.temp_c,\n    humidity_pct: m.humidity_pct,\n    door_open: m.door_open,\n    battery_pct: m.battery_pct,\n    rssi_dbm: m.rssi_dbm\n};\n\n// 9. Validasi setpoint opsional\nif (m.setpoint_c !== undefined) {\n    if (\n        !Number.isFinite(m.setpoint_c) ||\n        m.setpoint_c < 0 ||\n        m.setpoint_c > 10\n    ) {\n        return reject(\"Setpoint tidak valid\");\n    }\n\n    fields.setpoint_c = m.setpoint_c;\n}\n\n// 10. Siapkan data InfluxDB\nmsg.measurement = \"telemetry\";\n\nmsg.payload = [\n    fields,\n    {\n        device_id: data.device_id,\n        domain: data.domain,\n        gedung: data.gedung,\n        ruang: data.ruang\n    }\n];\n\nmsg.timestamp = data.ts;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -335,6 +335,536 @@
         "x": 870,
         "y": 460,
         "wires": []
+    },
+    {
+        "id": "c041000000000002",
+        "type": "mqtt in",
+        "z": "c041000000000001",
+        "name": "Coldchain Telemetry",
+        "topic": "kampus/coldchain/+/+/+/telemetry",
+        "qos": "1",
+        "datatype": "json",
+        "broker": "c84ec86569e1ea20",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 150,
+        "y": 100,
+        "wires": [
+            [
+                "c041000000000004"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000003",
+        "type": "inject",
+        "z": "c041000000000001",
+        "name": "Watchdog 5s",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "5",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "watchdog",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 180,
+        "wires": [
+            [
+                "c041000000000004"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000004",
+        "type": "function",
+        "z": "c041000000000001",
+        "name": "Validate + Rule Engine",
+        "func": "const registry = {\n    \"cc-01\": \"gudang-a\",\n    \"cc-02\": \"gudang-a\",\n    \"cc-03\": \"gudang-b\"\n};\n\nconst now = Date.now();\nlet states = context.get(\"states\") || {};\n\nfor (const id of Object.keys(registry)) {\n    if (!states[id]) {\n        states[id] = {\n            last: now,\n            rules: {}\n        };\n    }\n}\n\nconst rules = [\n    \"TEMP_WARN\",\n    \"TEMP_HIGH\",\n    \"TEMP_ESCALATED\",\n    \"DOOR_OPEN_LONG\",\n    \"OFFLINE\"\n];\n\nfunction slot(s, k) {\n    return s.rules[k] || (\n        s.rules[k] = {\n            since: null,\n            applied: null,\n            pending: null,\n            retry: 0\n        }\n    );\n}\n\nfunction reject(reason) {\n    node.warn(\"Telemetry ditolak: \" + reason);\n    return null;\n}\n\n// =========================\n// API RESPONSE HANDLER\n// =========================\n\nif (msg.result) {\n    const q = msg.result;\n    const s = states[q.id];\n\n    if (s) {\n        const a = slot(s, q.rule);\n\n        if (a.pending && a.pending.token === q.token) {\n            a.pending = null;\n\n            if (q.ok) {\n                a.applied = q.desired;\n            } else {\n                a.retry = now + 5000;\n            }\n        }\n    }\n\n} else if (msg.topic !== \"watchdog\") {\n\n    // =========================\n    // TELEMETRY VALIDATION\n    // =========================\n\n    const p = msg.payload;\n\n    if (!p || typeof p !== \"object\") {\n        return reject(\"Payload tidak valid\");\n    }\n\n    if (p.schema !== \"kampus.telemetry.v1\") {\n        return reject(\"Schema tidak dikenal\");\n    }\n\n    if (!Object.prototype.hasOwnProperty.call(\n        registry, p.device_id\n    )) {\n        return reject(\"Device tidak terdaftar\");\n    }\n\n    if (\n        p.domain !== \"coldchain\" ||\n        p.gedung !== \"bsd-a\" ||\n        p.ruang !== registry[p.device_id]\n    ) {\n        return reject(\"Lokasi tidak sesuai registry\");\n    }\n\n    const expectedTopic =\n        `kampus/coldchain/bsd-a/${p.ruang}/${p.device_id}/telemetry`;\n\n    if (msg.topic !== expectedTopic) {\n        return reject(\"MQTT topic tidak sesuai\");\n    }\n\n    if (\n        !Number.isSafeInteger(p.ts) ||\n        p.ts <= 0\n    ) {\n        return reject(\"Timestamp tidak valid\");\n    }\n\n    const m = p.metrics;\n\n    if (!m || typeof m !== \"object\") {\n        return reject(\"Metrics tidak tersedia\");\n    }\n\n    const numericFields = [\n        \"temp_c\",\n        \"humidity_pct\",\n        \"battery_pct\",\n        \"rssi_dbm\"\n    ];\n\n    for (const field of numericFields) {\n        if (!Number.isFinite(m[field])) {\n            return reject(\"Metric tidak valid: \" + field);\n        }\n    }\n\n    if (typeof m.door_open !== \"boolean\") {\n        return reject(\"door_open harus boolean\");\n    }\n\n    if (m.setpoint_c !== undefined) {\n        if (\n            !Number.isFinite(m.setpoint_c) ||\n            m.setpoint_c < 0 ||\n            m.setpoint_c > 10\n        ) {\n            return reject(\"Setpoint tidak valid\");\n        }\n    }\n\n    // =========================\n    // UPDATE DEVICE STATE\n    // =========================\n\n    const s = states[p.device_id];\n\n    if (now - s.last >= 60000) {\n        for (const k of rules.slice(0, 4)) {\n            slot(s, k).since = null;\n        }\n    }\n\n    s.last = now;\n    s.metrics = m;\n\n    if (m.temp_c > 8) {\n        slot(s, \"TEMP_ESCALATED\").applied = null;\n    }\n\n    for (const [k, on] of [\n        [\"TEMP_WARN\", m.temp_c > 6],\n        [\"TEMP_HIGH\", m.temp_c > 8],\n        [\"DOOR_OPEN_LONG\", m.door_open]\n    ]) {\n        const a = slot(s, k);\n        a.since = on ? (a.since ?? now) : null;\n    }\n}\n\n// =========================\n// RULE EVALUATION\n// =========================\n\nconst out = [];\n\nfor (const [id, s] of Object.entries(states)) {\n\n    const stale = now - s.last >= 60000;\n\n    for (const k of rules) {\n\n        const a = slot(s, k);\n        let desired;\n\n        if (k === \"OFFLINE\") {\n\n            desired = stale;\n\n        } else if (stale || !s.metrics) {\n\n            continue;\n\n        } else if (k === \"TEMP_ESCALATED\") {\n\n            if (s.metrics.temp_c > 8) {\n                continue;\n            }\n\n            desired = false;\n\n        } else {\n\n            const duration =\n                k === \"TEMP_HIGH\" ? 120000 : 60000;\n\n            if (\n                a.since !== null &&\n                now - a.since < duration\n            ) {\n                continue;\n            }\n\n            desired = a.since !== null;\n        }\n\n        if (\n            a.pending ||\n            now < a.retry ||\n            a.applied === desired\n        ) {\n            continue;\n        }\n\n        const token = (context.get(\"seq\") || 0) + 1;\n\n        context.set(\"seq\", token);\n\n        a.pending = { token };\n\n        const source =\n            k === \"OFFLINE\" ? \"?source=no_data\" : \"\";\n\n        const severity =\n            [\"OFFLINE\", \"TEMP_HIGH\"].includes(k)\n                ? \"critical\"\n                : \"warning\";\n\n        const metadata = {\n            source: k === \"OFFLINE\"\n                ? \"no_data\"\n                : \"rule_engine\",\n\n            duration_seconds:\n                k === \"TEMP_HIGH\" ? 120 : 60\n        };\n\n        if (s.metrics) {\n            metadata.temp_c = s.metrics.temp_c;\n            metadata.door_open = s.metrics.door_open;\n        }\n\n        out.push({\n            method: \"POST\",\n\n            url: desired\n                ? \"http://backend:8000/api/v1/internal/alerts\"\n                : `http://backend:8000/api/v1/internal/alerts/resolve-type/${id}/${k}${source}`,\n\n            headers: {\n                \"Content-Type\": \"application/json\",\n                \"X-API-Key\": env.get(\"API_KEY\")\n            },\n\n            requestTimeout: 10000,\n\n            payload: desired\n                ? {\n                    device_id: id,\n                    alert_type: k,\n                    severity: severity,\n                    message: `${k}: ${id}`,\n                    metadata: metadata\n                }\n                : {},\n\n            job: {\n                id,\n                rule: k,\n                desired,\n                token\n            }\n        });\n    }\n}\n\ncontext.set(\"states\", states);\n\nreturn [out];",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "context.set(\"states\", {});",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 140,
+        "wires": [
+            [
+                "c041000000000005"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000005",
+        "type": "http request",
+        "z": "c041000000000001",
+        "name": "Alert API",
+        "method": "use",
+        "ret": "obj",
+        "url": "",
+        "senderr": false,
+        "headers": [],
+        "x": 700,
+        "y": 140,
+        "wires": [
+            [
+                "c041000000000006"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000006",
+        "type": "function",
+        "z": "c041000000000001",
+        "name": "Result Handler",
+        "func": "if (!msg.job) return null;\nconst ok=!msg.error && Number(msg.statusCode)>=200 && Number(msg.statusCode)<300;\nconst q=msg.job;\nreturn [{result:{...q,ok}}, {payload:{device_id:q.id,alert_type:q.rule,action:q.desired?\"create\":\"resolve\",ok,statusCode:msg.statusCode}}];",
+        "outputs": 2,
+        "x": 930,
+        "y": 140,
+        "wires": [
+            [
+                "c041000000000004"
+            ],
+            [
+                "c041000000000007"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000007",
+        "type": "debug",
+        "z": "c041000000000001",
+        "name": "Safe Alert Result",
+        "active": true,
+        "tosidebar": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 1170,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "c041000000000008",
+        "type": "catch",
+        "z": "c041000000000001",
+        "name": "HTTP Errors",
+        "scope": [
+            "c041000000000005"
+        ],
+        "uncaught": false,
+        "x": 700,
+        "y": 220,
+        "wires": [
+            [
+                "c041000000000006"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000009",
+        "type": "inject",
+        "z": "c041000000000001",
+        "name": "Escalation 60s",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "60",
+        "once": true,
+        "onceDelay": "5",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 320,
+        "wires": [
+            [
+                "c04100000000000a"
+            ]
+        ]
+    },
+    {
+        "id": "c04100000000000a",
+        "type": "function",
+        "z": "c041000000000001",
+        "name": "Escalation Headers",
+        "func": "msg.headers={\"Content-Type\":\"application/json\",\"X-API-Key\":env.get(\"API_KEY\")}; msg.payload={}; return msg;",
+        "outputs": 1,
+        "x": 440,
+        "y": 320,
+        "wires": [
+            [
+                "c04100000000000b"
+            ]
+        ]
+    },
+    {
+        "id": "c04100000000000b",
+        "type": "http request",
+        "z": "c041000000000001",
+        "name": "Run Escalation",
+        "method": "POST",
+        "ret": "obj",
+        "url": "http://backend:8000/api/v1/internal/alerts/escalate",
+        "senderr": false,
+        "headers": [],
+        "x": 700,
+        "y": 320,
+        "wires": [
+            [
+                "c04100000000000c"
+            ]
+        ]
+    },
+    {
+        "id": "c04100000000000c",
+        "type": "debug",
+        "z": "c041000000000001",
+        "name": "Escalation Result",
+        "active": true,
+        "tosidebar": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 950,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "1c92f6fc34bbc2c4",
+        "type": "mqtt in",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Coldchain Telemetry Alert",
+        "topic": "kampus/coldchain/+/+/+/telemetry",
+        "qos": "1",
+        "datatype": "json",
+        "broker": "c84ec86569e1ea20",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 350,
+        "y": 320,
+        "wires": [
+            [
+                "4378fa2370bd6cca",
+                "75b1db56a37c5186",
+                "18d1faaab95d4844"
+            ]
+        ]
+    },
+    {
+        "id": "4378fa2370bd6cca",
+        "type": "function",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Temperature Threshold Checker",
+        "func": "\nconst data = msg.payload;\n\n// Validasi telemetry\nif (!data || !data.metrics || !data.device_id) {\n    node.warn(\"Data telemetry tidak valid\");\n    return null;\n}\n\nconst deviceId = data.device_id;\nconst temp = Number(data.metrics.temp_c);\n\nif (!Number.isFinite(temp)) {\n    node.warn(\"Nilai suhu tidak valid\");\n    return null;\n}\n\n// Status baru V3\nlet states = flow.get(\"temperatureAlertStatesV3\") || {};\n\nlet state = states[deviceId] || {\n    warningSent: false,\n    warningPending: false,\n    highSent: false,\n    highPending: false,\n    highSince: null\n};\n\nconst now = Date.now();\n\n// Suhu normal: reset status\nif (temp <= 6) {\n    states[deviceId] = {\n        warningSent: false,\n        warningPending: false,\n        highSent: false,\n        highPending: false,\n        highSince: null\n    };\n\n    flow.set(\"temperatureAlertStatesV3\", states);\n    node.warn(\"SUHU NORMAL: \" + deviceId);\n    return null;\n}\n\n// Mulai hitung durasi suhu tinggi\nif (temp > 8) {\n    if (state.highSince === null) {\n        state.highSince = now;\n    }\n} else {\n    state.highSince = null;\n    state.highSent = false;\n    state.highPending = false;\n}\n\n// TEMP_WARN: suhu > 6°C\nif (!state.warningSent && !state.warningPending) {\n    state.warningPending = true;\n\n    states[deviceId] = state;\n    flow.set(\"temperatureAlertStatesV3\", states);\n\n    node.warn(\"MENGIRIM TEMP_WARN: \" + deviceId);\n\n    msg.method = \"POST\";\n    msg.url = \"http://backend:8000/api/v1/internal/alerts\";\n    msg.alertDeviceId = deviceId;\n    msg.alertType = \"TEMP_WARN\";\n\n    msg.payload = {\n        device_id: deviceId,\n        alert_type: \"TEMP_WARN\",\n        severity: \"warning\",\n        message: `Suhu ${temp.toFixed(2)}°C melebihi batas 6°C`,\n        metadata: {\n            temp_c: temp,\n            threshold_c: 6\n        }\n    };\n\n    return msg;\n}\n\n// TEMP_HIGH: suhu > 8°C selama 2 menit\nif (\n    temp > 8 &&\n    state.highSince !== null &&\n    !state.highSent &&\n    !state.highPending &&\n    now - state.highSince >= 120000\n) {\n    state.highPending = true;\n\n    states[deviceId] = state;\n    flow.set(\"temperatureAlertStatesV3\", states);\n\n    node.warn(\"MENGIRIM TEMP_HIGH: \" + deviceId);\n\n    msg.method = \"POST\";\n    msg.url = \"http://backend:8000/api/v1/internal/alerts\";\n    msg.alertDeviceId = deviceId;\n    msg.alertType = \"TEMP_HIGH\";\n\n    msg.payload = {\n        device_id: deviceId,\n        alert_type: \"TEMP_HIGH\",\n        severity: \"critical\",\n        message: `Suhu ${temp.toFixed(2)}°C melebihi batas 8°C selama 2 menit`,\n        metadata: {\n            temp_c: temp,\n            threshold_c: 8,\n            duration_seconds: 120\n        }\n    };\n\n    return msg;\n}\n\n// Simpan status\nstates[deviceId] = state;\nflow.set(\"temperatureAlertStatesV3\", states);\n\nreturn null;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 320,
+        "wires": [
+            [
+                "d60e6653b9f21765",
+                "5356c936ea2331c8"
+            ]
+        ]
+    },
+    {
+        "id": "177da1700e111dea",
+        "type": "http request",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Create Temperature Alert",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://backend:8000/api/v1/internal/alerts",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1230,
+        "y": 320,
+        "wires": [
+            [
+                "e5ba149b597f39e9"
+            ]
+        ]
+    },
+    {
+        "id": "d60e6653b9f21765",
+        "type": "function",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Set Alert API Headers",
+        "func": "\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"X-API-Key\": env.get(\"API_KEY\")\n};\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 980,
+        "y": 320,
+        "wires": [
+            [
+                "177da1700e111dea"
+            ]
+        ]
+    },
+    {
+        "id": "e5ba149b597f39e9",
+        "type": "debug",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Temperature Alert API Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 390,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "8e54b31976d857f7",
+        "type": "inject",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Check Alert Escalation",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "60",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 410,
+        "y": 740,
+        "wires": [
+            [
+                "84335031e045d8e4"
+            ]
+        ]
+    },
+    {
+        "id": "2c577a471699aff1",
+        "type": "http request",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Run Alert Escalation",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://backend:8000/api/v1/internal/alerts/escalate",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 960,
+        "y": 740,
+        "wires": [
+            [
+                "afe94864c5acf674"
+            ]
+        ]
+    },
+    {
+        "id": "84335031e045d8e4",
+        "type": "function",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Set Escalation API Headers",
+        "func": "msg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"X-API-Key\": env.get(\"API_KEY\")\n};\n\nmsg.payload = {};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 680,
+        "y": 740,
+        "wires": [
+            [
+                "2c577a471699aff1"
+            ]
+        ]
+    },
+    {
+        "id": "afe94864c5acf674",
+        "type": "debug",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Escalation API Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1230,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "75b1db56a37c5186",
+        "type": "function",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Temperature Recovery Checker",
+        "func": "\nconst data = msg.payload;\n\nif (!data || !data.metrics || !data.device_id) {\n    return null;\n}\n\nconst deviceId = data.device_id;\nconst temp = Number(data.metrics.temp_c);\n\nif (!Number.isFinite(temp)) {\n    return null;\n}\n\nlet recovered = flow.get(\"temperatureRecoveredV2\") || {};\n\nif (temp <= 6 && !recovered[deviceId]) {\n    recovered[deviceId] = true;\n    flow.set(\"temperatureRecoveredV2\", recovered);\n\n    msg.method = \"POST\";\n    msg.url = `http://backend:8000/api/v1/internal/alerts/resolve-device/${deviceId}`;\n\n    msg.headers = {\n        \"Content-Type\": \"application/json\",\n        \"X-API-Key\": env.get(\"API_KEY\")\n    };\n\n    msg.payload = {};\n\n    return msg;\n}\n\nif (temp > 6) {\n    recovered[deviceId] = false;\n    flow.set(\"temperatureRecoveredV2\", recovered);\n}\n\nreturn null;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 220,
+        "wires": [
+            [
+                "b833e6b6273b27fd",
+                "b4fb765065820461"
+            ]
+        ]
+    },
+    {
+        "id": "b833e6b6273b27fd",
+        "type": "http request",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Resolve Device Alerts",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 960,
+        "y": 220,
+        "wires": [
+            [
+                "82e73d190e9576f7"
+            ]
+        ]
+    },
+    {
+        "id": "82e73d190e9576f7",
+        "type": "debug",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Resolve Device Alerts Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1250,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "b4fb765065820461",
+        "type": "debug",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Check Recovery URL",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 980,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "18d1faaab95d4844",
+        "type": "debug",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Recovery Input Check",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 640,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "5356c936ea2331c8",
+        "type": "debug",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "themp check",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 950,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "4264633c2710f48a",
+        "type": "function",
+        "z": "2e59cd7c3ea2e03b",
+        "name": "Alert Send Result Handler",
+        "func": "\nconst deviceId = msg.alertDeviceId;\nconst alertType = msg.alertType;\n\nif (!deviceId || !alertType) {\n    node.warn(\"Identitas alert tidak ditemukan\");\n    return msg;\n}\n\nlet states = flow.get(\"temperatureAlertStatesV3\") || {};\nlet state = states[deviceId];\n\nif (!state) {\n    node.warn(\"Status perangkat tidak ditemukan: \" + deviceId);\n    return msg;\n}\n\nconst success =\n    Number(msg.statusCode) >= 200 &&\n    Number(msg.statusCode) < 300;\n\nif (alertType === \"TEMP_WARN\") {\n    state.warningPending = false;\n    if (success) {\n        state.warningSent = true;\n    }\n}\n\nif (alertType === \"TEMP_HIGH\") {\n    state.highPending = false;\n    if (success) {\n        state.highSent = true;\n    }\n}\n\nstates[deviceId] = state;\nflow.set(\"temperatureAlertStatesV3\", states);\n\nif (success) {\n    node.warn(\"ALERT BERHASIL: \" + alertType + \" - \" + deviceId);\n} else {\n    node.warn({\n        message: \"ALERT GAGAL\",\n        device_id: deviceId,\n        alert_type: alertType,\n        statusCode: msg.statusCode,\n        response: msg.payload\n    });\n}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 500,
+        "wires": [
+            []
+        ]
     },
     {
         "id": "c2360799ef067605",
@@ -716,534 +1246,6 @@
         "statusType": "auto",
         "x": 1060,
         "y": 700,
-        "wires": []
-    },
-    {
-        "id": "1c92f6fc34bbc2c4",
-        "type": "mqtt in",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Coldchain Telemetry Alert",
-        "topic": "kampus/coldchain/+/+/+/telemetry",
-        "qos": "1",
-        "datatype": "json",
-        "broker": "c84ec86569e1ea20",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 350,
-        "y": 320,
-        "wires": [
-            [
-                "4378fa2370bd6cca",
-                "75b1db56a37c5186",
-                "18d1faaab95d4844"
-            ]
-        ]
-    },
-    {
-        "id": "4378fa2370bd6cca",
-        "type": "function",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Temperature Threshold Checker",
-        "func": "\nconst data = msg.payload;\n\n// Validasi telemetry\nif (!data || !data.metrics || !data.device_id) {\n    node.warn(\"Data telemetry tidak valid\");\n    return null;\n}\n\nconst deviceId = data.device_id;\nconst temp = Number(data.metrics.temp_c);\n\nif (!Number.isFinite(temp)) {\n    node.warn(\"Nilai suhu tidak valid\");\n    return null;\n}\n\n// Status baru V3\nlet states = flow.get(\"temperatureAlertStatesV3\") || {};\n\nlet state = states[deviceId] || {\n    warningSent: false,\n    warningPending: false,\n    highSent: false,\n    highPending: false,\n    highSince: null\n};\n\nconst now = Date.now();\n\n// Suhu normal: reset status\nif (temp <= 6) {\n    states[deviceId] = {\n        warningSent: false,\n        warningPending: false,\n        highSent: false,\n        highPending: false,\n        highSince: null\n    };\n\n    flow.set(\"temperatureAlertStatesV3\", states);\n    node.warn(\"SUHU NORMAL: \" + deviceId);\n    return null;\n}\n\n// Mulai hitung durasi suhu tinggi\nif (temp > 8) {\n    if (state.highSince === null) {\n        state.highSince = now;\n    }\n} else {\n    state.highSince = null;\n    state.highSent = false;\n    state.highPending = false;\n}\n\n// TEMP_WARN: suhu > 6°C\nif (!state.warningSent && !state.warningPending) {\n    state.warningPending = true;\n\n    states[deviceId] = state;\n    flow.set(\"temperatureAlertStatesV3\", states);\n\n    node.warn(\"MENGIRIM TEMP_WARN: \" + deviceId);\n\n    msg.method = \"POST\";\n    msg.url = \"http://backend:8000/api/v1/internal/alerts\";\n    msg.alertDeviceId = deviceId;\n    msg.alertType = \"TEMP_WARN\";\n\n    msg.payload = {\n        device_id: deviceId,\n        alert_type: \"TEMP_WARN\",\n        severity: \"warning\",\n        message: `Suhu ${temp.toFixed(2)}°C melebihi batas 6°C`,\n        metadata: {\n            temp_c: temp,\n            threshold_c: 6\n        }\n    };\n\n    return msg;\n}\n\n// TEMP_HIGH: suhu > 8°C selama 2 menit\nif (\n    temp > 8 &&\n    state.highSince !== null &&\n    !state.highSent &&\n    !state.highPending &&\n    now - state.highSince >= 120000\n) {\n    state.highPending = true;\n\n    states[deviceId] = state;\n    flow.set(\"temperatureAlertStatesV3\", states);\n\n    node.warn(\"MENGIRIM TEMP_HIGH: \" + deviceId);\n\n    msg.method = \"POST\";\n    msg.url = \"http://backend:8000/api/v1/internal/alerts\";\n    msg.alertDeviceId = deviceId;\n    msg.alertType = \"TEMP_HIGH\";\n\n    msg.payload = {\n        device_id: deviceId,\n        alert_type: \"TEMP_HIGH\",\n        severity: \"critical\",\n        message: `Suhu ${temp.toFixed(2)}°C melebihi batas 8°C selama 2 menit`,\n        metadata: {\n            temp_c: temp,\n            threshold_c: 8,\n            duration_seconds: 120\n        }\n    };\n\n    return msg;\n}\n\n// Simpan status\nstates[deviceId] = state;\nflow.set(\"temperatureAlertStatesV3\", states);\n\nreturn null;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 670,
-        "y": 320,
-        "wires": [
-            [
-                "d60e6653b9f21765",
-                "5356c936ea2331c8"
-            ]
-        ]
-    },
-    {
-        "id": "177da1700e111dea",
-        "type": "http request",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Create Temperature Alert",
-        "method": "POST",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://backend:8000/api/v1/internal/alerts",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 1230,
-        "y": 320,
-        "wires": [
-            [
-                "e5ba149b597f39e9"
-            ]
-        ]
-    },
-    {
-        "id": "d60e6653b9f21765",
-        "type": "function",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Set Alert API Headers",
-        "func": "\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"X-API-Key\": env.get(\"API_KEY\")\n};\n\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 980,
-        "y": 320,
-        "wires": [
-            [
-                "177da1700e111dea"
-            ]
-        ]
-    },
-    {
-        "id": "e5ba149b597f39e9",
-        "type": "debug",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Temperature Alert API Response",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 390,
-        "y": 480,
-        "wires": []
-    },
-    {
-        "id": "8e54b31976d857f7",
-        "type": "inject",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Check Alert Escalation",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "60",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "5",
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 410,
-        "y": 740,
-        "wires": [
-            [
-                "84335031e045d8e4"
-            ]
-        ]
-    },
-    {
-        "id": "2c577a471699aff1",
-        "type": "http request",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Run Alert Escalation",
-        "method": "POST",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://backend:8000/api/v1/internal/alerts/escalate",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 960,
-        "y": 740,
-        "wires": [
-            [
-                "afe94864c5acf674"
-            ]
-        ]
-    },
-    {
-        "id": "84335031e045d8e4",
-        "type": "function",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Set Escalation API Headers",
-        "func": "msg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"X-API-Key\": env.get(\"API_KEY\")\n};\n\nmsg.payload = {};\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 680,
-        "y": 740,
-        "wires": [
-            [
-                "2c577a471699aff1"
-            ]
-        ]
-    },
-    {
-        "id": "afe94864c5acf674",
-        "type": "debug",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Escalation API Response",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1230,
-        "y": 740,
-        "wires": []
-    },
-    {
-        "id": "75b1db56a37c5186",
-        "type": "function",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Temperature Recovery Checker",
-        "func": "\nconst data = msg.payload;\n\nif (!data || !data.metrics || !data.device_id) {\n    return null;\n}\n\nconst deviceId = data.device_id;\nconst temp = Number(data.metrics.temp_c);\n\nif (!Number.isFinite(temp)) {\n    return null;\n}\n\nlet recovered = flow.get(\"temperatureRecoveredV2\") || {};\n\nif (temp <= 6 && !recovered[deviceId]) {\n    recovered[deviceId] = true;\n    flow.set(\"temperatureRecoveredV2\", recovered);\n\n    msg.method = \"POST\";\n    msg.url = `http://backend:8000/api/v1/internal/alerts/resolve-device/${deviceId}`;\n\n    msg.headers = {\n        \"Content-Type\": \"application/json\",\n        \"X-API-Key\": env.get(\"API_KEY\")\n    };\n\n    msg.payload = {};\n\n    return msg;\n}\n\nif (temp > 6) {\n    recovered[deviceId] = false;\n    flow.set(\"temperatureRecoveredV2\", recovered);\n}\n\nreturn null;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 670,
-        "y": 220,
-        "wires": [
-            [
-                "b833e6b6273b27fd",
-                "b4fb765065820461"
-            ]
-        ]
-    },
-    {
-        "id": "b833e6b6273b27fd",
-        "type": "http request",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Resolve Device Alerts",
-        "method": "use",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 960,
-        "y": 220,
-        "wires": [
-            [
-                "82e73d190e9576f7"
-            ]
-        ]
-    },
-    {
-        "id": "82e73d190e9576f7",
-        "type": "debug",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Resolve Device Alerts Response",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1250,
-        "y": 220,
-        "wires": []
-    },
-    {
-        "id": "b4fb765065820461",
-        "type": "debug",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Check Recovery URL",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 980,
-        "y": 120,
-        "wires": []
-    },
-    {
-        "id": "18d1faaab95d4844",
-        "type": "debug",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Recovery Input Check",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 640,
-        "y": 120,
-        "wires": []
-    },
-    {
-        "id": "5356c936ea2331c8",
-        "type": "debug",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "themp check",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 950,
-        "y": 420,
-        "wires": []
-    },
-    {
-        "id": "4264633c2710f48a",
-        "type": "function",
-        "z": "2e59cd7c3ea2e03b",
-        "name": "Alert Send Result Handler",
-        "func": "\nconst deviceId = msg.alertDeviceId;\nconst alertType = msg.alertType;\n\nif (!deviceId || !alertType) {\n    node.warn(\"Identitas alert tidak ditemukan\");\n    return msg;\n}\n\nlet states = flow.get(\"temperatureAlertStatesV3\") || {};\nlet state = states[deviceId];\n\nif (!state) {\n    node.warn(\"Status perangkat tidak ditemukan: \" + deviceId);\n    return msg;\n}\n\nconst success =\n    Number(msg.statusCode) >= 200 &&\n    Number(msg.statusCode) < 300;\n\nif (alertType === \"TEMP_WARN\") {\n    state.warningPending = false;\n    if (success) {\n        state.warningSent = true;\n    }\n}\n\nif (alertType === \"TEMP_HIGH\") {\n    state.highPending = false;\n    if (success) {\n        state.highSent = true;\n    }\n}\n\nstates[deviceId] = state;\nflow.set(\"temperatureAlertStatesV3\", states);\n\nif (success) {\n    node.warn(\"ALERT BERHASIL: \" + alertType + \" - \" + deviceId);\n} else {\n    node.warn({\n        message: \"ALERT GAGAL\",\n        device_id: deviceId,\n        alert_type: alertType,\n        statusCode: msg.statusCode,\n        response: msg.payload\n    });\n}\n\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 730,
-        "y": 500,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "c041000000000002",
-        "type": "mqtt in",
-        "z": "c041000000000001",
-        "name": "Coldchain Telemetry",
-        "topic": "kampus/coldchain/+/+/+/telemetry",
-        "qos": "1",
-        "datatype": "json",
-        "broker": "c84ec86569e1ea20",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 160,
-        "y": 100,
-        "wires": [
-            [
-                "c041000000000004"
-            ]
-        ]
-    },
-    {
-        "id": "c041000000000003",
-        "type": "inject",
-        "z": "c041000000000001",
-        "name": "Watchdog 5s",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "5",
-        "once": true,
-        "onceDelay": "1",
-        "topic": "watchdog",
-        "payload": "",
-        "payloadType": "date",
-        "x": 160,
-        "y": 180,
-        "wires": [
-            [
-                "c041000000000004"
-            ]
-        ]
-    },
-    {
-        "id": "c041000000000004",
-        "type": "function",
-        "z": "c041000000000001",
-        "name": "Validate + Rule Engine",
-        "func": "const registry = {\"cc-01\":\"gudang-a\",\"cc-02\":\"gudang-a\",\"cc-03\":\"gudang-b\"};\nconst now = Date.now();\nlet states = context.get(\"states\") || {};\nfor (const id of Object.keys(registry)) {\n    if (!states[id]) states[id] = {last:now, rules:{}};\n}\nconst rules = [\"TEMP_WARN\",\"TEMP_HIGH\",\"TEMP_ESCALATED\",\"DOOR_OPEN_LONG\",\"OFFLINE\"];\nfunction slot(s,k) { return s.rules[k] || (s.rules[k]={since:null, applied:null, pending:null, retry:0}); }\nif (msg.result) {\n    const q=msg.result, s=states[q.id];\n    if (s) { const a=slot(s,q.rule); if(a.pending && a.pending.token===q.token) {\n        a.pending=null; if(q.ok) a.applied=q.desired; else a.retry=now+5000;\n    }}\n} else if (msg.topic !== \"watchdog\") {\n    const p=msg.payload, m=p && p.metrics;\n    if (!p || p.schema!==\"kampus.telemetry.v1\" || !Object.prototype.hasOwnProperty.call(registry,p.device_id) || p.domain!==\"coldchain\" || p.gedung!==\"bsd-a\" || p.ruang!==registry[p.device_id] || msg.topic!==`kampus/coldchain/bsd-a/${p.ruang}/${p.device_id}/telemetry` || !Number.isFinite(p.ts) || !m || ![m.temp_c,m.humidity_pct,m.battery_pct,m.rssi_dbm].every(Number.isFinite) || typeof m.door_open!==\"boolean\") { node.warn(\"Telemetry ditolak: schema, registry atau metrics tidak valid\"); return null; }\n    const s=states[p.device_id];\n    if(now-s.last>=60000) for(const k of rules.slice(0,4)) slot(s,k).since=null;\n    s.last=now; s.metrics=m;\n    if(m.temp_c>8) slot(s,\"TEMP_ESCALATED\").applied=null;\n    for(const [k,on] of [[\"TEMP_WARN\",m.temp_c>6],[\"TEMP_HIGH\",m.temp_c>8],[\"DOOR_OPEN_LONG\",m.door_open]]) {\n        const a=slot(s,k); a.since=on?(a.since??now):null;\n    }\n}\nconst out=[];\nfor(const [id,s] of Object.entries(states)) {\n    const stale=now-s.last>=60000;\n    for(const k of rules) {\n        const a=slot(s,k); let desired;\n        if(k===\"OFFLINE\") desired=stale;\n        else if(stale || !s.metrics) continue;\n        else if(k===\"TEMP_ESCALATED\") { if(s.metrics.temp_c>8) continue; desired=false; }\n        else { const duration=k===\"TEMP_HIGH\"?120000:60000; if(a.since!==null && now-a.since<duration) continue; desired=a.since!==null; }\n        if(a.pending || now<a.retry || a.applied===desired) continue;\n        const token=(context.get(\"seq\")||0)+1; context.set(\"seq\",token);\n        a.pending={token};\n        const source=k===\"OFFLINE\"?\"?source=no_data\":\"\";\n        const severity=[\"OFFLINE\",\"TEMP_HIGH\"].includes(k)?\"critical\":\"warning\";\n        const metadata={source:k===\"OFFLINE\"?\"no_data\":\"rule_engine\",duration_seconds:k===\"TEMP_HIGH\"?120:60};\n        if(s.metrics) {metadata.temp_c=s.metrics.temp_c; metadata.door_open=s.metrics.door_open;}\n        out.push({method:\"POST\",url:desired?\"http://backend:8000/api/v1/internal/alerts\":`http://backend:8000/api/v1/internal/alerts/resolve-type/${id}/${k}${source}`,headers:{\"Content-Type\":\"application/json\",\"X-API-Key\":env.get(\"API_KEY\")},requestTimeout:10000,payload:desired?{device_id:id,alert_type:k,severity,message:`${k}: ${id}`,metadata}:{},job:{id,rule:k,desired,token}});\n    }\n}\ncontext.set(\"states\",states);\nreturn [out];",
-        "outputs": 1,
-        "initialize": "context.set(\"states\", {});",
-        "finalize": "",
-        "libs": [],
-        "x": 440,
-        "y": 140,
-        "wires": [
-            [
-                "c041000000000005"
-            ]
-        ]
-    },
-    {
-        "id": "c041000000000005",
-        "type": "http request",
-        "z": "c041000000000001",
-        "name": "Alert API",
-        "method": "use",
-        "ret": "obj",
-        "url": "",
-        "senderr": false,
-        "headers": [],
-        "x": 700,
-        "y": 140,
-        "wires": [
-            [
-                "c041000000000006"
-            ]
-        ]
-    },
-    {
-        "id": "c041000000000006",
-        "type": "function",
-        "z": "c041000000000001",
-        "name": "Result Handler",
-        "func": "if (!msg.job) return null;\nconst ok=!msg.error && Number(msg.statusCode)>=200 && Number(msg.statusCode)<300;\nconst q=msg.job;\nreturn [{result:{...q,ok}}, {payload:{device_id:q.id,alert_type:q.rule,action:q.desired?\"create\":\"resolve\",ok,statusCode:msg.statusCode}}];",
-        "outputs": 2,
-        "x": 930,
-        "y": 140,
-        "wires": [
-            [
-                "c041000000000004"
-            ],
-            [
-                "c041000000000007"
-            ]
-        ]
-    },
-    {
-        "id": "c041000000000007",
-        "type": "debug",
-        "z": "c041000000000001",
-        "name": "Safe Alert Result",
-        "active": true,
-        "tosidebar": true,
-        "complete": "payload",
-        "targetType": "msg",
-        "x": 1170,
-        "y": 180,
-        "wires": []
-    },
-    {
-        "id": "c041000000000008",
-        "type": "catch",
-        "z": "c041000000000001",
-        "name": "HTTP Errors",
-        "scope": [
-            "c041000000000005"
-        ],
-        "uncaught": false,
-        "x": 700,
-        "y": 220,
-        "wires": [
-            [
-                "c041000000000006"
-            ]
-        ]
-    },
-    {
-        "id": "c041000000000009",
-        "type": "inject",
-        "z": "c041000000000001",
-        "name": "Escalation 60s",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "60",
-        "once": true,
-        "onceDelay": "5",
-        "payload": "",
-        "payloadType": "date",
-        "x": 160,
-        "y": 320,
-        "wires": [
-            [
-                "c04100000000000a"
-            ]
-        ]
-    },
-    {
-        "id": "c04100000000000a",
-        "type": "function",
-        "z": "c041000000000001",
-        "name": "Escalation Headers",
-        "func": "msg.headers={\"Content-Type\":\"application/json\",\"X-API-Key\":env.get(\"API_KEY\")}; msg.payload={}; return msg;",
-        "outputs": 1,
-        "x": 440,
-        "y": 320,
-        "wires": [
-            [
-                "c04100000000000b"
-            ]
-        ]
-    },
-    {
-        "id": "c04100000000000b",
-        "type": "http request",
-        "z": "c041000000000001",
-        "name": "Run Escalation",
-        "method": "POST",
-        "ret": "obj",
-        "url": "http://backend:8000/api/v1/internal/alerts/escalate",
-        "senderr": false,
-        "headers": [],
-        "x": 700,
-        "y": 320,
-        "wires": [
-            [
-                "c04100000000000c"
-            ]
-        ]
-    },
-    {
-        "id": "c04100000000000c",
-        "type": "debug",
-        "z": "c041000000000001",
-        "name": "Escalation Result",
-        "active": true,
-        "tosidebar": true,
-        "complete": "payload",
-        "targetType": "msg",
-        "x": 950,
-        "y": 320,
         "wires": []
     }
 ]

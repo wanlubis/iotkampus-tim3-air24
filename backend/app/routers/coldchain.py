@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.config import settings
@@ -52,12 +51,18 @@ def get_latest_telemetry(device_id: str = None):
         from(bucket: "{settings.INFLUXDB_BUCKET}")
             |> range(start: -24h)
             |> filter(fn: (r) =>
-                r._measurement == "coldchain_telemetry"
+                r._measurement == "telemetry"
+            )
+            |> filter(fn: (r) =>
+                r.domain == "coldchain"
             )
             |> filter(fn: (r) =>
                 r._field == "temp_c" or
                 r._field == "humidity_pct" or
-                r._field == "door_open"
+                r._field == "door_open" or
+                r._field == "battery_pct" or
+                r._field == "rssi_dbm" or
+                r._field == "setpoint_c"
             )
             {device_filter}
             |> pivot(
@@ -83,6 +88,9 @@ def get_latest_telemetry(device_id: str = None):
                 "temp_c": record.get("temp_c"),
                 "humidity_pct": record.get("humidity_pct"),
                 "door_open": record.get("door_open"),
+                "battery_pct": record.get("battery_pct"),
+                "rssi_dbm": record.get("rssi_dbm"),
+                "setpoint_c": record.get("setpoint_c"),
             }
 
     return telemetry
@@ -191,20 +199,23 @@ def get_escalations():
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT
-                        alert_id,
-                        device_id,
-                        alert_type,
-                        severity,
-                        message,
-                        status,
-                        triggered_at,
-                        acknowledged_at,
-                        acknowledged_by,
-                        resolved_at,
-                        metadata
-                    FROM alert_events
-                    WHERE alert_type = 'TEMP_ESCALATED'
-                    ORDER BY triggered_at DESC
+                        a.alert_id,
+                        a.device_id,
+                        a.alert_type,
+                        a.severity,
+                        a.message,
+                        a.status,
+                        a.triggered_at,
+                        a.acknowledged_at,
+                        a.acknowledged_by,
+                        a.resolved_at,
+                        a.metadata
+                    FROM alert_events a
+                    JOIN devices d
+                        ON a.device_id = d.device_id
+                    WHERE d.domain = 'coldchain'
+                      AND a.alert_type = 'TEMP_ESCALATED'
+                    ORDER BY a.triggered_at DESC
                 """)
 
                 alerts = cur.fetchall()
@@ -214,5 +225,7 @@ def get_escalations():
                     "data": alerts,
                 }
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

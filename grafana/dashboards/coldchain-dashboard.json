@@ -109,7 +109,7 @@
                                                               "type":  "influxdb",
                                                               "uid":  "eg5bre8jggm4gc"
                                                           },
-                                           "query":  "from(bucket: \"iot\")\r\n  |\u003e range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |\u003e filter(fn: (r) =\u003e r._measurement == \"coldchain_telemetry\")\r\n  |\u003e filter(fn: (r) =\u003e r._field == \"temp_c\")\r\n  |\u003e aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |\u003e yield(name: \"temperature\")",
+                                           "query":  "from(bucket: \"iot\")\r\n  |\u003e range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |\u003e filter(fn: (r) =\u003e r._measurement == \"telemetry\" and r.domain == \"coldchain\")\r\n  |\u003e filter(fn: (r) =\u003e r._field == \"temp_c\")\r\n  |\u003e aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |\u003e yield(name: \"temperature\")",
                                            "refId":  "A"
                                        }
                                    ],
@@ -204,7 +204,7 @@
                                                               "type":  "influxdb",
                                                               "uid":  "eg5bre8jggm4gc"
                                                           },
-                                           "query":  "from(bucket: \"iot\")\r\n  |\u003e range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |\u003e filter(fn: (r) =\u003e r._measurement == \"coldchain_telemetry\")\r\n  |\u003e filter(fn: (r) =\u003e r._field == \"humidity_pct\")\r\n  |\u003e aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |\u003e yield(name: \"humidity\")",
+                                           "query":  "from(bucket: \"iot\")\r\n  |\u003e range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |\u003e filter(fn: (r) =\u003e r._measurement == \"telemetry\" and r.domain == \"coldchain\")\r\n  |\u003e filter(fn: (r) =\u003e r._field == \"humidity_pct\")\r\n  |\u003e aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |\u003e yield(name: \"humidity\")",
                                            "refId":  "A"
                                        }
                                    ],
@@ -395,7 +395,7 @@
                                                               "type":  "influxdb",
                                                               "uid":  "eg5bre8jggm4gc"
                                                           },
-                                           "query":  "from(bucket: \"iot\")\r\n  |\u003e range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |\u003e filter(fn: (r) =\u003e r._measurement == \"coldchain_telemetry\")\r\n  |\u003e filter(fn: (r) =\u003e r._field == \"door_open\")\r\n  |\u003e aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\r\n  |\u003e yield(name: \"door_status\")",
+                                           "query":  "from(bucket: \"iot\")\r\n  |\u003e range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |\u003e filter(fn: (r) =\u003e r._measurement == \"telemetry\" and r.domain == \"coldchain\")\r\n  |\u003e filter(fn: (r) =\u003e r._field == \"door_open\")\r\n  |\u003e aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\r\n  |\u003e yield(name: \"door_status\")",
                                            "refId":  "A"
                                        }
                                    ],
