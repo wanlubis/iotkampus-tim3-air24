@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.config import settings
 from app.database import get_db_connection
+from app.outbox import enqueue_alert_event
 
 
 router = APIRouter(
@@ -153,7 +154,7 @@ def update_device_status(payload: DeviceStatus):
                                   'acknowledged'
                               )
                         )
-                        RETURNING alert_id
+                        RETURNING *
                         """,
                         (
                             payload.device_id,
@@ -162,7 +163,15 @@ def update_device_status(payload: DeviceStatus):
                         ),
                     )
 
-                    alert_created = cur.fetchone() is not None
+                    alert = cur.fetchone()
+                    alert_created = alert is not None
+
+                    if alert:
+                        enqueue_alert_event(
+                            cur,
+                            alert,
+                            "CREATED",
+                        )
 
                 # ==============================
                 # AUTOMATIC LWT RECOVERY
@@ -183,11 +192,20 @@ def update_device_status(payload: DeviceStatus):
                               'active',
                               'acknowledged'
                           )
+                        RETURNING *
                         """,
                         (payload.device_id,),
                     )
 
-                    alerts_resolved = cur.rowcount
+                    alerts = cur.fetchall()
+                    alerts_resolved = len(alerts)
+
+                    for alert in alerts:
+                        enqueue_alert_event(
+                            cur,
+                            alert,
+                            "RESOLVED",
+                        )
 
                 conn.commit()
 

@@ -1,16 +1,45 @@
 
+import asyncio
+import threading
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 
 from fastapi import FastAPI, Depends, HTTPException, Header
 from app.config import settings
 from app.database import get_db_connection
 from app.influx import query_influx
+from app.outbox_worker import run_outbox_worker
 from app.routers.coldchain import router as coldchain_router
 from app.routers.device_status import router as device_status_router
 from app.routers.alerts import router as alerts_router
 
 
+# =========================
+# APPLICATION LIFESPAN
+# =========================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    stop_event = threading.Event()
+
+    worker = threading.Thread(
+        target=run_outbox_worker,
+        args=(stop_event,),
+        name="alert-outbox-worker",
+        daemon=True,
+    )
+
+    worker.start()
+
+    try:
+        yield
+    finally:
+        stop_event.set()
+        await asyncio.to_thread(worker.join, 30)
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Cold-Chain IoT API",
     description="API untuk monitoring sistem cold-chain",
     version="1.0.0",

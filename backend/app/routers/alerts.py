@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 
 from app.config import settings
 from app.database import get_db_connection
+from app.outbox import enqueue_alert_event
+
 
 
 router = APIRouter(tags=["Alerts"])
@@ -46,6 +48,7 @@ class AlertCreate(BaseModel):
 class AlertAcknowledge(BaseModel):
     acked_by: str | None = None
     acknowledged_by: str | None = None
+
 
 
 # =====================================
@@ -139,6 +142,13 @@ def create_alert(alert: AlertCreate):
                 )
 
                 result = cur.fetchone()
+
+                # TRANSACTIONAL OUTBOX
+                enqueue_alert_event(
+                    cur,
+                    result,
+                    "CREATED",
+                )
 
             conn.commit()
 
@@ -285,6 +295,7 @@ def get_alert(alert_id: int):
         )
 
 
+
 # =====================================
 # ACKNOWLEDGE ALERT
 # =====================================
@@ -360,6 +371,13 @@ def acknowledge_alert(
 
                 alert = cur.fetchone()
 
+                # TRANSACTIONAL OUTBOX
+                enqueue_alert_event(
+                    cur,
+                    alert,
+                    "ACKNOWLEDGED",
+                )
+
             conn.commit()
 
         return {
@@ -428,7 +446,9 @@ def escalate_alerts():
                         jsonb_build_object(
                             'original_alert_id', a.alert_id,
                             'original_alert_type', a.alert_type,
-                            'duration_seconds', 300
+                            'duration_seconds', 300,
+                            'temp_c', a.metadata->'temp_c',
+                            'temp_c_source', 'original_alert'
                         )
                     FROM alert_events a
                     WHERE a.status = 'active'
@@ -449,6 +469,14 @@ def escalate_alerts():
 
                 escalations = cur.fetchall()
 
+                # TRANSACTIONAL OUTBOX
+                for escalation in escalations:
+                    enqueue_alert_event(
+                        cur,
+                        escalation,
+                        "CREATED",
+                    )
+
             conn.commit()
 
         return {
@@ -462,6 +490,7 @@ def escalate_alerts():
             status_code=500,
             detail=str(e),
         )
+
 
 
 # =====================================
@@ -489,6 +518,14 @@ def resolve_alert(alert_id: int):
                 )
 
                 alert = cur.fetchone()
+
+                # TRANSACTIONAL OUTBOX
+                if alert:
+                    enqueue_alert_event(
+                        cur,
+                        alert,
+                        "RESOLVED",
+                    )
 
             conn.commit()
 
@@ -543,6 +580,14 @@ def resolve_device_alerts(device_id: str):
                 )
 
                 alerts = cur.fetchall()
+
+                # TRANSACTIONAL OUTBOX
+                for alert in alerts:
+                    enqueue_alert_event(
+                        cur,
+                        alert,
+                        "RESOLVED",
+                    )
 
             conn.commit()
 
@@ -601,6 +646,14 @@ def resolve_alert_by_type(
             with conn.cursor() as cur:
                 cur.execute(query, tuple(params))
                 alerts = cur.fetchall()
+
+                # TRANSACTIONAL OUTBOX
+                for alert in alerts:
+                    enqueue_alert_event(
+                        cur,
+                        alert,
+                        "RESOLVED",
+                    )
 
             conn.commit()
 
