@@ -310,5 +310,46 @@
         "x": 850,
         "y": 120,
         "wires": []
+    },
+    {
+        "id": "mqtt_in_heartbeat",
+        "type": "mqtt in",
+        "z": "tab_ingest",
+        "name": "MQTT Heartbeat",
+        "topic": "kampus/+/+/+/+/heartbeat",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "mqtt_broker_local",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 180,
+        "y": 500,
+        "wires": [
+            [
+                "fn_validate_heartbeat"
+            ]
+        ]
+    },
+    {
+        "id": "fn_validate_heartbeat",
+        "type": "function",
+        "z": "tab_ingest",
+        "name": "Validate Heartbeat & Format Status",
+        "func": "let data = msg.payload;\n\nif (typeof data === \"string\") {\n    try {\n        data = JSON.parse(data);\n    } catch (e) {\n        return null;\n    }\n}\n\nlet parts = (msg.topic || \"\").split(\"/\");\n\nif (\n    parts.length !== 6 ||\n    parts[0] !== \"kampus\" ||\n    parts[5] !== \"heartbeat\" ||\n    !data ||\n    !data.device_id ||\n    !data.domain ||\n    typeof data.ts !== \"number\" ||\n    String(data.status).toLowerCase() !== \"alive\" ||\n    data.device_id !== parts[4]\n) {\n    return null;\n}\n\nlet fields = { online: 1 };\nlet tags = {\n    domain: data.domain,\n    gedung: parts[2],\n    ruang: parts[3],\n    device_id: data.device_id\n};\n\nmsg.measurement = \"status\";\nmsg.payload = [fields, tags];\nmsg.timestamp = data.ts * 1000000;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 500,
+        "wires": [
+            [
+                "out_influx_status"
+            ]
+        ]
     }
 ]
