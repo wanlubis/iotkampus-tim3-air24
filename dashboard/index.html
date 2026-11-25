@@ -25,6 +25,12 @@
       }
     }
   </script>
+  <!-- Chart.js CDN (untuk grafik interaktif Smart Energy) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+  <!-- IBM Plex Sans & Mono untuk tipografi instrumen Smart Energy (non-blocking) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
   <style>
     .pulse-dot {
       animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -32,6 +38,121 @@
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: .4; }
+    }
+    /* Smart Energy BMS Console (Scoped ONLY to #content-energy) */
+    body.en-bms-mode #global-kpi-bar {
+      display: none !important;
+    }
+    body.en-bms-mode > main {
+      max-width: 1440px !important;
+      padding-top: 1rem !important;
+      padding-bottom: 1.5rem !important;
+    }
+    #content-energy {
+      font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    }
+    #content-energy .en-num {
+      font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    #content-energy button:not(:disabled),
+    #content-energy select:not(:disabled),
+    #content-energy a[href] {
+      cursor: pointer;
+    }
+    #content-energy button:disabled,
+    #content-energy select:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    #content-energy button:focus-visible,
+    #content-energy select:focus-visible,
+    #content-energy input:focus-visible {
+      outline: 2px solid #38bdf8;
+      outline-offset: 2px;
+    }
+    .en-bms-card {
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow: 0 8px 24px -16px rgba(2, 6, 23, 0.75);
+    }
+    .en-bms-glass {
+      background: rgba(11, 18, 32, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      box-shadow: 0 16px 36px -12px rgba(2, 6, 23, 0.82);
+    }
+    .en-bms-btn {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      color: #cbd5e1;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .en-bms-btn:hover {
+      background: rgba(30, 41, 59, 0.9);
+      border-color: rgba(148, 163, 184, 0.36);
+      color: #f8fafc;
+    }
+    .en-bms-btn.active {
+      background: rgba(14, 165, 233, 0.15);
+      border-color: rgba(56, 189, 248, 0.5);
+      color: #e0f2fe;
+    }
+    /* Interactive 2D SVG Floor Plan Hover & Focus States (60 FPS lightweight) */
+    #en-floorplan-svg .en-svg-room {
+      transition: opacity 0.18s ease;
+      outline: none;
+    }
+    #en-floorplan-svg .en-svg-room .en-room-surface {
+      transition: fill 0.16s ease, stroke-width 0.16s ease, filter 0.16s ease;
+    }
+    #en-floorplan-svg .en-svg-room .en-room-selection {
+      transition: opacity 0.16s ease;
+    }
+    #en-floorplan-svg .en-svg-room:hover .en-room-surface {
+      filter: brightness(1.22);
+      stroke-width: 2.25;
+    }
+    #en-floorplan-svg .en-svg-room:focus-visible .en-room-selection {
+      opacity: 1 !important;
+      stroke: #38bdf8;
+      stroke-dasharray: 4 2;
+    }
+    /* Custom Dark Scrollbar (WebKit + Firefox) */
+    .en-dark-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.32) rgba(15, 23, 42, 0.45);
+    }
+    .en-dark-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .en-dark-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.45);
+    }
+    .en-dark-scroll::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.32);
+      border-radius: 3px;
+    }
+    .en-dark-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.55);
+    }
+    /* Mobile tap targets (R-03) */
+    @media (max-width: 640px) {
+      #content-energy .en-tap {
+        min-height: 44px;
+      }
+    }
+    /* Respect prefers-reduced-motion (R-39) */
+    @media (prefers-reduced-motion: reduce) {
+      #content-energy *,
+      #content-energy *::before,
+      #content-energy *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
@@ -106,7 +227,7 @@
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
     <!-- KPI BAR LINTAS DOMAIN (Bagian 7.4) -->
-    <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    <section id="global-kpi-bar" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
       
       <!-- Total Perangkat -->
       <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
@@ -344,25 +465,362 @@
     </div>
 
     <!-- ============================================================== -->
-    <!-- TAB 4: SMART ENERGY (TIM 1) -->
+    <!-- TAB 4: SMART ENERGY (TIM 1) - BMS 2D FLOOR PLAN & BENTO GRID   -->
     <!-- ============================================================== -->
-    <div id="content-energy" class="hidden space-y-6">
-      <div class="bg-gradient-to-r from-blue-900/40 to-slate-800 border border-blue-500/30 rounded-2xl p-5">
-        <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
-          <div>
-            <h2 class="text-lg font-bold text-white">⚡ Smart Energy (Tim 1)</h2>
-            <p class="text-xs text-slate-300 mt-1">Simulasi 4 kWh meter per ruang, deteksi pemborosan di luar jam kerja, dan estimasi tagihan.</p>
+    <div id="content-energy" class="hidden space-y-4">
+
+      <!-- 1. SLIM SINGLE-ROW BMS HEADER (Consolidated Status Pill & Quiet Controls) -->
+      <div class="relative flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+        <!-- Left: Title, Location & Single Consolidated Status Pill -->
+        <div class="flex items-center gap-3 flex-wrap min-w-0">
+          <div class="flex items-baseline gap-2.5 flex-wrap">
+            <h2 class="text-base sm:text-lg font-semibold text-slate-100 tracking-tight">Smart Energy Monitoring</h2>
+            <span class="text-xs text-slate-400">Lantai 3 · Gedung BSD-A</span>
           </div>
-          <div class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-300">
-            Asumsi Tarif: <strong class="text-emerald-400">Rp 1.500 / kWh</strong> (Simulasi)
+
+          <span id="en-status-pill" class="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-200 border border-emerald-400/30 whitespace-nowrap">
+            <span id="en-status-pill-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span id="en-status-pill-text">Live FastAPI</span>
+          </span>
+
+          <button id="en-info-btn-title" type="button" aria-expanded="false" aria-controls="en-info-popover" class="text-xs text-slate-400 hover:text-sky-300 underline decoration-slate-600 hover:decoration-sky-400 underline-offset-4 transition whitespace-nowrap">
+            Tarif &amp; Ambang
+          </button>
+
+          <span id="en-loading-indicator" class="hidden text-xs text-sky-300" role="status" aria-live="polite">Memuat...</span>
+        </div>
+
+        <!-- Right: Quiet Filters, Simulation Toggle & Export -->
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="en-window-select" aria-label="Rentang waktu telemetri" class="en-bms-btn en-tap rounded-lg px-2.5 py-1.5 text-xs text-slate-100">
+            <option value="-15m" data-mins="15">15 Menit</option>
+            <option value="-1h" data-mins="60" selected>1 Jam</option>
+            <option value="-6h" data-mins="360">6 Jam</option>
+            <option value="-24h" data-mins="1440">24 Jam</option>
+          </select>
+
+          <select id="en-bill-period" aria-label="Periode estimasi tagihan" class="en-bms-btn en-tap rounded-lg px-2.5 py-1.5 text-xs text-slate-100">
+            <option value="daily">Harian</option>
+            <option value="weekly">Mingguan</option>
+          </select>
+
+          <select id="en-room-filter" aria-label="Filter ruang kWh meter" class="en-bms-btn en-tap rounded-lg px-2.5 py-1.5 text-xs text-slate-100">
+            <option value="all">Semua Ruang (4)</option>
+            <option value="r3012">R3012 (kwh-01)</option>
+            <option value="r3013">R3013 (kwh-02)</option>
+            <option value="r3017">R3017 (kwh-03)</option>
+            <option value="lab-iot">Lab-IoT (kwh-04)</option>
+          </select>
+
+          <button id="en-mode-toggle" type="button" class="en-bms-btn en-tap px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap">
+            Mode Simulasi
+          </button>
+
+          <button id="en-export-csv" type="button" class="en-tap px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white transition whitespace-nowrap">
+            Ekspor CSV
+          </button>
+        </div>
+
+        <!-- Tariff & Threshold Reference Popover -->
+        <div id="en-info-popover" role="dialog" aria-label="Asumsi tarif dan ambang alert" class="hidden en-bms-glass rounded-xl p-4 w-[min(420px,calc(100vw-24px))] absolute top-11 left-0 z-40 text-xs text-slate-200 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="font-semibold text-white">Asumsi Tarif &amp; Ambang Alert</span>
+            <button id="en-info-close-btn" type="button" aria-label="Tutup jendela informasi" class="en-bms-btn w-6 h-6 rounded flex items-center justify-center text-xs">×</button>
+          </div>
+          <div id="en-assumptions-banner" class="leading-relaxed text-slate-300">
+            <strong>Tarif Simulasi:</strong> <strong class="text-emerald-300">Rp 1.500 / kWh</strong> (asumsi simulasi internal kampus, bukan tarif resmi PLN).<br/>
+            <strong>Jam Kerja Kampus:</strong> Senin-Jumat 07:00-18:00 WIB.
+          </div>
+          <div class="space-y-1.5 text-[11px]">
+            <div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-amber-500/10 border border-amber-500/25 text-amber-200">
+              <span class="en-num font-semibold">WASTE_AFTER_HOURS</span>
+              <span>&gt;200 W di luar jam kerja (2 mnt)</span>
+            </div>
+            <div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-rose-500/10 border border-rose-500/25 text-rose-200">
+              <span class="en-num font-semibold">HIGH_LOAD</span>
+              <span>&gt;3000 W terus-menerus (1 mnt)</span>
+            </div>
+            <div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-300">
+              <span class="en-num font-semibold">OFFLINE (LWT / No-Data)</span>
+              <span>&gt;60 detik tanpa telemetri</span>
+            </div>
           </div>
         </div>
       </div>
-      <div id="energy-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <!-- Rendered by JS -->
-      </div>
-    </div>
 
+      <!-- Inline Error Strip (Hidden unless API error) -->
+      <div id="en-error-strip" class="hidden rounded-xl bg-rose-950/75 border border-rose-700/50 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs text-rose-100">
+        <span id="en-error-text">Gagal memuat data Smart Energy dari FastAPI.</span>
+        <div class="flex items-center gap-2 shrink-0">
+          <button id="en-error-retry" type="button" class="px-2.5 py-1 rounded-md bg-rose-800 hover:bg-rose-700 text-white font-semibold">Coba Lagi</button>
+          <button id="en-error-sim" type="button" class="underline text-rose-200 hover:text-white">Gunakan Mode Simulasi</button>
+        </div>
+      </div>
+
+      <!-- 2. TOP KPI STRIP (4 Compact BMS Cards, Bold Tabular Typography) -->
+      <section aria-label="Ringkasan metrik energi" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+        <!-- KPI 1 (Focal): Daya Aktif Gedung -->
+        <div class="en-bms-card rounded-xl p-4 border-t-2 border-t-sky-400/70 flex flex-col justify-between gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-medium text-slate-400">Daya Aktif Gedung</span>
+            <span id="en-kpi-power-delta" class="en-num text-[11px] font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700 whitespace-nowrap">0.0% beban</span>
+          </div>
+          <div class="flex items-baseline justify-between gap-2">
+            <span id="en-kpi-power" class="en-num text-2xl font-semibold text-white tracking-tight whitespace-nowrap">-- W</span>
+            <span id="en-kpi-online" class="text-[11px] text-slate-400 whitespace-nowrap">0/4 meter online</span>
+          </div>
+        </div>
+
+        <!-- KPI 2: Energi Periode -->
+        <div class="en-bms-card rounded-xl p-4 flex flex-col justify-between gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-medium text-slate-400">Energi Periode</span>
+            <span id="en-kpi-kwh-delta" class="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-800/80 text-slate-300">Harian</span>
+          </div>
+          <div class="flex items-baseline justify-between gap-2 min-w-0">
+            <span id="en-kpi-kwh" class="en-num text-2xl font-semibold text-sky-300 tracking-tight whitespace-nowrap">-- kWh</span>
+            <span id="en-kpi-period-note" class="text-[11px] text-slate-400 truncate max-w-[130px]" title="Rentang WIB aktif">WIB aktif</span>
+          </div>
+        </div>
+
+        <!-- KPI 3: Estimasi Tagihan -->
+        <div class="en-bms-card rounded-xl p-4 flex flex-col justify-between gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-medium text-slate-400">Estimasi Tagihan</span>
+            <button id="en-info-btn-bill" type="button" class="text-[11px] text-sky-400 hover:text-sky-300 underline underline-offset-2">Asumsi tarif</button>
+          </div>
+          <div class="flex items-baseline justify-between gap-2">
+            <span id="en-kpi-bill" class="en-num text-2xl font-semibold text-emerald-300 tracking-tight whitespace-nowrap">Rp 0</span>
+            <span id="en-kpi-tariff" class="en-num text-[11px] text-slate-400 whitespace-nowrap">Rp 1.500/kWh</span>
+          </div>
+        </div>
+
+        <!-- KPI 4: Boros Belum ACK -->
+        <div class="en-bms-card rounded-xl p-4 flex flex-col justify-between gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-medium text-slate-400">Boros Belum ACK</span>
+            <span id="en-kpi-waste-badge" class="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 whitespace-nowrap">Aman</span>
+          </div>
+          <div class="flex items-baseline justify-between gap-2">
+            <span id="en-kpi-waste-unacked" class="en-num text-2xl font-semibold text-amber-300 tracking-tight whitespace-nowrap">0</span>
+            <span id="en-kpi-waste-total" class="text-[11px] text-slate-400 whitespace-nowrap">Total kejadian: 0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. MAIN BENTO GRID: LEFT ~60% (SVG FLOOR PLAN + 2 PERMANENT CHARTS) | RIGHT ~40% (ROOM DETAIL + ANOMALIES) -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+
+        <!-- LEFT COLUMN (~60% -> 7 of 12 cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-4 min-w-0">
+
+          <!-- A. Interactive 2D Architectural Floor Plan (SVG) Card -->
+          <div class="en-bms-card rounded-xl p-4 flex flex-col gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="text-sm font-semibold text-slate-100">Denah Arsitektur Lantai 3</h3>
+                <p class="text-[11px] text-slate-400">Pilih ruangan untuk melihat detail beban, biaya, dan status perangkat</p>
+              </div>
+              <!-- Compact Status Legend -->
+              <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-300">
+                <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-sky-400" aria-hidden="true"></span>Normal</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400" aria-hidden="true"></span>Waste</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500" aria-hidden="true"></span>High-Load</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-slate-500" aria-hidden="true"></span>Offline</span>
+              </div>
+            </div>
+
+            <!-- Modular SVG Host (Rendered by /energy/floorplan.js) -->
+            <div id="en-floorplan-host" class="w-full rounded-lg overflow-hidden border border-slate-800/80 bg-[#080f1d]"></div>
+          </div>
+
+          <!-- B. Permanent 2D Analytics Charts (2 Side-by-Side Cards, Always Visible) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+            <!-- Chart 1: Tren Daya (Line/Area Chart) -->
+            <div class="en-bms-card rounded-xl p-4 flex flex-col">
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <h3 class="text-xs font-semibold text-slate-100">Tren Daya (power_w)</h3>
+                <span id="en-trend-window-pill" class="en-num text-[10px] px-2 py-0.5 rounded bg-slate-800/80 text-slate-300">1 Jam</span>
+              </div>
+              <div class="relative flex-1 min-h-[210px]">
+                <canvas id="en-chart-power"></canvas>
+                <div id="en-chart-power-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-900/90 rounded-lg border border-slate-800 gap-2.5">
+                  <p class="text-xs text-slate-300">Belum ada data telemetri daya pada rentang waktu ini.</p>
+                  <button type="button" class="en-empty-preview-btn px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-medium text-white transition">Aktifkan Mode Simulasi</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chart 2: Distribusi Tagihan (Donut Chart) -->
+            <div class="en-bms-card rounded-xl p-4 flex flex-col">
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <h3 class="text-xs font-semibold text-slate-100">Distribusi Tagihan</h3>
+                <span class="text-[10px] text-slate-400">Proporsi IDR &amp; kWh</span>
+              </div>
+              <div class="relative flex-1 min-h-[210px]">
+                <canvas id="en-chart-donut"></canvas>
+                <div id="en-chart-donut-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-900/90 rounded-lg border border-slate-800 gap-2.5">
+                  <p class="text-xs text-slate-300">Belum ada akumulasi kWh untuk estimasi tagihan.</p>
+                  <button type="button" class="en-empty-preview-btn px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-medium text-white transition">Aktifkan Mode Simulasi</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN (~40% -> 5 of 12 cols): Room Detail Inspector + Alert/Anomaly Feed -->
+        <aside aria-label="Panel detail ruangan dan alert anomali" class="lg:col-span-5 flex flex-col gap-4 min-w-0">
+
+          <!-- Selected Room Detail Inspector Card -->
+          <div class="en-bms-card rounded-xl p-4 space-y-4">
+            <!-- Quick Room Switcher Row -->
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Detail Ruangan</span>
+              <div id="en-detail-room-pills" class="flex flex-wrap items-center gap-1.5"></div>
+            </div>
+
+            <!-- Selected Room Identity -->
+            <div class="pb-3 border-b border-slate-800/80">
+              <div class="flex items-center justify-between gap-2">
+                <h3 id="en-detail-title" class="text-base font-semibold text-white truncate">R3012: Ruang Kuliah 3012</h3>
+                <span id="en-detail-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded border bg-slate-700/40 text-slate-300 border-slate-600/50 whitespace-nowrap">OFFLINE</span>
+              </div>
+              <div class="flex items-center justify-between gap-2 mt-1 text-[11px] text-slate-400 flex-wrap">
+                <span id="en-detail-sub" class="en-num truncate">kwh-01 · Gedung BSD-A</span>
+                <span id="en-detail-lastseen" class="en-num text-slate-500 whitespace-nowrap">Terakhir: -</span>
+              </div>
+            </div>
+
+            <!-- 2x2 Room Metrics -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <div class="rounded-lg bg-slate-900/70 border border-slate-800/90 p-3">
+                <div class="text-[11px] text-slate-400">Daya Instan</div>
+                <div id="en-detail-power" class="en-num text-lg font-semibold text-sky-300 mt-0.5">0.0 W</div>
+              </div>
+              <div class="rounded-lg bg-slate-900/70 border border-slate-800/90 p-3">
+                <div class="text-[11px] text-slate-400">Energi Periode</div>
+                <div id="en-detail-energy" class="en-num text-lg font-semibold text-slate-100 mt-0.5">0.000 kWh</div>
+              </div>
+              <div class="rounded-lg bg-slate-900/70 border border-slate-800/90 p-3">
+                <div class="text-[11px] text-slate-400">Estimasi Biaya</div>
+                <div id="en-detail-bill" class="en-num text-sm font-semibold text-emerald-300 mt-1">Rp 0</div>
+              </div>
+              <div class="rounded-lg bg-slate-900/70 border border-slate-800/90 p-3">
+                <div class="flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Beban vs 3000 W</span>
+                  <span id="en-detail-load" class="en-num font-semibold text-slate-200">0%</span>
+                </div>
+                <div class="h-1.5 bg-slate-800 rounded overflow-hidden mt-2">
+                  <div id="en-detail-load-bar" class="h-full bg-sky-400 rounded transition-all duration-300" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Baseline Jam Kerja vs Luar Jam Kerja -->
+            <div class="rounded-lg bg-slate-900/55 border border-slate-800/80 p-3 space-y-2 text-[11px]">
+              <div class="font-medium text-slate-200">Baseline Rata-Rata Ruangan</div>
+              <div>
+                <div class="flex justify-between text-slate-400 mb-1">
+                  <span>Jam Kerja (07:00-18:00 WIB)</span>
+                  <span id="en-detail-work" class="en-num text-sky-300">-</span>
+                </div>
+                <div class="h-1.5 bg-slate-800 rounded overflow-hidden">
+                  <div id="en-detail-work-bar" class="h-full bg-sky-400 transition-all duration-300" style="width: 0%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-slate-400 mb-1">
+                  <span>Luar Jam Kerja (Malam / Libur)</span>
+                  <span id="en-detail-after" class="en-num text-amber-300">-</span>
+                </div>
+                <div class="h-1.5 bg-slate-800 rounded overflow-hidden">
+                  <div id="en-detail-after-bar" class="h-full bg-amber-400 transition-all duration-300" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Room Controls / Actions -->
+            <div class="grid grid-cols-2 gap-2">
+              <button id="en-detail-btn-filter" type="button" class="en-bms-btn en-tap py-2 px-3 rounded-lg text-xs font-medium text-center">
+                Fokus Grafik: R3012
+              </button>
+              <button id="en-detail-btn-csv" type="button" class="en-bms-btn en-tap py-2 px-3 rounded-lg text-xs font-medium text-center text-sky-200 border-sky-500/30">
+                Ekspor CSV R3012
+              </button>
+            </div>
+          </div>
+
+          <!-- Anomaly & Alert Feed Card -->
+          <div class="en-bms-card rounded-xl p-4 flex-1 flex flex-col min-h-[260px]">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div class="flex items-center gap-2">
+                <h3 class="text-xs font-semibold text-slate-100">Alert &amp; Status Anomali</h3>
+                <span id="en-alerts-count" class="en-num text-[10px] px-2 py-0.5 rounded bg-slate-800/80 text-slate-300">0 kejadian</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <select id="en-alert-scope" aria-label="Cakupan ruangan alert" class="en-bms-btn rounded-md px-2 py-1 text-[11px] text-slate-200">
+                  <option value="all">Semua Ruang</option>
+                  <option value="room">Ruang Terpilih</option>
+                </select>
+                <select id="en-alert-filter" aria-label="Filter tipe alert" class="en-bms-btn rounded-md px-2 py-1 text-[11px] text-slate-200">
+                  <option value="all">Semua Tipe</option>
+                  <option value="unacked">Belum ACK</option>
+                  <option value="WASTE_AFTER_HOURS">WASTE</option>
+                  <option value="HIGH_LOAD">HIGH_LOAD</option>
+                  <option value="OFFLINE">OFFLINE</option>
+                </select>
+              </div>
+            </div>
+            <div id="en-alerts-feed" class="space-y-2.5 flex-1 overflow-y-auto en-dark-scroll max-h-[340px] pr-1">
+              <div class="text-center py-6 text-xs text-slate-400">Memuat daftar alert energi...</div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- 4. SUPPLEMENTAL BMS ANALYTICS ROW (Baseline Comparison & kWh Meter Registry) -->
+      <section class="en-bms-card rounded-xl p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div role="tablist" aria-label="Analisis tambahan Smart Energy" class="flex items-center gap-1 bg-slate-900/80 border border-slate-800 rounded-lg p-0.5">
+            <button data-en-extab="baseline" role="tab" aria-selected="true" type="button" class="en-extra-tab-btn en-bms-btn active px-3 py-1 rounded-md text-xs font-medium border-transparent">Baseline Jam Kerja</button>
+            <button data-en-extab="table" role="tab" aria-selected="false" type="button" class="en-extra-tab-btn en-bms-btn px-3 py-1 rounded-md text-xs font-medium border-transparent">Tabel kWh Meter (4)</button>
+          </div>
+          <span class="text-[11px] text-slate-400">Klik baris meter untuk menyorot ruangan di denah lantai</span>
+        </div>
+
+        <!-- Pane 1: Baseline Chart -->
+        <div id="en-extra-pane-baseline" class="relative h-[220px]">
+          <canvas id="en-chart-baseline"></canvas>
+          <div id="en-chart-baseline-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-900/90 rounded-lg border border-slate-800 gap-2.5">
+            <p class="text-xs text-slate-300">Data perbandingan jam kerja vs luar jam kerja belum tersedia.</p>
+            <button type="button" class="en-empty-preview-btn px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-medium text-white transition">Aktifkan Mode Simulasi</button>
+          </div>
+        </div>
+
+        <!-- Pane 2: Meter Registry Table -->
+        <div id="en-extra-pane-table" class="hidden space-y-3">
+          <div class="flex justify-end">
+            <input id="en-table-search" type="search" aria-label="Cari kWh meter atau ruang" placeholder="Cari ruang / meter..." class="en-bms-btn rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 w-full sm:w-64" />
+          </div>
+          <div class="overflow-x-auto en-dark-scroll">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 text-[11px] uppercase tracking-wider">
+                  <th class="py-2 px-3"><button type="button" data-sort-key="device_id" class="en-sort-btn inline-flex items-center gap-1 hover:text-white uppercase tracking-wider">Perangkat &amp; Ruang <span id="en-sort-device_id">↕</span></button></th>
+                  <th class="py-2 px-3"><button type="button" data-sort-key="status" class="en-sort-btn inline-flex items-center gap-1 hover:text-white uppercase tracking-wider">Status <span id="en-sort-status">↕</span></button></th>
+                  <th class="py-2 px-3"><button type="button" data-sort-key="power_w" class="en-sort-btn inline-flex items-center gap-1 hover:text-white uppercase tracking-wider">Daya &amp; Beban <span id="en-sort-power_w">↕</span></button></th>
+                  <th class="py-2 px-3"><button type="button" data-sort-key="energy_kwh" class="en-sort-btn inline-flex items-center gap-1 hover:text-white uppercase tracking-wider">Energi Total <span id="en-sort-energy_kwh">↕</span></button></th>
+                  <th class="py-2 px-3">Terakhir Update</th>
+                </tr>
+              </thead>
+              <tbody id="energy-container" class="divide-y divide-slate-800/70 text-xs">
+                <tr><td colspan="5" class="py-5 text-center text-slate-400">Memuat kWh meter...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
 
   <!-- FOOTER -->
@@ -408,9 +866,22 @@
           content.classList.add('hidden');
         }
       });
+
+      const isEnergy = tabId === 'energy';
+      document.body.classList.toggle('en-bms-mode', isEnergy);
+      if (!isEnergy && typeof window.closeEnergyInfoPopover === 'function') {
+        window.closeEnergyInfoPopover();
+      }
+
       if (tabId === 'air') fetchAirRooms();
       if (tabId === 'coldchain') fetchColdchainChambers();
-      if (tabId === 'energy') fetchEnergyRooms();
+      if (tabId === 'energy') {
+        if (window.energyApp && typeof window.energyApp.onTabActivated === 'function') {
+          window.energyApp.onTabActivated();
+        } else if (typeof window.fetchEnergyRooms === 'function') {
+          window.fetchEnergyRooms();
+        }
+      }
     }
 
     // Main Fetch Summary (Cross-Domain)
@@ -685,29 +1156,6 @@
       }
     }
 
-    // Fetch Energy Rooms (Tim 1 Domain Tab)
-    async function fetchEnergyRooms() {
-      try {
-        const res = await fetch(`/api/v1/energy/rooms`);
-        if (!res.ok) return;
-        const rooms = await res.json();
-        const container = document.getElementById('energy-container');
-
-        container.innerHTML = rooms.map(r => `
-          <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono font-bold text-xs text-slate-200">${r.device_id}</span>
-              <span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">${r.ruang}</span>
-            </div>
-            <div class="text-xl font-extrabold text-white mt-1">${r.power_w} <span class="text-xs text-slate-400">W</span></div>
-            <div class="text-xs text-slate-400 mt-1">Kumulatif: <strong class="text-slate-200">${r.energy_kwh} kWh</strong></div>
-          </div>
-        `).join('');
-      } catch (e) {
-        console.error("Energy fetch error:", e);
-      }
-    }
-
     // Initial Load & Loop
     function init() {
       fetchSummary();
@@ -724,8 +1172,11 @@
       if (currentTab === 'overview') fetchDevices();
       if (currentTab === 'air') fetchAirRooms();
       if (currentTab === 'coldchain') fetchColdchainChambers();
-      if (currentTab === 'energy') fetchEnergyRooms();
+      if (currentTab === 'energy' && typeof window.fetchEnergyRooms === 'function') window.fetchEnergyRooms();
     }, 5000);
   </script>
+
+  <!-- Modular Smart Energy BMS App (Interactive 2D SVG Floor Plan + Charts + Detail Panel) -->
+  <script type="module" src="/energy/energyApp.js"></script>
 </body>
 </html>

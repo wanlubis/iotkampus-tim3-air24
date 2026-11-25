@@ -13,6 +13,13 @@ Repository monorepo resmi untuk **Mini IoT Platform Kampus**, dikelola oleh **Ti
 | **Marina Evelin** | `marinaevelin02@gmail.com` | Router FastAPI Domain Air, Integrasi API, Visualisasi Metrik Ruang | `api/app/routers/air.py`, `dashboard/` |
 | **Alwan Aqthin** | `alwanatqhinlubis18@gmail.com` | **Koordinator Integrasi**: Compose, Keamanan, Registry Master, Core API (`/summary`), Dashboard Pusat | `docker-compose.yml`, `postgres/`, `api/app/routers/core.py`, `dashboard/` |
 
+### Pembagian Peran Anggota Tim 1 (Smart Energy)
+
+| Nama Anggota | Kontak GitHub | Peran Utama | Folder Tanggung Jawab |
+|---|---|---|---|
+| **Vincent (`VozzyJun`)** | `vincentjunio1@gmail.com` | Owner Simulator 4 kWh Meter, Injektor Gangguan, & Rule Engine Energy Node-RED | `simulators/energy/`, `nodered/` (tab Energy) |
+| **Aldy (`Aldy-create`)** | `aldypasaribu59@gmail.com` | Owner REST API Smart Energy (`/api/v1/energy/*`), Tab Dashboard Smart Energy (BMS 2D SVG Floor Plan), Panel Grafana, & Unit Test | `api/app/routers/energy.py`, `api/tests/test_energy_api.py`, `dashboard/` (`#content-energy`, `dashboard/energy/`), `grafana/` |
+
 ---
 
 ## 2. Arsitektur & Daftar Layanan (Docker Compose)
@@ -69,9 +76,12 @@ Channel yang digunakan: `telemetry` (QoS 1), `status` (QoS 1, retain + LWT), `he
    - `TEMP_HIGH`: Critical jika `temp_c > 8.0 °C`.
    - `TEMP_ESCALATED`: Escalated jika `TEMP_HIGH` tidak di-ACK dalam 5 menit.
 3. **Smart Energy (Tim 1)**:
-   - Tarif simulasi: **Rp 1.500 / kWh** (Asumsi internal kampus, bukan tarif resmi PLN).
+   - Tarif simulasi: **Rp 1.500 / kWh** (Asumsi internal kampus, **bukan tarif resmi PLN**).
    - Jam kerja acuan: Senin–Jumat, 07.00–18.00 WIB.
-   - `WASTE_AFTER_HOURS`: Warning jika `power_w > 200 W` di luar jam kerja.
+   - `WASTE_AFTER_HOURS`: Warning jika `power_w > 200 W` di luar jam kerja selama 2 menit.
+   - `HIGH_LOAD`: Critical jika `power_w > 3000 W` selama 1 menit (dalam/luar jam kerja).
+   - `OFFLINE`: Critical jika telemetry/heartbeat hilang 60 detik atau status LWT `offline`.
+   - Endpoint API Tim 1 (`/api/v1/energy/*`): `GET /rooms`, `GET /rooms/{ruang}/usage?from=&to=`, `GET /rooms/{ruang}/usage/export`, `GET /waste?from=&to=`, `GET /bill?period=daily|weekly`, dan `GET /baseline`.
 
 > **Pernyataan Secret & Keamanan**: File `.env` sungguhan dan secret tidak pernah di-commit ke repositori Git. Kredensial lab dikonfigurasi melalui berkas template `.env.example`.
 
@@ -159,3 +169,41 @@ Untuk demonstrasi live di depan dosen penguji, gunakan simulator injektor beriku
    python simulators/air/simulator.py --mode STOP --device aq-01
    ```
    *Hasil:* Koneksi tetap online namun telemetri berhenti dikirim.
+
+### Skenario Demo & Injektor Gangguan Tim 1 — Smart Energy (Menit 8–12)
+
+Jalankan simulator 4 kWh meter (`kwh-01` s.d. `kwh-04`) melalui Docker Compose profile `team-1` atau Python lokal:
+```bash
+docker compose --profile team-1 up --build -d energy-simulator
+```
+
+1. **Uji Pemborosan Luar Jam Kerja (`BOROS` → `WASTE_AFTER_HOURS`)**:
+   ```bash
+   python simulators/energy/inject.py boros --device kwh-02 --via cmd
+   ```
+   *Hasil:* Daya naik >200 W (simulasi luar jam kerja); setelah 2 menit, alert `WASTE_AFTER_HOURS` (`warning`) terbit di feed alert pusat dan `/api/v1/energy/waste`.
+
+2. **Uji Lonjakan Beban Tinggi (`LONJAKAN` → `HIGH_LOAD`)**:
+   ```bash
+   python simulators/energy/inject.py lonjakan --device kwh-03 --via cmd
+   ```
+   *Hasil:* Daya melonjak >3000 W; setelah 1 menit, alert `HIGH_LOAD` (`critical`) terbit di feed alert pusat.
+
+3. **Uji Putus Mendadak / LWT (`CRASH` → `OFFLINE`) & Uji No-Data (`STOP` → `OFFLINE` 60 dtk)**:
+   ```bash
+   python simulators/energy/inject.py crash --device kwh-01 --via cmd
+   python simulators/energy/inject.py stop --device kwh-04 --via cmd
+   ```
+
+4. **Pulihkan Kondisi Normal (*Auto-Resolve*)**:
+   ```bash
+   python simulators/energy/inject.py normal --device all --via cmd
+   ```
+
+5. **Dashboard BMS & Unit Test Tim 1**:
+   - **Dashboard BMS Smart Energy** (`http://localhost:8080` -> tab **Smart Energy**): menampilkan 4 kartu KPI utama, denah arsitektur **Interactive 2D SVG Floor Plan** Lantai 3 Gedung BSD-A (`R3012`, `R3013`, `R3017`, `Lab-IoT`), grafik permanen **Tren Daya** & **Distribusi Tagihan**, **Panel Detail Ruangan** + feed Alert/ACK, Ekspor CSV, serta tombol **Mode Simulasi** untuk preview lokal tanpa backend aktif.
+   - **Unit Test Terotomasi Tim 1**:
+     ```bash
+     pytest -q api/tests/test_energy_api.py simulators/energy/test_simulator.py
+     node nodered/tests/test_rules.js
+     ```

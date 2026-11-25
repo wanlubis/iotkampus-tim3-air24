@@ -132,8 +132,8 @@
         "type": "function",
         "z": "tab_ingest",
         "name": "Validate Status & Format Influx",
-        "func": "let data = msg.payload;\nif (typeof data === 'string') {\n    try { data = JSON.parse(data); } catch(e) { return [null, {payload: 'Invalid JSON'}]; }\n}\n\nif (!data || data.schema !== 'kampus.status.v1' || !data.device_id || !data.domain || !data.status) {\n    return [null, {payload: 'Rejected status schema: ' + JSON.stringify(data)}];\n}\n\nlet isOnline = (data.status.toLowerCase() === 'online') ? 1 : 0;\nlet fields = { online: isOnline };\nlet tags = {\n    domain: data.domain,\n    gedung: data.gedung || '',\n    ruang: data.ruang || '',\n    device_id: data.device_id\n};\n\nlet validMsg = {\n    measurement: 'status',\n    payload: [fields, tags],\n    timestamp: (data.ts || Date.now()) * 1000000\n};\n\nreturn [validMsg, null];\n",
-        "outputs": 2,
+        "func": "let data = msg.payload;\nif (typeof data === 'string') {\n    try { data = JSON.parse(data); } catch(e) { return [null, {payload: 'Invalid JSON'}]; }\n}\n\nif (!data || data.schema !== 'kampus.status.v1' || !data.device_id || !data.domain || !data.status) {\n    return [null, {payload: 'Rejected status schema: ' + JSON.stringify(data)}];\n}\n\nlet isOnline = (data.status.toLowerCase() === 'online') ? 1 : 0;\nlet fields = { online: isOnline };\nlet tags = {\n    domain: data.domain,\n    gedung: data.gedung || '',\n    ruang: data.ruang || '',\n    device_id: data.device_id\n};\n\nlet validMsg = {\n    measurement: 'status',\n    payload: [fields, tags],\n    timestamp: (data.ts || Date.now()) * 1000000\n};\n\nreturn [validMsg, null, {payload: data}];\n",
+        "outputs": 3,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
@@ -147,6 +147,9 @@
             ],
             [
                 "debug_audit_log"
+            ],
+            [
+                "link_to_status_rules"
             ]
         ]
     },
@@ -207,10 +210,11 @@
         "id": "link_to_rules",
         "type": "link out",
         "z": "tab_ingest",
-        "name": "Link Out to Air Rules",
+        "name": "Link Out to Domain Rules",
         "mode": "link",
         "links": [
-            "link_from_ingest"
+            "link_from_ingest",
+            "link_energy_from_ingest"
         ],
         "x": 695,
         "y": 140,
@@ -309,6 +313,248 @@
         "statusType": "auto",
         "x": 850,
         "y": 120,
+        "wires": []
+    },
+    {
+        "id": "link_to_status_rules",
+        "type": "link out",
+        "z": "tab_ingest",
+        "name": "Link Out Status to Rules",
+        "mode": "link",
+        "links": [
+            "link_energy_status_in"
+        ],
+        "x": 695,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "tab_rules_energy",
+        "type": "tab",
+        "label": "Rules - Smart Energy",
+        "disabled": false,
+        "info": "Rule Engine Tim 1 (Smart Energy): WASTE_AFTER_HOURS (2m), HIGH_LOAD (1m), OFFLINE (LWT + 60s watchdog), dedup & auto-resolve"
+    },
+    {
+        "id": "link_energy_from_ingest",
+        "type": "link in",
+        "z": "tab_rules_energy",
+        "name": "Link In Telemetry (Energy)",
+        "links": [
+            "link_to_rules"
+        ],
+        "x": 120,
+        "y": 100,
+        "wires": [
+            [
+                "fn_energy_rule_engine"
+            ]
+        ]
+    },
+    {
+        "id": "fn_energy_rule_engine",
+        "type": "function",
+        "z": "tab_rules_energy",
+        "name": "Smart Energy Rule Engine (WASTE, HIGH_LOAD, Dedup, Auto-Resolve)",
+        "func": "let data = msg.payload;\nif (!data || data.domain !== 'energy') {\n    return null;\n}\n\nconst tsMs = (typeof data.ts === 'number') ? data.ts : Date.now();\nconst deviceId = data.device_id;\nconst gedung = data.gedung || 'bsd-a';\nconst ruang = data.ruang || '';\nconst m = data.metrics || {};\nconst powerW = Number(m.power_w);\nconst energyKwh = Number(m.energy_kwh || 0);\n\nconst wasteThresholdW = Number(env.get('ENERGY_WASTE_THRESHOLD_W')) || 200;\nconst wasteDurationMs = (Number(env.get('ENERGY_WASTE_DURATION_SEC')) || 120) * 1000;\nconst highLoadThresholdW = Number(env.get('ENERGY_HIGH_LOAD_THRESHOLD_W')) || 3000;\nconst highLoadDurationMs = (Number(env.get('ENERGY_HIGH_LOAD_DURATION_SEC')) || 60) * 1000;\nconst workStart = Number(env.get('ENERGY_WORK_START_HOUR')) || 7;\nconst workEnd = Number(env.get('ENERGY_WORK_END_HOUR')) || 18;\n\nlet breachSince = flow.get('energyBreachSince') || {};\nlet activeAlerts = flow.get('energyActiveAlerts') || {};\nlet lastSeen = flow.get('energyLastSeen') || {};\n\n// Catat telemetri masuk untuk watchdog OFFLINE\nlastSeen[deviceId] = { ts: tsMs, gedung, ruang, online: true };\n\nlet alertsToPost = [];\nlet resolveLogs = [];\n\n// Auto-resolve OFFLINE bila perangkat kembali mengirim telemetri\nconst offKey = deviceId + ':OFFLINE';\nif (activeAlerts[offKey]) {\n    resolveLogs.push({\n        event: 'AUTO_RESOLVED',\n        code: 'OFFLINE',\n        device_id: deviceId,\n        ruang,\n        resolved_ts: tsMs,\n        note: 'Telemetri kembali diterima dari ' + deviceId\n    });\n    delete activeAlerts[offKey];\n}\n\n// Cek jam kerja WIB (Senin-Jumat 07:00-18:00 UTC+7)\nconst wibDate = new Date(tsMs + 7 * 3600 * 1000);\nconst wibDay = wibDate.getUTCDay();\nconst wibHour = wibDate.getUTCHours();\nconst isWorkHour = (wibDay >= 1 && wibDay <= 5 && wibHour >= workStart && wibHour < workEnd);\nconst isAfterHours = (!isWorkHour) || Boolean(data.sim_after_hours);\n\nfunction evalSustained(key, isBreaching, durationMs, buildAlert, resolveNote) {\n    if (isBreaching) {\n        if (breachSince[key] === undefined) {\n            breachSince[key] = tsMs;\n        }\n        const elapsedMs = tsMs - breachSince[key];\n        if (elapsedMs >= durationMs) {\n            if (activeAlerts[key]) {\n                // Deduplikasi: alert sudah aktif\n                activeAlerts[key].occurrence_count = (activeAlerts[key].occurrence_count || 1) + 1;\n                activeAlerts[key].last_seen_ts = tsMs;\n            } else {\n                const durSec = Math.round(elapsedMs / 1000);\n                const alertObj = buildAlert(durSec);\n                activeAlerts[key] = { ...alertObj, triggered_ts: tsMs, last_seen_ts: tsMs, occurrence_count: 1 };\n                alertsToPost.push(alertObj);\n            }\n        }\n    } else {\n        delete breachSince[key];\n        if (activeAlerts[key]) {\n            resolveLogs.push({\n                event: 'AUTO_RESOLVED',\n                code: activeAlerts[key].code,\n                device_id: deviceId,\n                ruang,\n                resolved_ts: tsMs,\n                note: resolveNote\n            });\n            delete activeAlerts[key];\n        }\n    }\n}\n\n// 1. WASTE_AFTER_HOURS (warning): power_w > 200 W di luar jam kerja selama >= 2 menit\nevalSustained(\n    deviceId + ':WASTE_AFTER_HOURS',\n    isAfterHours && powerW > wasteThresholdW,\n    wasteDurationMs,\n    (durSec) => ({\n        device_id: deviceId,\n        domain: 'energy',\n        code: 'WASTE_AFTER_HOURS',\n        severity: 'warning',\n        message: 'Pemborosan daya di luar jam kerja pada ' + ruang + ' (' + powerW + ' W > ' + wasteThresholdW + ' W selama ' + durSec + ' dtk)',\n        value: powerW,\n        context: {\n            gedung,\n            ruang,\n            duration_sec: durSec,\n            threshold_w: wasteThresholdW,\n            energy_kwh: energyKwh,\n            simulated_after_hours: Boolean(data.sim_after_hours)\n        }\n    }),\n    'Konsumsi daya di ' + ruang + ' kembali normal (' + powerW + ' W)'\n);\n\n// 2. HIGH_LOAD (critical): power_w > 3000 W selama >= 1 menit\nevalSustained(\n    deviceId + ':HIGH_LOAD',\n    powerW > highLoadThresholdW,\n    highLoadDurationMs,\n    (durSec) => ({\n        device_id: deviceId,\n        domain: 'energy',\n        code: 'HIGH_LOAD',\n        severity: 'critical',\n        message: 'Beban daya sangat tinggi di ' + ruang + ' mencapai ' + powerW + ' W (> ' + highLoadThresholdW + ' W selama ' + durSec + ' dtk)',\n        value: powerW,\n        context: {\n            gedung,\n            ruang,\n            duration_sec: durSec,\n            threshold_w: highLoadThresholdW,\n            energy_kwh: energyKwh\n        }\n    }),\n    'Beban daya di ' + ruang + ' kembali aman (' + powerW + ' W)'\n);\n\nflow.set('energyBreachSince', breachSince);\nflow.set('energyActiveAlerts', activeAlerts);\nflow.set('energyLastSeen', lastSeen);\n\nconst outAlerts = alertsToPost.length > 0\n    ? alertsToPost.map(a => ({\n        payload: a,\n        headers: {\n            'Content-Type': 'application/json',\n            'X-API-Key': env.get('API_KEY')\n        }\n    }))\n    : null;\n\nconst outResolves = resolveLogs.length > 0\n    ? resolveLogs.map(r => ({ payload: r }))\n    : null;\n\nif (!outAlerts && !outResolves) {\n    return null;\n}\nreturn [outAlerts, outResolves];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 100,
+        "wires": [
+            [
+                "http_post_energy_alert",
+                "debug_energy_alert_raised"
+            ],
+            [
+                "debug_energy_autoresolve"
+            ]
+        ]
+    },
+    {
+        "id": "link_energy_status_in",
+        "type": "link in",
+        "z": "tab_rules_energy",
+        "name": "Link In Status (LWT/Birth)",
+        "links": [
+            "link_to_status_rules"
+        ],
+        "x": 120,
+        "y": 220,
+        "wires": [
+            [
+                "fn_energy_status_heartbeat"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_in_energy_heartbeat",
+        "type": "mqtt in",
+        "z": "tab_rules_energy",
+        "name": "MQTT Energy Heartbeat",
+        "topic": "kampus/energy/+/+/+/heartbeat",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "mqtt_broker_local",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 150,
+        "y": 280,
+        "wires": [
+            [
+                "fn_energy_status_heartbeat"
+            ]
+        ]
+    },
+    {
+        "id": "fn_energy_status_heartbeat",
+        "type": "function",
+        "z": "tab_rules_energy",
+        "name": "Energy Status LWT & Heartbeat Tracker",
+        "func": "let data = msg.payload;\nif (typeof data === 'string') {\n    try { data = JSON.parse(data); } catch (e) { return null; }\n}\nif (!data || data.domain !== 'energy' || !data.device_id) {\n    return null;\n}\n\nconst tsMs = (typeof data.ts === 'number') ? data.ts : Date.now();\nconst deviceId = data.device_id;\nconst gedung = data.gedung || 'bsd-a';\nconst ruang = data.ruang || '';\nconst status = String(data.status || '').toLowerCase();\n\nlet activeAlerts = flow.get('energyActiveAlerts') || {};\nlet lastSeen = flow.get('energyLastSeen') || {};\nconst offKey = deviceId + ':OFFLINE';\n\nif (status === 'offline') {\n    const prev = lastSeen[deviceId] || {};\n    lastSeen[deviceId] = { ts: tsMs, gedung: gedung || prev.gedung || 'bsd-a', ruang: ruang || prev.ruang || '', online: false };\n    flow.set('energyLastSeen', lastSeen);\n\n    if (activeAlerts[offKey]) {\n        activeAlerts[offKey].occurrence_count = (activeAlerts[offKey].occurrence_count || 1) + 1;\n        flow.set('energyActiveAlerts', activeAlerts);\n        return null;\n    }\n\n    const alertObj = {\n        device_id: deviceId,\n        domain: 'energy',\n        code: 'OFFLINE',\n        severity: 'critical',\n        message: 'KWh Meter ' + deviceId + ' (' + (ruang || prev.ruang || '') + ') terputus dari broker (LWT offline)',\n        value: 0,\n        context: { gedung: gedung || prev.gedung || 'bsd-a', ruang: ruang || prev.ruang || '', trigger: 'lwt_status' }\n    };\n    activeAlerts[offKey] = { ...alertObj, triggered_ts: tsMs, occurrence_count: 1 };\n    flow.set('energyActiveAlerts', activeAlerts);\n\n    return [{\n        payload: alertObj,\n        headers: {\n            'Content-Type': 'application/json',\n            'X-API-Key': env.get('API_KEY')\n        }\n    }, null];\n}\n\nif (status === 'online' || status === 'alive') {\n    const prev = lastSeen[deviceId] || {};\n    lastSeen[deviceId] = { ts: tsMs, gedung: gedung || prev.gedung || 'bsd-a', ruang: ruang || prev.ruang || '', online: true };\n    flow.set('energyLastSeen', lastSeen);\n\n    if (activeAlerts[offKey]) {\n        delete activeAlerts[offKey];\n        flow.set('energyActiveAlerts', activeAlerts);\n        return [null, {\n            payload: {\n                event: 'AUTO_RESOLVED',\n                code: 'OFFLINE',\n                device_id: deviceId,\n                ruang: ruang || prev.ruang || '',\n                resolved_ts: tsMs,\n                note: 'Perangkat kembali ' + status\n            }\n        }];\n    }\n}\n\nreturn null;\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 240,
+        "wires": [
+            [
+                "http_post_energy_alert",
+                "debug_energy_alert_raised"
+            ],
+            [
+                "debug_energy_autoresolve"
+            ]
+        ]
+    },
+    {
+        "id": "inject_energy_watchdog",
+        "type": "inject",
+        "z": "tab_rules_energy",
+        "name": "Watchdog No-Data (15s)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "15",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 360,
+        "wires": [
+            [
+                "fn_energy_offline_watchdog"
+            ]
+        ]
+    },
+    {
+        "id": "fn_energy_offline_watchdog",
+        "type": "function",
+        "z": "tab_rules_energy",
+        "name": "Energy OFFLINE Watchdog (60s)",
+        "func": "const nowMs = Date.now();\nconst timeoutMs = (Number(env.get('ENERGY_OFFLINE_TIMEOUT_SEC')) || 60) * 1000;\n\nlet lastSeen = flow.get('energyLastSeen') || {};\nlet activeAlerts = flow.get('energyActiveAlerts') || {};\nlet alertsToPost = [];\n\nfor (const [deviceId, info] of Object.entries(lastSeen)) {\n    const silentMs = nowMs - info.ts;\n    const offKey = deviceId + ':OFFLINE';\n    if (silentMs >= timeoutMs && !activeAlerts[offKey]) {\n        const silentSec = Math.round(silentMs / 1000);\n        const alertObj = {\n            device_id: deviceId,\n            domain: 'energy',\n            code: 'OFFLINE',\n            severity: 'critical',\n            message: 'Tidak ada telemetri/heartbeat dari ' + deviceId + ' (' + info.ruang + ') selama ' + silentSec + ' detik',\n            value: silentSec,\n            context: {\n                gedung: info.gedung || 'bsd-a',\n                ruang: info.ruang || '',\n                trigger: 'no_data_timeout',\n                silent_sec: silentSec\n            }\n        };\n        activeAlerts[offKey] = { ...alertObj, triggered_ts: nowMs, occurrence_count: 1 };\n        alertsToPost.push(alertObj);\n    }\n}\n\nflow.set('energyActiveAlerts', activeAlerts);\n\nif (alertsToPost.length === 0) {\n    return null;\n}\n\nreturn [alertsToPost.map(a => ({\n    payload: a,\n    headers: {\n        'Content-Type': 'application/json',\n        'X-API-Key': env.get('API_KEY')\n    }\n}))];\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 360,
+        "wires": [
+            [
+                "http_post_energy_alert",
+                "debug_energy_alert_raised"
+            ]
+        ]
+    },
+    {
+        "id": "http_post_energy_alert",
+        "type": "http request",
+        "z": "tab_rules_energy",
+        "name": "Post Energy Alert to FastAPI",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://api:8000/api/v1/alerts",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 820,
+        "y": 180,
+        "wires": [
+            [
+                "debug_energy_alert_response"
+            ]
+        ]
+    },
+    {
+        "id": "debug_energy_alert_raised",
+        "type": "debug",
+        "z": "tab_rules_energy",
+        "name": "Energy Alert Raised",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload.code",
+        "statusType": "auto",
+        "x": 800,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "debug_energy_autoresolve",
+        "type": "debug",
+        "z": "tab_rules_energy",
+        "name": "Energy Auto-Resolve Log",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 810,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "debug_energy_alert_response",
+        "type": "debug",
+        "z": "tab_rules_energy",
+        "name": "FastAPI Energy Alert Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1080,
+        "y": 180,
         "wires": []
     },
     {
