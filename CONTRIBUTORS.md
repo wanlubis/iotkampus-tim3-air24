@@ -37,6 +37,15 @@ Kontribusi:
 
 ## Tim 1: Smart Energy (AIR24)
 
+### Vincent (Anggota 1 — Simulator 4 kWh Meter, Injektor Gangguan & Rule Engine Energy)
+
+GitHub: VozzyJun (`vincentjunio1@gmail.com`)
+
+Kontribusi:
+- Implementasi simulator 4 kWh meter (`kwh-01` s.d. `kwh-04` pada gedung `bsd-a`: `r3012`, `r3013`, `r3017`, `lab-iot`) dengan 1 MQTT client independen per perangkat, amplop `kampus.telemetry.v1` (`power_w`, `energy_kwh` non-menurun), `kampus.status.v1` (Birth & LWT), `heartbeat` 15 detik, dan subscriber `cmd` pada `simulators/energy/simulator.py` dan `devices_config.py`.
+- Pengembangan utilitas injektor gangguan CLI (`NORMAL`, `BOROS`, `LONJAKAN`, `STOP`, `CRASH`) pada `simulators/energy/inject.py` dan `inject_event.py`, lengkap dengan `Dockerfile`, `requirements.txt`, `README.md`, serta unit test `simulators/energy/test_simulator.py`.
+- Implementasi tab Node-RED `Rules - Smart Energy` pada `nodered/data/flows.json` (aturan durasi `WASTE_AFTER_HOURS` 2 menit, `HIGH_LOAD` 1 menit, `OFFLINE` via LWT & watchdog 60 detik, deduplikasi, auto-resolve, dan `POST /api/v1/alerts`) beserta modul & unit test di `nodered/lib/` dan `nodered/tests/test_rules.js`.
+
 ### Aldy (Anggota 2 — API, Dashboard, Grafana & Unit Test)
 
 GitHub: Aldy-create (`aldypasaribu59@gmail.com`)
