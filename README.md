@@ -18,7 +18,7 @@ Repository monorepo resmi untuk **Mini IoT Platform Kampus**, dikelola oleh **Ti
 | Nama Anggota | Kontak GitHub | Peran Utama | Folder Tanggung Jawab |
 |---|---|---|---|
 | **Vincent (`VozzyJun`)** | `vincentjunio1@gmail.com` | Owner Simulator 4 kWh Meter, Injektor Gangguan, & Rule Engine Energy Node-RED | `simulators/energy/`, `nodered/` (tab Energy) |
-| **Aldy (`Aldy-create`)** | `aldypasaribu59@gmail.com` | Owner REST API Smart Energy (`/api/v1/energy/*`), Tab Dashboard Smart Energy, Panel Grafana, & Unit Test | `api/app/routers/energy.py`, `api/tests/test_energy_api.py`, `dashboard/` (`#content-energy`), `grafana/` |
+| **Aldy (`Aldy-create`)** | `aldypasaribu59@gmail.com` | Owner REST API Smart Energy (`/api/v1/energy/*`), Tab Dashboard Smart Energy (BMS 2D SVG Floor Plan), Panel Grafana, & Unit Test | `api/app/routers/energy.py`, `api/tests/test_energy_api.py`, `dashboard/` (`#content-energy`, `dashboard/energy/`), `grafana/` |
 
 ---
 
@@ -199,3 +199,11 @@ docker compose --profile team-1 up --build -d energy-simulator
    ```bash
    python simulators/energy/inject.py normal --device all --via cmd
    ```
+
+5. **Dashboard BMS & Unit Test Tim 1**:
+   - **Dashboard BMS Smart Energy** (`http://localhost:8080` -> tab **Smart Energy**): menampilkan 4 kartu KPI utama, denah arsitektur **Interactive 2D SVG Floor Plan** Lantai 3 Gedung BSD-A (`R3012`, `R3013`, `R3017`, `Lab-IoT`), grafik permanen **Tren Daya** & **Distribusi Tagihan**, **Panel Detail Ruangan** + feed Alert/ACK, Ekspor CSV, serta tombol **Mode Simulasi** untuk preview lokal tanpa backend aktif.
+   - **Unit Test Terotomasi Tim 1**:
+     ```bash
+     pytest -q api/tests/test_energy_api.py simulators/energy/test_simulator.py
+     node nodered/tests/test_rules.js
+     ```
