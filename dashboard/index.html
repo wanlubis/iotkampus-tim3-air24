@@ -387,64 +387,229 @@
     <!-- ============================================================== -->
     <!-- TAB 2: SMART ENVIRONMENT / AIR QUALITY (TIM 3) -->
     <!-- ============================================================== -->
-    <div id="content-air" class="hidden space-y-6">
-      
-      <!-- Domain Air Header -->
-      <div class="bg-gradient-to-r from-emerald-900/40 to-slate-800 border border-emerald-500/30 rounded-2xl p-5">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div id="content-air" class="hidden space-y-5">
+
+      <!-- Domain Air Header & Ambang Batas -->
+      <div class="bg-gradient-to-r from-emerald-950/60 via-slate-800/90 to-slate-800/90 border border-emerald-500/30 rounded-2xl p-5 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-              <span>🌱 Domain Smart Environment (Air Quality & Kebisingan)</span>
-              <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">Owner: Tim 3</span>
-            </h2>
+            <div class="flex items-center space-x-2.5">
+              <h2 class="text-lg font-bold text-white">🌱 Smart Environment — Kualitas Udara & Kebisingan</h2>
+              <span class="text-[11px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/30 font-semibold">Tim 3</span>
+            </div>
             <p class="text-xs text-slate-300 mt-1">
-              Pemantauan konsentrasi CO₂ (ppm), partikulat PM2.5 (µg/m³), dan kebisingan (dB) di ruang kampus BSD-A.
+              Pemantauan real-time CO₂ (ppm), partikulat PM2.5 (µg/m³), dan kebisingan (dB) pada Gedung BSD-A.
+              <span class="text-slate-400 italic">(Catatan: Ambang batas berikut adalah asumsi simulasi lab, bukan baku mutu resmi).</span>
             </p>
           </div>
-          <!-- Ambang Rules Info Pill -->
-          <div class="flex flex-wrap gap-2 text-[11px]">
-            <div class="px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
-              CO₂ Warn: <strong class="text-amber-400">&gt;1000</strong> · Crit: <strong class="text-rose-400">&gt;1500 ppm</strong>
+          <div class="flex flex-wrap gap-2 text-[11px] shrink-0">
+            <div class="px-2.5 py-1 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-300">
+              CO₂: <strong class="text-amber-400">&gt;1000</strong> · <strong class="text-rose-400">&gt;1500 ppm</strong>
             </div>
-            <div class="px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
-              PM2.5 Warn: <strong class="text-amber-400">&gt;35</strong> · Crit: <strong class="text-rose-400">&gt;75 µg/m³</strong>
+            <div class="px-2.5 py-1 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-300">
+              PM2.5: <strong class="text-amber-400">&gt;35</strong> · <strong class="text-rose-400">&gt;75 µg/m³</strong>
             </div>
-            <div class="px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-300">
-              Noise Warn: <strong class="text-amber-400">&gt;70 dB</strong>
+            <div class="px-2.5 py-1 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-300">
+              Noise: <strong class="text-amber-400">&gt;70 dB</strong>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Air Quality Room Cards (3 Nodes: aq-01, aq-02, aq-03) -->
-      <div id="air-rooms-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Rendered by JS -->
+      <!-- Error Banner (Hidden by default) -->
+      <div id="air-error-banner" class="hidden bg-rose-950/60 border border-rose-500/50 text-rose-200 px-4 py-3 rounded-xl text-xs flex items-center justify-between">
+        <span id="air-error-msg">Gagal memuat data Smart Environment.</span>
+        <button onclick="window.airApp.fetchAirDashboard()" class="px-2.5 py-1 rounded bg-rose-800/60 hover:bg-rose-700 text-white font-semibold">Coba Lagi</button>
       </div>
 
-      <!-- Injeksi Gangguan Quick Guide (Untuk Demo UAS) -->
+      <!-- 4 KARTU KPI DOMAIN AIR (Bagian 7.4) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+          <div class="text-xs text-slate-400 font-medium">Rata-rata CO₂ Ruang</div>
+          <div class="flex items-baseline space-x-1.5">
+            <span id="air-kpi-co2-avg" class="text-2xl font-extrabold text-emerald-400 mt-1">--</span>
+            <span class="text-xs text-slate-400">ppm</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">Ambang aman &le; 1000 ppm</div>
+        </div>
+
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+          <div class="text-xs text-slate-400 font-medium">PM2.5 Tertinggi</div>
+          <div class="flex items-baseline space-x-1.5">
+            <span id="air-kpi-pm25-max" class="text-2xl font-extrabold text-emerald-400 mt-1">--</span>
+            <span class="text-xs text-slate-400">µg/m³</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">Ambang aman &le; 35 µg/m³</div>
+        </div>
+
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+          <div class="text-xs text-slate-400 font-medium">Kebisingan Tertinggi</div>
+          <div class="flex items-baseline space-x-1.5">
+            <span id="air-kpi-noise-max" class="text-2xl font-extrabold text-emerald-400 mt-1">--</span>
+            <span class="text-xs text-slate-400">dB</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">Ambang nyaman &le; 70 dB</div>
+        </div>
+
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+          <div class="text-xs text-slate-400 font-medium">Node Aktif & Alert Air</div>
+          <div class="flex items-baseline justify-between mt-1">
+            <span id="air-kpi-online" class="text-2xl font-extrabold text-white">0/3</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-semibold">
+              <span id="air-kpi-alerts-count">0</span> Alert
+            </span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">aq-01, aq-02, aq-03</div>
+        </div>
+      </div>
+
+      <!-- ROW 2: PETA ZONA KUALITAS UDARA (2D SVG) + FEED ALERT DOMAIN AIR -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        <!-- 2D SVG Zone Map Gedung BSD-A -->
+        <div class="lg:col-span-2 bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold text-white">Peta Zona Kualitas Udara — Gedung BSD-A</h3>
+              <p class="text-xs text-slate-400">Klik zona ruang untuk menyaring grafik time-series di bawah</p>
+            </div>
+            <div class="flex items-center space-x-3 text-[10px] text-slate-400">
+              <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>Sehat</span></span>
+              <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span><span>Waspada</span></span>
+              <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-rose-400"></span><span>Kritis</span></span>
+              <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-slate-500"></span><span>Offline</span></span>
+            </div>
+          </div>
+
+          <div class="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl p-3 flex-1 flex items-center justify-center">
+            <svg viewBox="0 0 640 220" class="w-full h-auto max-h-[240px]" xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer Building Outline -->
+              <rect x="10" y="10" width="620" height="200" rx="12" fill="#0f172a" stroke="#334155" stroke-width="2" />
+              <text x="24" y="30" fill="#64748b" font-size="11" font-family="monospace" font-weight="bold">GEDUNG BSD-A · LANTAI 3 (SMART ENVIRONMENT)</text>
+
+              <!-- Zone 1: Ruang 3012 (aq-01) -->
+              <g onclick="window.airApp.selectRoom('aq-01')" class="cursor-pointer transition">
+                <rect id="air-zone-aq-01" x="24" y="44" width="210" height="96" rx="8" fill="rgba(16, 185, 129, 0.16)" stroke="#10b981" stroke-width="2" />
+                <text x="38" y="68" fill="#f8fafc" font-size="13" font-weight="bold">Ruang 3012 (aq-01)</text>
+                <text id="air-zone-val-aq-01" x="38" y="92" fill="#cbd5e1" font-size="12" font-family="monospace">-- ppm · -- µg</text>
+                <text id="air-zone-status-aq-01" x="38" y="118" fill="#34d399" font-size="10" font-weight="bold">SEHAT</text>
+              </g>
+
+              <!-- Zone 2: Ruang 3017 (aq-02) -->
+              <g onclick="window.airApp.selectRoom('aq-02')" class="cursor-pointer transition">
+                <rect id="air-zone-aq-02" x="406" y="44" width="210" height="96" rx="8" fill="rgba(16, 185, 129, 0.16)" stroke="#10b981" stroke-width="2" />
+                <text x="420" y="68" fill="#f8fafc" font-size="13" font-weight="bold">Ruang 3017 (aq-02)</text>
+                <text id="air-zone-val-aq-02" x="420" y="92" fill="#cbd5e1" font-size="12" font-family="monospace">-- ppm · -- µg</text>
+                <text id="air-zone-status-aq-02" x="420" y="118" fill="#34d399" font-size="10" font-weight="bold">SEHAT</text>
+              </g>
+
+              <!-- Connector Hallway -->
+              <rect x="244" y="75" width="152" height="34" rx="4" fill="#1e293b" stroke="#334155" stroke-dasharray="4 3" />
+              <text x="320" y="96" text-anchor="middle" fill="#64748b" font-size="10" font-family="monospace">AKSES KORIDOR</text>
+
+              <!-- Zone 3: Koridor 1 (aq-03) -->
+              <g onclick="window.airApp.selectRoom('aq-03')" class="cursor-pointer transition">
+                <rect id="air-zone-aq-03" x="24" y="150" width="592" height="48" rx="8" fill="rgba(16, 185, 129, 0.16)" stroke="#10b981" stroke-width="2" />
+                <text x="40" y="179" fill="#f8fafc" font-size="13" font-weight="bold">Koridor Utama 1 (aq-03)</text>
+                <text id="air-zone-val-aq-03" x="280" y="179" fill="#cbd5e1" font-size="12" font-family="monospace">-- ppm · -- µg</text>
+                <text id="air-zone-status-aq-03" x="550" y="179" text-anchor="end" fill="#34d399" font-size="11" font-weight="bold">SEHAT</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Feed Alert Khusus Domain Air + Tombol ACK -->
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold text-white">Feed Alert Domain Air</h3>
+              <p class="text-xs text-slate-400">CO₂, PM2.5, Noise & Offline</p>
+            </div>
+            <button onclick="window.airApp.fetchAirDashboard()" class="text-xs text-emerald-400 hover:underline">Refresh</button>
+          </div>
+          <div id="air-alerts-container" class="flex-1 overflow-y-auto max-h-[240px] space-y-2.5 pr-1">
+            <div class="text-center py-8 text-xs text-slate-400">Memuat alert domain air...</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ROW 3: KARTU PER RUANG (3 Nodes: aq-01, aq-02, aq-03) -->
+      <div id="air-rooms-container" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Rendered by airApp.js -->
+      </div>
+
+      <!-- ROW 4: GRAFIK TIME-SERIES KETIGA METRIK (CO2, PM2.5, NOISE) -->
+      <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-bold text-white">Grafik Tren Ketiga Metrik Udara & Kebisingan</h3>
+            <p class="text-xs text-slate-400">Data historis langsung dari InfluxDB dengan garis ambang peringatan</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="air-chart-device-filter" onchange="window.airApp.onDeviceFilterChange(this.value)"
+                    class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200">
+              <option value="all">Semua Ruang (aq-01..03)</option>
+              <option value="aq-01">Ruang 3012 (aq-01)</option>
+              <option value="aq-02">Ruang 3017 (aq-02)</option>
+              <option value="aq-03">Koridor 1 (aq-03)</option>
+            </select>
+            <div class="flex items-center space-x-1 bg-slate-900 p-1 rounded-lg border border-slate-700">
+              <button onclick="window.airApp.setTimeRange('-15m')" data-range="-15m" class="air-range-btn px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-800 text-slate-400 hover:text-white transition">15m</button>
+              <button onclick="window.airApp.setTimeRange('-30m')" data-range="-30m" class="air-range-btn px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-600 text-white transition">30m</button>
+              <button onclick="window.airApp.setTimeRange('-1h')" data-range="-1h" class="air-range-btn px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-800 text-slate-400 hover:text-white transition">1j</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="bg-slate-900/70 border border-slate-700/60 rounded-xl p-3">
+            <div class="text-xs font-semibold text-slate-300 mb-2">Konsentrasi CO₂ (ppm)</div>
+            <div class="h-44"><canvas id="air-chart-co2"></canvas></div>
+          </div>
+          <div class="bg-slate-900/70 border border-slate-700/60 rounded-xl p-3">
+            <div class="text-xs font-semibold text-slate-300 mb-2">Partikulat PM2.5 (µg/m³)</div>
+            <div class="h-44"><canvas id="air-chart-pm25"></canvas></div>
+          </div>
+          <div class="bg-slate-900/70 border border-slate-700/60 rounded-xl p-3">
+            <div class="text-xs font-semibold text-slate-300 mb-2">Tingkat Kebisingan (dB)</div>
+            <div class="h-44"><canvas id="air-chart-noise"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 5: INJEKSI GANGGUAN QUICK GUIDE (DENGAN TOMBOL COPY) -->
       <div class="bg-slate-800/60 border border-slate-700 rounded-2xl p-5">
-        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
-          <span>🛠️ Kontrol & Injektor Gangguan Demo (Bagian 11)</span>
-        </h3>
-        <p class="text-xs text-slate-400 mt-1">Jalankan perintah ini di terminal untuk memicu simulasi saat sesi demo live:</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-xs">
-          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-emerald-400">
-            python simulator.py --mode CO2_SPIKE
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-white">🛠️ Kontrol & Injektor Gangguan Demo (Bagian 11)</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Klik untuk menyalin perintah terminal injeksi gangguan saat sesi demo live:</p>
           </div>
-          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-purple-400">
-            python simulator.py --mode PM_SPIKE
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3 text-xs">
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-emerald-400 truncate">python simulators/air/simulator.py --mode CO2_SPIKE</code>
+            <button onclick="window.airApp.copyDemoCmd('python simulators/air/simulator.py --mode CO2_SPIKE', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
           </div>
-          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-amber-400">
-            python simulator.py --mode NOISE_SPIKE
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-purple-400 truncate">python simulators/air/simulator.py --mode PM_SPIKE</code>
+            <button onclick="window.airApp.copyDemoCmd('python simulators/air/simulator.py --mode PM_SPIKE', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
           </div>
-          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-blue-400">
-            python simulator.py --mode STOP
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-amber-400 truncate">python simulators/air/simulator.py --mode NOISE_SPIKE</code>
+            <button onclick="window.airApp.copyDemoCmd('python simulators/air/simulator.py --mode NOISE_SPIKE', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
           </div>
-          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-rose-400">
-            python simulator.py --mode CRASH
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-blue-400 truncate">python simulators/air/simulator.py --mode STOP</code>
+            <button onclick="window.airApp.copyDemoCmd('python simulators/air/simulator.py --mode STOP', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
           </div>
-          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono text-slate-300">
-            python simulator.py --mode NORMAL
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-rose-400 truncate">python simulators/air/simulator.py --mode CRASH</code>
+            <button onclick="window.airApp.copyDemoCmd('python simulators/air/simulator.py --mode CRASH', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
+          </div>
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-slate-300 truncate">python simulators/air/simulator.py --mode NORMAL</code>
+            <button onclick="window.airApp.copyDemoCmd('python simulators/air/simulator.py --mode NORMAL', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
           </div>
         </div>
       </div>
@@ -873,7 +1038,13 @@
         window.closeEnergyInfoPopover();
       }
 
-      if (tabId === 'air') fetchAirRooms();
+      if (tabId === 'air') {
+        if (window.airApp && typeof window.airApp.fetchAirDashboard === 'function') {
+          window.airApp.fetchAirDashboard();
+        } else {
+          fetchAirRooms();
+        }
+      }
       if (tabId === 'coldchain') fetchColdchainChambers();
       if (tabId === 'energy') {
         if (window.energyApp && typeof window.energyApp.onTabActivated === 'function') {
@@ -1170,12 +1341,20 @@
       fetchSummary();
       fetchAlerts();
       if (currentTab === 'overview') fetchDevices();
-      if (currentTab === 'air') fetchAirRooms();
+      if (currentTab === 'air') {
+        if (window.airApp && typeof window.airApp.fetchAirDashboard === 'function') {
+          window.airApp.fetchAirDashboard();
+        } else {
+          fetchAirRooms();
+        }
+      }
       if (currentTab === 'coldchain') fetchColdchainChambers();
       if (currentTab === 'energy' && typeof window.fetchEnergyRooms === 'function') window.fetchEnergyRooms();
     }, 5000);
   </script>
 
+  <!-- Modular Smart Environment (Air Quality) App (Tim 3) -->
+  <script type="module" src="/air/airApp.js"></script>
   <!-- Modular Smart Energy BMS App (Interactive 2D SVG Floor Plan + Charts + Detail Panel) -->
   <script type="module" src="/energy/energyApp.js"></script>
 </body>
