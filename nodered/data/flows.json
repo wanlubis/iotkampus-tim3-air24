@@ -11,7 +11,7 @@
         "id": "8876492dfbe5ea33",
         "type": "tab",
         "label": "Flow 2 - Coldchain Alert",
-        "disabled": false,
+        "disabled": true,
         "info": "Deteksi suhu, pemulihan alert, dan eskalasi alert.",
         "env": []
     },
@@ -22,6 +22,13 @@
         "disabled": true,
         "info": "",
         "env": []
+    },
+    {
+        "id": "c041000000000001",
+        "type": "tab",
+        "label": "Coldchain Rule Engine V4",
+        "disabled": false,
+        "info": ""
     },
     {
         "id": "c84ec86569e1ea20",
@@ -1036,5 +1043,207 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "c041000000000002",
+        "type": "mqtt in",
+        "z": "c041000000000001",
+        "name": "Coldchain Telemetry",
+        "topic": "kampus/coldchain/+/+/+/telemetry",
+        "qos": "1",
+        "datatype": "json",
+        "broker": "c84ec86569e1ea20",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 100,
+        "wires": [
+            [
+                "c041000000000004"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000003",
+        "type": "inject",
+        "z": "c041000000000001",
+        "name": "Watchdog 5s",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "5",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "watchdog",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 180,
+        "wires": [
+            [
+                "c041000000000004"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000004",
+        "type": "function",
+        "z": "c041000000000001",
+        "name": "Validate + Rule Engine",
+        "func": "const registry = {\"cc-01\":\"gudang-a\",\"cc-02\":\"gudang-a\",\"cc-03\":\"gudang-b\"};\nconst now = Date.now();\nlet states = context.get(\"states\") || {};\nfor (const id of Object.keys(registry)) {\n    if (!states[id]) states[id] = {last:now, rules:{}};\n}\nconst rules = [\"TEMP_WARN\",\"TEMP_HIGH\",\"TEMP_ESCALATED\",\"DOOR_OPEN_LONG\",\"OFFLINE\"];\nfunction slot(s,k) { return s.rules[k] || (s.rules[k]={since:null, applied:null, pending:null, retry:0}); }\nif (msg.result) {\n    const q=msg.result, s=states[q.id];\n    if (s) { const a=slot(s,q.rule); if(a.pending && a.pending.token===q.token) {\n        a.pending=null; if(q.ok) a.applied=q.desired; else a.retry=now+5000;\n    }}\n} else if (msg.topic !== \"watchdog\") {\n    const p=msg.payload, m=p && p.metrics;\n    if (!p || p.schema!==\"kampus.telemetry.v1\" || !Object.prototype.hasOwnProperty.call(registry,p.device_id) || p.domain!==\"coldchain\" || p.gedung!==\"bsd-a\" || p.ruang!==registry[p.device_id] || msg.topic!==`kampus/coldchain/bsd-a/${p.ruang}/${p.device_id}/telemetry` || !Number.isFinite(p.ts) || !m || ![m.temp_c,m.humidity_pct,m.battery_pct,m.rssi_dbm].every(Number.isFinite) || typeof m.door_open!==\"boolean\") { node.warn(\"Telemetry ditolak: schema, registry atau metrics tidak valid\"); return null; }\n    const s=states[p.device_id];\n    if(now-s.last>=60000) for(const k of rules.slice(0,4)) slot(s,k).since=null;\n    s.last=now; s.metrics=m;\n    if(m.temp_c>8) slot(s,\"TEMP_ESCALATED\").applied=null;\n    for(const [k,on] of [[\"TEMP_WARN\",m.temp_c>6],[\"TEMP_HIGH\",m.temp_c>8],[\"DOOR_OPEN_LONG\",m.door_open]]) {\n        const a=slot(s,k); a.since=on?(a.since??now):null;\n    }\n}\nconst out=[];\nfor(const [id,s] of Object.entries(states)) {\n    const stale=now-s.last>=60000;\n    for(const k of rules) {\n        const a=slot(s,k); let desired;\n        if(k===\"OFFLINE\") desired=stale;\n        else if(stale || !s.metrics) continue;\n        else if(k===\"TEMP_ESCALATED\") { if(s.metrics.temp_c>8) continue; desired=false; }\n        else { const duration=k===\"TEMP_HIGH\"?120000:60000; if(a.since!==null && now-a.since<duration) continue; desired=a.since!==null; }\n        if(a.pending || now<a.retry || a.applied===desired) continue;\n        const token=(context.get(\"seq\")||0)+1; context.set(\"seq\",token);\n        a.pending={token};\n        const source=k===\"OFFLINE\"?\"?source=no_data\":\"\";\n        const severity=[\"OFFLINE\",\"TEMP_HIGH\"].includes(k)?\"critical\":\"warning\";\n        const metadata={source:k===\"OFFLINE\"?\"no_data\":\"rule_engine\",duration_seconds:k===\"TEMP_HIGH\"?120:60};\n        if(s.metrics) {metadata.temp_c=s.metrics.temp_c; metadata.door_open=s.metrics.door_open;}\n        out.push({method:\"POST\",url:desired?\"http://backend:8000/api/v1/internal/alerts\":`http://backend:8000/api/v1/internal/alerts/resolve-type/${id}/${k}${source}`,headers:{\"Content-Type\":\"application/json\",\"X-API-Key\":env.get(\"API_KEY\")},requestTimeout:10000,payload:desired?{device_id:id,alert_type:k,severity,message:`${k}: ${id}`,metadata}:{},job:{id,rule:k,desired,token}});\n    }\n}\ncontext.set(\"states\",states);\nreturn [out];",
+        "outputs": 1,
+        "initialize": "context.set(\"states\", {});",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 140,
+        "wires": [
+            [
+                "c041000000000005"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000005",
+        "type": "http request",
+        "z": "c041000000000001",
+        "name": "Alert API",
+        "method": "use",
+        "ret": "obj",
+        "url": "",
+        "senderr": false,
+        "headers": [],
+        "x": 700,
+        "y": 140,
+        "wires": [
+            [
+                "c041000000000006"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000006",
+        "type": "function",
+        "z": "c041000000000001",
+        "name": "Result Handler",
+        "func": "if (!msg.job) return null;\nconst ok=!msg.error && Number(msg.statusCode)>=200 && Number(msg.statusCode)<300;\nconst q=msg.job;\nreturn [{result:{...q,ok}}, {payload:{device_id:q.id,alert_type:q.rule,action:q.desired?\"create\":\"resolve\",ok,statusCode:msg.statusCode}}];",
+        "outputs": 2,
+        "x": 930,
+        "y": 140,
+        "wires": [
+            [
+                "c041000000000004"
+            ],
+            [
+                "c041000000000007"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000007",
+        "type": "debug",
+        "z": "c041000000000001",
+        "name": "Safe Alert Result",
+        "active": true,
+        "tosidebar": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 1170,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "c041000000000008",
+        "type": "catch",
+        "z": "c041000000000001",
+        "name": "HTTP Errors",
+        "scope": [
+            "c041000000000005"
+        ],
+        "uncaught": false,
+        "x": 700,
+        "y": 220,
+        "wires": [
+            [
+                "c041000000000006"
+            ]
+        ]
+    },
+    {
+        "id": "c041000000000009",
+        "type": "inject",
+        "z": "c041000000000001",
+        "name": "Escalation 60s",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "60",
+        "once": true,
+        "onceDelay": "5",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 320,
+        "wires": [
+            [
+                "c04100000000000a"
+            ]
+        ]
+    },
+    {
+        "id": "c04100000000000a",
+        "type": "function",
+        "z": "c041000000000001",
+        "name": "Escalation Headers",
+        "func": "msg.headers={\"Content-Type\":\"application/json\",\"X-API-Key\":env.get(\"API_KEY\")}; msg.payload={}; return msg;",
+        "outputs": 1,
+        "x": 440,
+        "y": 320,
+        "wires": [
+            [
+                "c04100000000000b"
+            ]
+        ]
+    },
+    {
+        "id": "c04100000000000b",
+        "type": "http request",
+        "z": "c041000000000001",
+        "name": "Run Escalation",
+        "method": "POST",
+        "ret": "obj",
+        "url": "http://backend:8000/api/v1/internal/alerts/escalate",
+        "senderr": false,
+        "headers": [],
+        "x": 700,
+        "y": 320,
+        "wires": [
+            [
+                "c04100000000000c"
+            ]
+        ]
+    },
+    {
+        "id": "c04100000000000c",
+        "type": "debug",
+        "z": "c041000000000001",
+        "name": "Escalation Result",
+        "active": true,
+        "tosidebar": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 950,
+        "y": 320,
+        "wires": []
     }
 ]

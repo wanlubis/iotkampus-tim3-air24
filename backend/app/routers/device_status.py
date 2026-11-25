@@ -1,4 +1,3 @@
-
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -14,6 +13,10 @@ router = APIRouter(
 )
 
 
+# ==========================================
+# API KEY AUTHENTICATION
+# ==========================================
+
 def verify_api_key(x_api_key: str = Header(default="")):
     if not settings.API_KEY:
         raise HTTPException(
@@ -28,17 +31,26 @@ def verify_api_key(x_api_key: str = Header(default="")):
         )
 
 
+# ==========================================
+# REQUEST MODEL
+# ==========================================
+
 class DeviceStatus(BaseModel):
     device_id: str
     status: str
     ts: int | None = None
 
 
+# ==========================================
+# UPDATE DEVICE STATUS
+# ==========================================
+
 @router.post(
     "/device-status",
     dependencies=[Depends(verify_api_key)],
 )
 def update_device_status(payload: DeviceStatus):
+
     if payload.status not in ("online", "offline"):
         raise HTTPException(
             status_code=400,
@@ -46,14 +58,36 @@ def update_device_status(payload: DeviceStatus):
         )
 
     try:
+        event_time = (
+            datetime.fromtimestamp(
+                payload.ts / 1000,
+                tz=timezone.utc,
+            )
+            if payload.ts is not None
+            else datetime.now(timezone.utc)
+        )
+
+    except (ValueError, OverflowError, OSError):
+        raise HTTPException(
+            status_code=400,
+            detail="Timestamp tidak valid",
+        )
+
+    try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
+
+                # ==============================
+                # UPDATE STATUS PERANGKAT
+                # ==============================
+
                 cur.execute(
                     """
                     UPDATE devices
                     SET status = %s,
                         last_seen = CASE
-                            WHEN %s = 'online' THEN %s
+                            WHEN %s = 'online'
+                            THEN GREATEST(last_seen, %s)
                             ELSE last_seen
                         END,
                         updated_at = NOW()
@@ -64,14 +98,7 @@ def update_device_status(payload: DeviceStatus):
                     (
                         payload.status,
                         payload.status,
-                        (
-                            datetime.fromtimestamp(
-                                payload.ts / 1000,
-                                tz=timezone.utc,
-                            )
-                            if payload.ts is not None
-                            else datetime.now(timezone.utc)
-                        ),
+                        event_time,
                         payload.device_id,
                     ),
                 )
@@ -84,12 +111,98 @@ def update_device_status(payload: DeviceStatus):
                         detail="Device tidak ditemukan",
                     )
 
+                alert_created = False
+                alerts_resolved = 0
+
+                # ==============================
+                # CREATE OFFLINE ALERT (LWT)
+                # ==============================
+
+                if payload.status == "offline":
+
+                    cur.execute(
+                        """
+                        INSERT INTO alert_events (
+                            device_id,
+                            alert_type,
+                            severity,
+                            message,
+                            status,
+                            metadata
+                        )
+                        SELECT
+                            %s,
+                            'OFFLINE',
+                            'critical',
+                            %s,
+                            'active',
+                            jsonb_build_object(
+                                'source', 'device_status',
+                                'device_status', 'offline',
+                                'reason', 'mqtt_offline'
+                            )
+                        WHERE NOT EXISTS (
+                            SELECT 1
+                            FROM alert_events
+                            WHERE device_id = %s
+                              AND alert_type = 'OFFLINE'
+                              AND metadata->>'source'
+                                  = 'device_status'
+                              AND status IN (
+                                  'active',
+                                  'acknowledged'
+                              )
+                        )
+                        RETURNING alert_id
+                        """,
+                        (
+                            payload.device_id,
+                            f"Perangkat {payload.device_id} offline",
+                            payload.device_id,
+                        ),
+                    )
+
+                    alert_created = cur.fetchone() is not None
+
+                # ==============================
+                # AUTOMATIC LWT RECOVERY
+                # ==============================
+
+                elif payload.status == "online":
+
+                    cur.execute(
+                        """
+                        UPDATE alert_events
+                        SET status = 'resolved',
+                            resolved_at = NOW()
+                        WHERE device_id = %s
+                          AND alert_type = 'OFFLINE'
+                          AND metadata->>'source'
+                              = 'device_status'
+                          AND status IN (
+                              'active',
+                              'acknowledged'
+                          )
+                        """,
+                        (payload.device_id,),
+                    )
+
+                    alerts_resolved = cur.rowcount
+
+                conn.commit()
+
                 return {
                     "message": "Status perangkat berhasil diperbarui",
                     "data": device,
+                    "alert_created": alert_created,
+                    "alerts_resolved": alerts_resolved,
                 }
 
     except HTTPException:
         raise
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )

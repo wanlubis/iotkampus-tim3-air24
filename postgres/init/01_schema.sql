@@ -33,6 +33,7 @@ ON CONFLICT (device_id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS alert_events (
     alert_id BIGSERIAL PRIMARY KEY,
+
     device_id VARCHAR(50) NOT NULL
         REFERENCES devices(device_id),
 
@@ -50,10 +51,23 @@ CREATE TABLE IF NOT EXISTS alert_events (
     metadata JSONB DEFAULT '{}'::jsonb,
 
     CONSTRAINT valid_alert_severity
-        CHECK (severity IN ('info', 'warning', 'critical')),
+        CHECK (
+            severity IN (
+                'info',
+                'warning',
+                'critical',
+                'escalated'
+            )
+        ),
 
     CONSTRAINT valid_alert_status
-        CHECK (status IN ('active', 'acknowledged', 'resolved'))
+        CHECK (
+            status IN (
+                'active',
+                'acknowledged',
+                'resolved'
+            )
+        )
 );
 
 -- =====================================
