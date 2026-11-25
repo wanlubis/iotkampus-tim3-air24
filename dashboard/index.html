@@ -26,16 +26,11 @@
     }
   </script>
   <!-- Chart.js CDN (untuk grafik interaktif Smart Energy) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <!-- Three.js ES Modules Import Map (untuk 3D Digital Twin Smart Energy) -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-    }
-  }
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+  <!-- IBM Plex Sans & Mono untuk tipografi instrumen Smart Energy (non-blocking) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
   <style>
     .pulse-dot {
       animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -44,128 +39,90 @@
       0%, 100% { opacity: 1; }
       50% { opacity: .4; }
     }
-    .en-glass {
-      background: linear-gradient(145deg, rgba(30, 41, 59, 0.78), rgba(15, 23, 42, 0.88));
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(148, 163, 184, 0.16);
-      box-shadow: 0 10px 30px -12px rgba(2, 6, 23, 0.65);
-    }
-    .en-glass-card {
-      background: linear-gradient(160deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.85));
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(148, 163, 184, 0.15);
-      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-    .en-glass-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(56, 189, 248, 0.35);
-      box-shadow: 0 12px 28px -10px rgba(14, 165, 233, 0.18);
-    }
-    /* 3D Digital Twin Full-Viewport Spatial Command Center (Scoped ONLY to Smart Energy Tab) */
-    :root {
-      --navbar-height: 112px;
-    }
-    body.en-spatial-mode {
-      overflow: hidden !important;
-      height: 100vh !important;
-    }
-    body.en-spatial-mode > main {
-      max-width: none !important;
-      width: 100% !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      flex: 1 1 auto !important;
-    }
-    body.en-spatial-mode #global-kpi-bar,
-    body.en-spatial-mode > footer {
+    /* Smart Energy BMS Console (Scoped ONLY to #content-energy) */
+    body.en-bms-mode #global-kpi-bar {
       display: none !important;
     }
-    body.en-spatial-mode #content-energy {
-      position: relative;
-      width: 100%;
-      height: calc(100vh - var(--navbar-height, 112px));
-      overflow: hidden;
-      margin: 0 !important;
-      padding: 0 !important;
+    body.en-bms-mode > main {
+      max-width: 1440px !important;
+      padding-top: 1rem !important;
+      padding-bottom: 1.5rem !important;
     }
-
-    #en3d-stage {
-      background: radial-gradient(circle at 50% 35%, #0c1930 0%, #050b18 60%, #02050d 100%);
+    #content-energy {
+      font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
     }
-    #en3d-stage:fullscreen {
-      width: 100vw !important;
-      height: 100vh !important;
-      border-radius: 0;
-      border: none;
+    #content-energy .en-num {
+      font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+      font-variant-numeric: tabular-nums;
     }
-    .en3d-hud {
-      background: rgba(10, 18, 32, 0.72);
+    #content-energy button:not(:disabled),
+    #content-energy select:not(:disabled),
+    #content-energy a[href] {
+      cursor: pointer;
+    }
+    #content-energy button:disabled,
+    #content-energy select:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    #content-energy button:focus-visible,
+    #content-energy select:focus-visible,
+    #content-energy input:focus-visible {
+      outline: 2px solid #38bdf8;
+      outline-offset: 2px;
+    }
+    .en-bms-card {
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow: 0 8px 24px -16px rgba(2, 6, 23, 0.75);
+    }
+    .en-bms-glass {
+      background: rgba(11, 18, 32, 0.88);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(56, 189, 248, 0.2);
-      box-shadow: 0 8px 28px -8px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      box-shadow: 0 16px 36px -12px rgba(2, 6, 23, 0.82);
     }
-    .en3d-hud-strong {
-      background: rgba(10, 18, 32, 0.88);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(56, 189, 248, 0.24);
-      box-shadow: 0 14px 40px -10px rgba(0, 0, 0, 0.78), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    }
-    .en3d-btn {
-      background: rgba(15, 23, 42, 0.74);
-      border: 1px solid rgba(148, 163, 184, 0.22);
+    .en-bms-btn {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.18);
       color: #cbd5e1;
-      transition: all 0.18s ease;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
-    .en3d-btn:hover {
-      background: rgba(30, 41, 59, 0.94);
-      border-color: rgba(56, 189, 248, 0.5);
+    .en-bms-btn:hover {
+      background: rgba(30, 41, 59, 0.9);
+      border-color: rgba(148, 163, 184, 0.36);
       color: #f8fafc;
     }
-    .en3d-btn.active {
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.32), rgba(56, 189, 248, 0.16));
-      border-color: rgba(56, 189, 248, 0.75);
+    .en-bms-btn.active {
+      background: rgba(14, 165, 233, 0.15);
+      border-color: rgba(56, 189, 248, 0.5);
       color: #e0f2fe;
-      box-shadow: 0 0 14px -4px rgba(56, 189, 248, 0.52);
     }
-    #en3d-cam-toolbar {
-      transition: opacity 0.22s ease;
+    /* Interactive 2D SVG Floor Plan Hover & Focus States (60 FPS lightweight) */
+    #en-floorplan-svg .en-svg-room {
+      transition: opacity 0.18s ease;
+      outline: none;
     }
-    #en3d-drawer {
-      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease;
+    #en-floorplan-svg .en-svg-room .en-room-surface {
+      transition: fill 0.16s ease, stroke-width 0.16s ease, filter 0.16s ease;
     }
-    #en3d-drawer.en3d-drawer-closed {
-      transform: translateX(calc(100% + 28px));
-      opacity: 0;
-      pointer-events: none;
+    #en-floorplan-svg .en-svg-room .en-room-selection {
+      transition: opacity 0.16s ease;
     }
-    #en-bottom-drawer {
-      transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease;
+    #en-floorplan-svg .en-svg-room:hover .en-room-surface {
+      filter: brightness(1.22);
+      stroke-width: 2.25;
     }
-    #en-bottom-drawer.en-bottom-closed {
-      transform: translateY(calc(100% + 24px));
-      opacity: 0;
-      pointer-events: none;
+    #en-floorplan-svg .en-svg-room:focus-visible .en-room-selection {
+      opacity: 1 !important;
+      stroke: #38bdf8;
+      stroke-dasharray: 4 2;
     }
-    #en3d-tooltip {
-      position: absolute;
-      z-index: 35;
-      pointer-events: none;
-      opacity: 0;
-      transform: translate(-50%, -115%) scale(0.96);
-      transition: opacity 0.12s ease, transform 0.12s ease;
-    }
-    #en3d-tooltip.visible {
-      opacity: 1;
-      transform: translate(-50%, -115%) scale(1);
-    }
-    /* Custom Dark/Cyan Scrollbar (WebKit + Firefox) */
+    /* Custom Dark Scrollbar (WebKit + Firefox) */
     .en-dark-scroll {
       scrollbar-width: thin;
-      scrollbar-color: rgba(56, 189, 248, 0.36) rgba(15, 23, 42, 0.45);
+      scrollbar-color: rgba(148, 163, 184, 0.32) rgba(15, 23, 42, 0.45);
     }
     .en-dark-scroll::-webkit-scrollbar {
       width: 6px;
@@ -173,14 +130,29 @@
     }
     .en-dark-scroll::-webkit-scrollbar-track {
       background: rgba(15, 23, 42, 0.45);
-      border-radius: 999px;
     }
     .en-dark-scroll::-webkit-scrollbar-thumb {
-      background: rgba(56, 189, 248, 0.32);
-      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.32);
+      border-radius: 3px;
     }
     .en-dark-scroll::-webkit-scrollbar-thumb:hover {
-      background: rgba(56, 189, 248, 0.58);
+      background: rgba(148, 163, 184, 0.55);
+    }
+    /* Mobile tap targets (R-03) */
+    @media (max-width: 640px) {
+      #content-energy .en-tap {
+        min-height: 44px;
+      }
+    }
+    /* Respect prefers-reduced-motion (R-39) */
+    @media (prefers-reduced-motion: reduce) {
+      #content-energy *,
+      #content-energy *::before,
+      #content-energy *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
@@ -493,464 +465,362 @@
     </div>
 
     <!-- ============================================================== -->
-    <!-- TAB 4: SMART ENERGY (TIM 1) — FULL-VIEWPORT 3D COMMAND CENTER  -->
+    <!-- TAB 4: SMART ENERGY (TIM 1) - BMS 2D FLOOR PLAN & BENTO GRID   -->
     <!-- ============================================================== -->
-    <div id="content-energy" class="hidden relative w-full overflow-hidden">
-      <!-- FULL-VIEWPORT 3D STAGE (100% WIDTH x 100% HEIGHT) -->
-      <div id="en3d-stage" class="relative w-full h-full overflow-hidden select-none">
-        <!-- WebGL Background Canvas Host -->
-        <div id="en3d-canvas-host" class="absolute inset-0 w-full h-full"></div>
+    <div id="content-energy" class="hidden space-y-4">
 
-        <!-- Floating Hover Tooltip (auto-hidden when dragging or hovering selected room) -->
-        <div id="en3d-tooltip" class="en3d-hud rounded-xl px-3.5 py-2.5 min-w-[215px]">
-          <div class="flex items-center justify-between gap-2 mb-1.5">
-            <div>
-              <div id="en3d-tt-room" class="text-xs font-bold text-white">r3012</div>
-              <div id="en3d-tt-device" class="text-[10px] font-mono text-slate-400">kwh-01 · Gedung BSD-A</div>
-            </div>
-            <span id="en3d-tt-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">NORMAL</span>
+      <!-- 1. SLIM SINGLE-ROW BMS HEADER (Consolidated Status Pill & Quiet Controls) -->
+      <div class="relative flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+        <!-- Left: Title, Location & Single Consolidated Status Pill -->
+        <div class="flex items-center gap-3 flex-wrap min-w-0">
+          <div class="flex items-baseline gap-2.5 flex-wrap">
+            <h2 class="text-base sm:text-lg font-semibold text-slate-100 tracking-tight">Smart Energy Monitoring</h2>
+            <span class="text-xs text-slate-400">Lantai 3 · Gedung BSD-A</span>
           </div>
-          <div class="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-700/60 text-[11px]">
-            <div>
-              <div class="text-slate-400 text-[10px]">Daya Instan</div>
-              <div id="en3d-tt-power" class="font-mono font-bold text-cyan-300">0 W</div>
-            </div>
-            <div>
-              <div class="text-slate-400 text-[10px]">Energi / Tagihan</div>
-              <div id="en3d-tt-energy" class="font-mono font-semibold text-slate-100">0 kWh</div>
-            </div>
-          </div>
-          <div class="mt-1 text-[10px] text-sky-300/80">Klik ruangan untuk fokus kamera &amp; detail</div>
+
+          <span id="en-status-pill" class="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-200 border border-emerald-400/30 whitespace-nowrap">
+            <span id="en-status-pill-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span id="en-status-pill-text">Live FastAPI</span>
+          </span>
+
+          <button id="en-info-btn-title" type="button" aria-expanded="false" aria-controls="en-info-popover" class="text-xs text-slate-400 hover:text-sky-300 underline decoration-slate-600 hover:decoration-sky-400 underline-offset-4 transition whitespace-nowrap">
+            Tarif &amp; Ambang
+          </button>
+
+          <span id="en-loading-indicator" class="hidden text-xs text-sky-300" role="status" aria-live="polite">Memuat...</span>
         </div>
 
-        <!-- FLOATING HUD OVERLAY LAYER (pointer-events: none agar area kosong bebas orbit) -->
-        <div class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-2.5 sm:p-3 gap-2">
+        <!-- Right: Quiet Filters, Simulation Toggle & Export -->
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="en-window-select" aria-label="Rentang waktu telemetri" class="en-bms-btn en-tap rounded-lg px-2.5 py-1.5 text-xs text-slate-100">
+            <option value="-15m" data-mins="15">15 Menit</option>
+            <option value="-1h" data-mins="60" selected>1 Jam</option>
+            <option value="-6h" data-mins="360">6 Jam</option>
+            <option value="-24h" data-mins="1440">24 Jam</option>
+          </select>
 
-          <!-- TOP FLOATING HUD: Compact Toolbar + 4 Compact KPI Strip -->
-          <div class="flex flex-col gap-2 shrink-0">
-            <!-- Row 1: Title, Info Popover (ⓘ), Mode Badge & Interactive Filters -->
-            <div class="pointer-events-auto en3d-hud rounded-xl px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 relative">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="w-2 h-2 rounded-full bg-cyan-400 pulse-dot"></span>
-                <h2 class="text-xs sm:text-sm font-bold text-white tracking-tight">⚡ Smart Energy Digital Twin</h2>
-                <span class="hidden sm:inline-block text-[10px] bg-sky-500/15 text-sky-300 px-2 py-0.5 rounded-full border border-sky-400/30 font-semibold">Gedung BSD-A · Tim 1</span>
-                <span id="en-source-badge" class="text-[10px] bg-emerald-500/15 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 font-semibold">Live FastAPI</span>
+          <select id="en-bill-period" aria-label="Periode estimasi tagihan" class="en-bms-btn en-tap rounded-lg px-2.5 py-1.5 text-xs text-slate-100">
+            <option value="daily">Harian</option>
+            <option value="weekly">Mingguan</option>
+          </select>
 
-                <!-- Info Icon (ⓘ) for Open Assumptions & Alert Thresholds (Bagian 5.3 & 5.4) -->
-                <button id="en-info-btn-title" onclick="toggleEnergyInfoPopover(event)" type="button" class="en3d-btn w-6 h-6 rounded-full inline-flex items-center justify-center text-[11px] font-bold text-sky-300" title="Asumsi Tarif, Jam Kerja & Ambang Alert (Panduan PDF)">
-                  ⓘ
-                </button>
+          <select id="en-room-filter" aria-label="Filter ruang kWh meter" class="en-bms-btn en-tap rounded-lg px-2.5 py-1.5 text-xs text-slate-100">
+            <option value="all">Semua Ruang (4)</option>
+            <option value="r3012">R3012 (kwh-01)</option>
+            <option value="r3013">R3013 (kwh-02)</option>
+            <option value="r3017">R3017 (kwh-03)</option>
+            <option value="lab-iot">Lab-IoT (kwh-04)</option>
+          </select>
 
-                <!-- Compact Preview Mode Pill (only visible in preview mode) -->
-                <div id="en-preview-notice" class="hidden inline-flex items-center gap-1.5 bg-amber-500/15 border border-amber-400/40 rounded-lg px-2 py-0.5 text-[10px] text-amber-200">
-                  <span><strong>Preview Simulasi</strong> (JSON lokal)</span>
-                  <button onclick="toggleEnergyPreviewMode()" type="button" class="underline font-semibold text-amber-100">Live API</button>
-                </div>
-              </div>
+          <button id="en-mode-toggle" type="button" class="en-bms-btn en-tap px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap">
+            Mode Simulasi
+          </button>
 
-              <!-- Filter Controls -->
-              <div class="flex flex-wrap items-center gap-1.5">
-                <select id="en-window-select" onchange="fetchEnergyRooms()" class="en3d-btn rounded-lg px-2 py-1 text-[11px] text-slate-100 focus:outline-none focus:border-sky-400">
-                  <option value="-15m" data-mins="15">15 Menit</option>
-                  <option value="-1h" data-mins="60" selected>1 Jam Terakhir</option>
-                  <option value="-6h" data-mins="360">6 Jam Terakhir</option>
-                  <option value="-24h" data-mins="1440">24 Jam Terakhir</option>
-                </select>
+          <button id="en-export-csv" type="button" class="en-tap px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white transition whitespace-nowrap">
+            Ekspor CSV
+          </button>
+        </div>
 
-                <select id="en-bill-period" onchange="fetchEnergyRooms()" class="en3d-btn rounded-lg px-2 py-1 text-[11px] text-slate-100 focus:outline-none focus:border-sky-400">
-                  <option value="daily">Tagihan: Harian</option>
-                  <option value="weekly">Tagihan: Mingguan</option>
-                </select>
-
-                <select id="en-room-filter" onchange="fetchEnergyRooms()" class="en3d-btn rounded-lg px-2 py-1 text-[11px] text-slate-100 focus:outline-none focus:border-sky-400">
-                  <option value="all">Semua Ruang (4 Meter)</option>
-                  <option value="r3012">r3012 (kwh-01)</option>
-                  <option value="r3013">r3013 (kwh-02)</option>
-                  <option value="r3017">r3017 (kwh-03)</option>
-                  <option value="lab-iot">lab-iot (kwh-04)</option>
-                </select>
-
-                <button id="en-mode-toggle" onclick="toggleEnergyPreviewMode()" type="button" class="en3d-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold">
-                  Preview Data Contoh
-                </button>
-
-                <button onclick="exportEnergyCsv()" type="button" class="px-2.5 py-1 rounded-lg bg-sky-600/90 hover:bg-sky-500 text-[11px] font-semibold text-white shadow shadow-sky-600/25 transition">
-                  Ekspor CSV
-                </button>
-              </div>
-
-              <!-- Info Popover: Asumsi Terbuka & Ambang Batas (Bagian 5.3 & 5.4) -->
-              <div id="en-info-popover" class="hidden pointer-events-auto en3d-hud-strong rounded-xl p-3.5 w-[320px] sm:w-[370px] absolute left-3 top-[calc(100%+8px)] z-40 text-xs text-slate-200 space-y-2.5">
-                <div class="flex items-center justify-between border-b border-slate-700/70 pb-1.5">
-                  <span class="font-bold text-sky-300 flex items-center gap-1.5"><span>ⓘ</span> Asumsi Terbuka &amp; Aturan Alert</span>
-                  <button onclick="closeEnergyInfoPopover()" type="button" class="text-slate-400 hover:text-white text-xs px-1">✕</button>
-                </div>
-                <div id="en-assumptions-banner" class="text-[11px] leading-relaxed text-slate-300">
-                  <strong>Tarif Simulasi:</strong> <strong class="text-emerald-300">Rp 1.500 / kWh</strong> (asumsi internal kampus, bukan tarif resmi PLN).<br/>
-                  <strong>Jam Kerja Kampus:</strong> Senin–Jumat, 07:00–18:00 WIB.
-                </div>
-                <div class="grid grid-cols-1 gap-1.5 text-[10px] pt-1 border-t border-slate-700/60">
-                  <div class="flex items-center justify-between px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-200">
-                    <span class="font-mono font-semibold">WASTE_AFTER_HOURS</span>
-                    <span>&gt;200 W luar jam kerja (2 mnt)</span>
-                  </div>
-                  <div class="flex items-center justify-between px-2 py-1 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-200">
-                    <span class="font-mono font-semibold">HIGH_LOAD</span>
-                    <span>&gt;3000 W terus-menerus (1 mnt)</span>
-                  </div>
-                  <div class="flex items-center justify-between px-2 py-1 rounded-md bg-slate-800/80 border border-slate-600/60 text-slate-300">
-                    <span class="font-mono font-semibold">OFFLINE (LWT / No-Data)</span>
-                    <span>&gt;60 detik tanpa telemetry</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Row 2: Compact 4 KPI Strip + Floating Camera Toolbar Alignment -->
-            <div class="flex flex-col xl:flex-row xl:items-start justify-between gap-2">
-              <!-- 4 Compact Floating KPI Cards -->
-              <div class="pointer-events-auto grid grid-cols-2 lg:grid-cols-4 gap-2 flex-1 max-w-4xl">
-                <!-- KPI 1: Daya Total -->
-                <div class="en3d-hud rounded-xl px-3 py-2 flex flex-col justify-between">
-                  <div class="flex items-center justify-between gap-1">
-                    <span class="text-[10px] font-medium text-slate-400 truncate">Daya Total Saat Ini</span>
-                    <span id="en-kpi-power-delta" class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-slate-700/70 text-slate-300">0.0%</span>
-                  </div>
-                  <div class="mt-0.5 flex items-baseline justify-between gap-2">
-                    <span id="en-kpi-power" class="text-base sm:text-lg font-extrabold font-mono text-white leading-tight">-- W</span>
-                    <span id="en-kpi-online" class="text-[10px] text-slate-400 truncate">Meter: -/4</span>
-                  </div>
-                </div>
-
-                <!-- KPI 2: Energi Periode -->
-                <div class="en3d-hud rounded-xl px-3 py-2 flex flex-col justify-between">
-                  <div class="flex items-center justify-between gap-1">
-                    <span class="text-[10px] font-medium text-slate-400 truncate">Energi Periode Berjalan</span>
-                    <span id="en-kpi-kwh-delta" class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-slate-700/70 text-slate-300">Harian</span>
-                  </div>
-                  <div class="mt-0.5 flex items-baseline justify-between gap-2">
-                    <span id="en-kpi-kwh" class="text-base sm:text-lg font-extrabold font-mono text-sky-300 leading-tight">-- kWh</span>
-                    <span id="en-kpi-period-note" class="text-[10px] text-slate-400 truncate max-w-[110px]" title="Rentang WIB aktif">WIB aktif</span>
-                  </div>
-                </div>
-
-                <!-- KPI 3: Estimasi Tagihan + Info Icon (ⓘ) -->
-                <div class="en3d-hud rounded-xl px-3 py-2 flex flex-col justify-between">
-                  <div class="flex items-center justify-between gap-1">
-                    <span class="text-[10px] font-medium text-slate-400 truncate flex items-center gap-1">
-                      <span>Estimasi Tagihan</span>
-                      <button id="en-info-btn-bill" onclick="toggleEnergyInfoPopover(event)" type="button" class="text-sky-300 hover:text-sky-200 font-bold" title="Lihat asumsi tarif & jam kerja">ⓘ</button>
-                    </span>
-                    <span id="en-kpi-bill-delta" class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-300">Asumsi</span>
-                  </div>
-                  <div class="mt-0.5 flex items-baseline justify-between gap-2">
-                    <span id="en-kpi-bill" class="text-base sm:text-lg font-extrabold font-mono text-emerald-400 leading-tight">Rp 0</span>
-                    <span id="en-kpi-tariff" class="text-[10px] text-slate-400 truncate">Rp 1.500/kWh</span>
-                  </div>
-                </div>
-
-                <!-- KPI 4: Boros Belum Di-ACK -->
-                <div class="en3d-hud rounded-xl px-3 py-2 flex flex-col justify-between">
-                  <div class="flex items-center justify-between gap-1">
-                    <span class="text-[10px] font-medium text-slate-400 truncate">Boros Belum Di-ACK</span>
-                    <span id="en-kpi-waste-badge" class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-300">Aman</span>
-                  </div>
-                  <div class="mt-0.5 flex items-baseline justify-between gap-2">
-                    <span id="en-kpi-waste-unacked" class="text-base sm:text-lg font-extrabold font-mono text-amber-400 leading-tight">0</span>
-                    <span id="en-kpi-waste-total" class="text-[10px] text-slate-400 truncate">Total boros: 0</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Floating 3D Camera Controls Toolbar (smoothly shifts left when right drawer opens) -->
-              <div id="en3d-cam-toolbar" class="pointer-events-auto en3d-hud rounded-xl px-2 py-1.5 flex flex-wrap items-center gap-1 self-start xl:self-center shrink-0">
-                <button data-en3d-cam="overview" type="button" class="en3d-cam-btn en3d-btn active text-[11px] font-medium px-2 py-1 rounded-lg">Overview</button>
-                <button data-en3d-cam="top" type="button" class="en3d-cam-btn en3d-btn text-[11px] font-medium px-2 py-1 rounded-lg">Top View</button>
-                <button data-en3d-cam="corridor" type="button" class="en3d-cam-btn en3d-btn text-[11px] font-medium px-2 py-1 rounded-lg">Corridor</button>
-                <button id="en3d-btn-reset" type="button" class="en3d-btn text-[11px] font-medium px-2 py-1 rounded-lg">Reset</button>
-                <button id="en3d-btn-orbit" type="button" class="en3d-btn text-[11px] font-medium px-2 py-1 rounded-lg">Auto Orbit</button>
-                <button id="en3d-btn-fullscreen" type="button" class="en3d-btn text-[11px] font-semibold px-2 py-1 rounded-lg border-sky-400/40 text-sky-200" title="Tampilkan 3D layar penuh">Layar Penuh</button>
-              </div>
-            </div>
+        <!-- Tariff & Threshold Reference Popover -->
+        <div id="en-info-popover" role="dialog" aria-label="Asumsi tarif dan ambang alert" class="hidden en-bms-glass rounded-xl p-4 w-[min(420px,calc(100vw-24px))] absolute top-11 left-0 z-40 text-xs text-slate-200 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="font-semibold text-white">Asumsi Tarif &amp; Ambang Alert</span>
+            <button id="en-info-close-btn" type="button" aria-label="Tutup jendela informasi" class="en-bms-btn w-6 h-6 rounded flex items-center justify-center text-xs">×</button>
           </div>
-
-          <!-- MIDDLE SPATIAL AREA: Right Slide-In Room Detail Drawer (Sticky Header + Custom Dark Scrollbar) -->
-          <div class="flex-1 relative flex justify-end items-start min-h-0">
-            <aside id="en3d-drawer" class="pointer-events-auto en3d-drawer-closed en3d-hud-strong rounded-2xl w-[305px] sm:w-[340px] max-h-full overflow-y-auto en-dark-scroll">
-              <!-- Sticky Room Header -->
-              <div class="sticky top-0 z-20 px-3.5 py-2.5 border-b border-slate-700/70 flex items-start justify-between gap-2 bg-[#0a1220]/95 backdrop-blur-md">
-                <div class="min-w-0">
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <h4 id="en3d-dr-title" class="text-sm font-bold text-white truncate">r3012</h4>
-                    <span id="en3d-dr-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/35">NORMAL</span>
-                  </div>
-                  <div id="en3d-dr-sub" class="text-[10px] font-mono text-slate-400 mt-0.5 truncate">kwh-01 · Gedung BSD-A</div>
-                </div>
-                <button id="en3d-btn-close-drawer" type="button" class="en3d-btn w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0" title="Tutup panel detail (ESC)">×</button>
-              </div>
-
-              <!-- Scrollable Drawer Content -->
-              <div class="p-3.5 space-y-3 text-xs">
-                <div class="grid grid-cols-2 gap-2">
-                  <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5">
-                    <div class="text-[10px] text-slate-400">Daya Instan</div>
-                    <div id="en3d-dr-power" class="text-base font-bold font-mono text-cyan-300 mt-0.5">0 W</div>
-                  </div>
-                  <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5">
-                    <div class="text-[10px] text-slate-400">Energi Periode</div>
-                    <div id="en3d-dr-energy" class="text-base font-bold font-mono text-white mt-0.5">0.00 kWh</div>
-                  </div>
-                  <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5">
-                    <div class="text-[10px] text-slate-400">Estimasi Tagihan</div>
-                    <div id="en3d-dr-bill" class="text-xs font-bold font-mono text-emerald-300 mt-0.5">Rp 0</div>
-                  </div>
-                  <div class="rounded-xl bg-slate-900/80 border border-slate-700/60 p-2.5">
-                    <div class="text-[10px] text-slate-400">Beban vs 3000W</div>
-                    <div id="en3d-dr-load" class="text-xs font-bold font-mono text-sky-300 mt-0.5">0%</div>
-                  </div>
-                </div>
-
-                <!-- Mini 2D Trend Chart inside Right Drawer with OFFLINE Empty State -->
-                <div class="rounded-xl bg-slate-950/75 border border-slate-700/60 p-2.5">
-                  <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[10px] font-semibold text-slate-200">Tren Daya Ruang (power_w)</span>
-                    <span id="en3d-dr-window" class="text-[10px] font-mono text-slate-400">1 Jam Terakhir</span>
-                  </div>
-                  <div class="h-[116px] relative">
-                    <canvas id="en3d-drawer-chart"></canvas>
-                    <div id="en3d-drawer-chart-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-3 bg-slate-900/85 rounded-lg border border-slate-700/60 gap-1.5">
-                      <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                      <p class="text-[10px] text-slate-400 leading-snug">Belum ada data aktif (meter OFFLINE) — klik Preview Data Contoh untuk melihat simulasi.</p>
-                      <button onclick="if(!enState.previewMode) toggleEnergyPreviewMode()" type="button" class="en-empty-preview-btn px-2 py-0.5 rounded-md bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/40 text-[10px] font-semibold text-sky-200 transition">Preview Data Contoh</button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Baseline Comparison -->
-                <div class="rounded-xl bg-slate-900/70 border border-slate-700/60 p-2.5 space-y-2 text-[10px]">
-                  <div class="font-semibold text-slate-200">Baseline Jam Kerja vs Luar Jam Kerja</div>
-                  <div>
-                    <div class="flex justify-between text-slate-400 mb-0.5">
-                      <span>Jam Kerja (07–18 WIB)</span>
-                      <span id="en3d-dr-work" class="font-mono text-cyan-300">-</span>
-                    </div>
-                    <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div id="en3d-dr-work-bar" class="h-full bg-cyan-400 rounded-full transition-all duration-500" style="width: 0%"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="flex justify-between text-slate-400 mb-0.5">
-                      <span>Luar Jam Kerja</span>
-                      <span id="en3d-dr-after" class="font-mono text-amber-300">-</span>
-                    </div>
-                    <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div id="en3d-dr-after-bar" class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width: 0%"></div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Active Room Alerts + ACK -->
-                <div class="rounded-xl bg-slate-900/70 border border-slate-700/60 p-2.5">
-                  <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[10px] font-semibold text-slate-200">Alert Ruangan</span>
-                    <span id="en3d-dr-alert-cnt" class="text-[10px] font-mono text-slate-400">0</span>
-                  </div>
-                  <div id="en3d-dr-alerts" class="space-y-1.5 text-[10px]">
-                    <div class="text-slate-500 italic">Tidak ada alert pada ruangan ini.</div>
-                  </div>
-                </div>
-
-                <!-- Sync 2D Charts to Room -->
-                <button id="en3d-btn-sync-filter" type="button" class="w-full py-2 rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white text-[11px] font-semibold transition">
-                  Filter Grafik 2D ke Ruang Ini
-                </button>
-              </div>
-            </aside>
+          <div id="en-assumptions-banner" class="leading-relaxed text-slate-300">
+            <strong>Tarif Simulasi:</strong> <strong class="text-emerald-300">Rp 1.500 / kWh</strong> (asumsi simulasi internal kampus, bukan tarif resmi PLN).<br/>
+            <strong>Jam Kerja Kampus:</strong> Senin-Jumat 07:00-18:00 WIB.
           </div>
-
-          <!-- BOTTOM ROW: Collapsible Bottom-Left Dock + Centered Expandable 2D Analytics Trigger + Right Legend -->
-          <div class="relative flex flex-wrap items-end justify-between gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-end shrink-0">
-            <!-- Collapsible Bottom-Left Dock (Fokus Ruang + FPS) -->
-            <div id="en3d-bottom-dock" class="pointer-events-auto en3d-hud rounded-xl px-2 py-1.5 flex items-center gap-2 max-w-full overflow-hidden lg:justify-self-start">
-              <button id="en3d-dock-toggle" type="button" class="en3d-btn px-2 py-1 rounded-lg text-[10px] font-semibold text-sky-200 flex items-center gap-1 shrink-0" title="Sembunyikan / tampilkan dock fokus & FPS">
-                <span id="en3d-dock-chevron">◀</span>
-                <span class="hidden sm:inline">Fokus</span>
-              </button>
-
-              <div id="en3d-dock-body" class="flex flex-wrap items-center gap-1.5">
-                <div class="flex items-center gap-1">
-                  <button data-en3d-room="r3012" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1">
-                    <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>#r3012
-                  </button>
-                  <button data-en3d-room="r3013" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1">
-                    <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>#r3013
-                  </button>
-                  <button data-en3d-room="r3017" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1">
-                    <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>#r3017
-                  </button>
-                  <button data-en3d-room="lab-iot" type="button" class="en3d-room-pill en3d-btn text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1">
-                    <span class="en3d-dot w-2 h-2 rounded-full bg-slate-500"></span>#lab-iot
-                  </button>
-                </div>
-
-                <span class="text-slate-700">|</span>
-                <span id="en3d-fps" class="font-mono text-[10px] text-cyan-300/85 pr-1 whitespace-nowrap">60 FPS</span>
-              </div>
+          <div class="space-y-1.5 text-[11px]">
+            <div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-amber-500/10 border border-amber-500/25 text-amber-200">
+              <span class="en-num font-semibold">WASTE_AFTER_HOURS</span>
+              <span>&gt;200 W di luar jam kerja (2 mnt)</span>
             </div>
-
-            <!-- Centered Bottom Trigger Pill for Expandable 2D Analytics Drawer -->
-            <button id="en-bottom-drawer-toggle" onclick="toggleEnergyBottomDrawer()" type="button" class="pointer-events-auto en3d-hud-strong hover:border-sky-400/60 rounded-full px-4 py-2 text-xs font-semibold text-sky-100 flex items-center gap-2 shadow-xl shadow-slate-950/80 transition whitespace-nowrap lg:justify-self-center">
-              <span class="text-sky-400">▲</span>
-              <span>Analitik &amp; Grafik 2D</span>
-              <span id="en-bottom-alert-dot" class="hidden w-2 h-2 rounded-full bg-amber-400 pulse-dot"></span>
-            </button>
-
-            <!-- Bottom-Right Compact Status Legend -->
-            <div class="hidden lg:flex pointer-events-auto en3d-hud rounded-xl px-2.5 py-1.5 items-center gap-2.5 text-[10px] text-slate-300 justify-self-end whitespace-nowrap">
-              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-400"></span>Normal</span>
-              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span>Waste</span>
-              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span>High Load</span>
-              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-500"></span>Offline</span>
+            <div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-rose-500/10 border border-rose-500/25 text-rose-200">
+              <span class="en-num font-semibold">HIGH_LOAD</span>
+              <span>&gt;3000 W terus-menerus (1 mnt)</span>
+            </div>
+            <div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-300">
+              <span class="en-num font-semibold">OFFLINE (LWT / No-Data)</span>
+              <span>&gt;60 detik tanpa telemetri</span>
             </div>
           </div>
         </div>
-
-        <!-- EXPANDABLE BOTTOM 2D ANALYTICS DRAWER (Slides up ~42vh, default collapsed) -->
-        <section id="en-bottom-drawer" class="en-bottom-closed pointer-events-auto en3d-hud-strong rounded-2xl absolute left-2.5 right-2.5 bottom-2.5 z-30 h-[43vh] min-h-[300px] max-h-[440px] flex flex-col overflow-hidden">
-          <!-- Bottom Drawer Header & Sub-Tabs -->
-          <div class="px-4 py-2.5 border-b border-slate-700/70 flex flex-wrap items-center justify-between gap-2 bg-[#0a1220]/90 shrink-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs font-bold text-white flex items-center gap-1.5">
-                <span class="text-sky-400">📊</span> Analitik 2D Smart Energy
-              </span>
-              <div class="flex items-center gap-1 bg-slate-900/80 border border-slate-700/70 rounded-lg p-0.5 text-[11px]">
-                <button data-en-dtab="charts" onclick="switchEnergyDrawerTab('charts')" type="button" class="en-drawer-tab-btn en3d-btn active px-2.5 py-0.5 rounded-md font-medium">Grafik Utama</button>
-                <button data-en-dtab="baseline" onclick="switchEnergyDrawerTab('baseline')" type="button" class="en-drawer-tab-btn en3d-btn px-2.5 py-0.5 rounded-md font-medium">Baseline &amp; Alert</button>
-                <button data-en-dtab="table" onclick="switchEnergyDrawerTab('table')" type="button" class="en-drawer-tab-btn en3d-btn px-2.5 py-0.5 rounded-md font-medium">Tabel kWh Meter</button>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <span id="en-trend-window-pill" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-900/80 border border-slate-700 text-slate-300">1 Jam Terakhir</span>
-              <button id="en-bottom-drawer-close" onclick="toggleEnergyBottomDrawer(false)" type="button" class="en3d-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-200 flex items-center gap-1">
-                <span>▼</span> Tutup Analitik
-              </button>
-            </div>
-          </div>
-
-          <!-- Bottom Drawer Content Area -->
-          <div class="flex-1 min-h-0 p-3.5 overflow-y-auto en-dark-scroll">
-            <!-- SUB-TAB 1 (DEFAULT): 2 COLUMNS SIDE-BY-SIDE (TREN DAYA + DISTRIBUSI TAGIHAN) -->
-            <div id="en-drawer-pane-charts" class="grid grid-cols-1 md:grid-cols-12 gap-4 h-full">
-              <!-- Grafik 1: Line/Area Tren Daya -->
-              <div class="md:col-span-8 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex flex-col min-h-[210px]">
-                <div class="flex items-center justify-between mb-2 shrink-0">
-                  <div>
-                    <h3 class="text-xs sm:text-sm font-bold text-white">Tren Daya Instan per Ruangan (W)</h3>
-                    <p class="text-[10px] text-slate-400">Area chart interaktif <code>power_w</code> — arahkan kursor untuk detail per ruangan</p>
-                  </div>
-                </div>
-                <div class="relative flex-1 min-h-[160px] w-full">
-                  <canvas id="en-chart-power"></canvas>
-                  <div id="en-chart-power-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-950/80 rounded-lg border border-slate-700/60 gap-2">
-                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    <p class="text-xs text-slate-400 max-w-md">Belum ada data aktif (meter OFFLINE) — klik <strong>Preview Data Contoh</strong> untuk melihat simulasi.</p>
-                    <button onclick="if(!enState.previewMode) toggleEnergyPreviewMode()" type="button" class="en-empty-preview-btn px-3 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/40 text-[11px] font-semibold text-sky-200 transition">Preview Data Contoh</button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Grafik 2: Doughnut Distribusi Tagihan & kWh -->
-              <div class="md:col-span-4 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex flex-col min-h-[210px]">
-                <div class="mb-2 shrink-0">
-                  <h3 class="text-xs sm:text-sm font-bold text-white">Distribusi Tagihan per Ruang</h3>
-                  <p class="text-[10px] text-slate-400">Proporsi konsumsi <code>kWh</code> &amp; estimasi biaya (IDR)</p>
-                </div>
-                <div class="relative flex-1 min-h-[160px] flex items-center justify-center">
-                  <canvas id="en-chart-donut"></canvas>
-                  <div id="en-chart-donut-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-950/80 rounded-lg border border-slate-700/60 gap-2">
-                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-                    <p class="text-xs text-slate-400">Belum ada data aktif (meter OFFLINE) — klik <strong>Preview Data Contoh</strong> untuk melihat simulasi.</p>
-                    <button onclick="if(!enState.previewMode) toggleEnergyPreviewMode()" type="button" class="en-empty-preview-btn px-3 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/40 text-[11px] font-semibold text-sky-200 transition">Preview Data Contoh</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- SUB-TAB 2: BASELINE BAR CHART + FEED ALERT ENERGY -->
-            <div id="en-drawer-pane-baseline" class="hidden grid grid-cols-1 md:grid-cols-12 gap-4 h-full">
-              <div class="md:col-span-7 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex flex-col min-h-[210px]">
-                <div class="flex items-center justify-between mb-2 shrink-0">
-                  <div>
-                    <h3 class="text-xs sm:text-sm font-bold text-white">Baseline: Jam Kerja vs Luar Jam Kerja (W)</h3>
-                    <p class="text-[10px] text-slate-400">Deteksi pemborosan di luar jam kerja (ambang 200 W)</p>
-                  </div>
-                  <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-400/30 text-amber-300">24 Jam</span>
-                </div>
-                <div class="relative flex-1 min-h-[160px] w-full">
-                  <canvas id="en-chart-baseline"></canvas>
-                  <div id="en-chart-baseline-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-950/80 rounded-lg border border-slate-700/60 gap-2">
-                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                    <p class="text-xs text-slate-400">Belum ada data baseline (meter OFFLINE) — klik <strong>Preview Data Contoh</strong> untuk simulasi.</p>
-                    <button onclick="if(!enState.previewMode) toggleEnergyPreviewMode()" type="button" class="en-empty-preview-btn px-3 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/40 text-[11px] font-semibold text-sky-200 transition">Preview Data Contoh</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="md:col-span-5 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex flex-col min-h-[210px]">
-                <div class="flex items-center justify-between gap-2 mb-2 shrink-0">
-                  <div>
-                    <h3 class="text-xs sm:text-sm font-bold text-white">Kejadian Alert Energy</h3>
-                    <p class="text-[10px] text-slate-400">WASTE_AFTER_HOURS · HIGH_LOAD · OFFLINE</p>
-                  </div>
-                  <select id="en-alert-filter" onchange="renderEnergyAlertsList()" class="bg-slate-900 border border-slate-600/80 rounded-lg px-2 py-0.5 text-[11px] text-slate-200 focus:outline-none">
-                    <option value="all">Semua</option>
-                    <option value="unacked">Belum Di-ACK</option>
-                    <option value="WASTE_AFTER_HOURS">WASTE</option>
-                    <option value="HIGH_LOAD">HIGH_LOAD</option>
-                    <option value="OFFLINE">OFFLINE</option>
-                  </select>
-                </div>
-                <div id="en-alerts-feed" class="flex-1 overflow-y-auto en-dark-scroll space-y-2 pr-1">
-                  <div class="text-center py-6 text-xs text-slate-400">Memuat kejadian alert energy...</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- SUB-TAB 3: SEARCHABLE & SORTABLE kWh METER TABLE -->
-            <div id="en-drawer-pane-table" class="hidden bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex flex-col gap-2.5">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h3 class="text-xs sm:text-sm font-bold text-white">Detail Status per kWh Meter</h3>
-                  <p class="text-[10px] text-slate-400">Klik judul kolom untuk urutkan · Status <code>online/offline</code> nyata (LWT &amp; no-data 60 dtk)</p>
-                </div>
-                <div class="relative w-full sm:w-60">
-                  <input id="en-table-search" oninput="renderEnergyMetersTable()" type="text" placeholder="Cari meter, ruang, status..." class="w-full bg-slate-950/80 border border-slate-600/80 rounded-lg pl-7 pr-2.5 py-1 text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:border-sky-400" />
-                  <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                </div>
-              </div>
-              <div class="overflow-x-auto en-dark-scroll">
-                <table class="w-full text-left text-xs">
-                  <thead class="bg-slate-950/70 text-slate-300 font-semibold border-b border-slate-700/80 select-none">
-                    <tr>
-                      <th onclick="sortEnergyTable('device_id')" class="py-2 px-3 cursor-pointer hover:text-sky-300 transition">Meter / Ruang <span id="en-sort-device_id" class="text-[10px]">↕</span></th>
-                      <th onclick="sortEnergyTable('status')" class="py-2 px-3 cursor-pointer hover:text-sky-300 transition">Status <span id="en-sort-status" class="text-[10px]">↕</span></th>
-                      <th onclick="sortEnergyTable('power_w')" class="py-2 px-3 cursor-pointer hover:text-sky-300 transition">Daya Terakhir &amp; Beban <span id="en-sort-power_w" class="text-[10px]">↕</span></th>
-                      <th onclick="sortEnergyTable('energy_kwh')" class="py-2 px-3 cursor-pointer hover:text-sky-300 transition">Energi Kumulatif <span id="en-sort-energy_kwh" class="text-[10px]">↕</span></th>
-                      <th class="py-2 px-3">Update Terakhir (WIB)</th>
-                    </tr>
-                  </thead>
-                  <tbody id="energy-container" class="divide-y divide-slate-700/50">
-                    <tr><td colspan="5" class="py-4 text-center text-slate-400">Memuat data kWh meter...</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
-    </div>
 
+      <!-- Inline Error Strip (Hidden unless API error) -->
+      <div id="en-error-strip" class="hidden rounded-xl bg-rose-950/75 border border-rose-700/50 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs text-rose-100">
+        <span id="en-error-text">Gagal memuat data Smart Energy dari FastAPI.</span>
+        <div class="flex items-center gap-2 shrink-0">
+          <button id="en-error-retry" type="button" class="px-2.5 py-1 rounded-md bg-rose-800 hover:bg-rose-700 text-white font-semibold">Coba Lagi</button>
+          <button id="en-error-sim" type="button" class="underline text-rose-200 hover:text-white">Gunakan Mode Simulasi</button>
+        </div>
+      </div>
+
+      <!-- 2. TOP KPI STRIP (4 Compact BMS Cards, Bold Tabular Typography) -->
+      <section aria-label="Ringkasan metrik energi" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+        <!-- KPI 1 (Focal): Daya Aktif Gedung -->
+        <div class="en-bms-card rounded-xl p-4 border-t-2 border-t-sky-400/70 flex flex-col justify-between gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-medium text-slate-400">Daya Aktif Gedung</span>
+            <span id="en-kpi-power-delta" class="en-num text-[11px] font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700 whitespace-nowrap">0.0% beban</span>
+          </div>
+          <div class="flex items-baseline justify-between gap-2">
+            <span id="en-kpi-power" class="en-num text-2xl font-semibold text-white tracking-tight whitespace-nowrap">-- W</span>
+            <span id="en-kpi-online" class="text-[11px] text-slate-400 whitespace-nowrap">0/4 meter online</span>
+          </div>
+        </div>
+
+        <!-- KPI 2: Energi Periode -->
+        <div class="en-bms-card rounded-xl p-4 flex flex-col justify-between gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-medium text-slate-400">Energi Periode</span>
+            <span id="en-kpi-kwh-delta" class="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-800/80 text-slate-300">Harian</span>
+          </div>
+          <div class="flex items-baseline justify-between gap-2 min-w-0">
+            <span id="en-kpi-kwh" class="en-num text-2xl font-semibold text-sky-300 tracking-tight whitespace-nowrap">-- kWh</span>
+            <span id="en-kpi-period-note" class="text-[11px] text-slate-400 truncate max-w-[130px]" title="Rentang WIB aktif">WIB aktif</span>
+          </div>
+        </div>
+
+        <!-- KPI 3: Estimasi Tagihan -->
+        <div class="en-bms-card rounded-xl p-4 flex flex-col justify-between gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-medium text-slate-400">Estimasi Tagihan</span>
+            <button id="en-info-btn-bill" type="button" class="text-[11px] text-sky-400 hover:text-sky-300 underline underline-offset-2">Asumsi tarif</button>
+          </div>
+          <div class="flex items-baseline justify-between gap-2">
+            <span id="en-kpi-bill" class="en-num text-2xl font-semibold text-emerald-300 tracking-tight whitespace-nowrap">Rp 0</span>
+            <span id="en-kpi-tariff" class="en-num text-[11px] text-slate-400 whitespace-nowrap">Rp 1.500/kWh</span>
+          </div>
+        </div>
+
+        <!-- KPI 4: Boros Belum ACK -->
+        <div class="en-bms-card rounded-xl p-4 flex flex-col justify-between gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-medium text-slate-400">Boros Belum ACK</span>
+            <span id="en-kpi-waste-badge" class="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 whitespace-nowrap">Aman</span>
+          </div>
+          <div class="flex items-baseline justify-between gap-2">
+            <span id="en-kpi-waste-unacked" class="en-num text-2xl font-semibold text-amber-300 tracking-tight whitespace-nowrap">0</span>
+            <span id="en-kpi-waste-total" class="text-[11px] text-slate-400 whitespace-nowrap">Total kejadian: 0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. MAIN BENTO GRID: LEFT ~60% (SVG FLOOR PLAN + 2 PERMANENT CHARTS) | RIGHT ~40% (ROOM DETAIL + ANOMALIES) -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+
+        <!-- LEFT COLUMN (~60% -> 7 of 12 cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-4 min-w-0">
+
+          <!-- A. Interactive 2D Architectural Floor Plan (SVG) Card -->
+          <div class="en-bms-card rounded-xl p-4 flex flex-col gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="text-sm font-semibold text-slate-100">Denah Arsitektur Lantai 3</h3>
+                <p class="text-[11px] text-slate-400">Pilih ruangan untuk melihat detail beban, biaya, dan status perangkat</p>
+              </div>
+              <!-- Compact Status Legend -->
+              <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-300">
+                <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-sky-400" aria-hidden="true"></span>Normal</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400" aria-hidden="true"></span>Waste</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500" aria-hidden="true"></span>High-Load</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-slate-500" aria-hidden="true"></span>Offline</span>
+              </div>
+            </div>
+
+            <!-- Modular SVG Host (Rendered by /energy/floorplan.js) -->
+            <div id="en-floorplan-host" class="w-full rounded-lg overflow-hidden border border-slate-800/80 bg-[#080f1d]"></div>
+          </div>
+
+          <!-- B. Permanent 2D Analytics Charts (2 Side-by-Side Cards, Always Visible) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+            <!-- Chart 1: Tren Daya (Line/Area Chart) -->
+            <div class="en-bms-card rounded-xl p-4 flex flex-col">
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <h3 class="text-xs font-semibold text-slate-100">Tren Daya (power_w)</h3>
+                <span id="en-trend-window-pill" class="en-num text-[10px] px-2 py-0.5 rounded bg-slate-800/80 text-slate-300">1 Jam</span>
+              </div>
+              <div class="relative flex-1 min-h-[210px]">
+                <canvas id="en-chart-power"></canvas>
+                <div id="en-chart-power-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-900/90 rounded-lg border border-slate-800 gap-2.5">
+                  <p class="text-xs text-slate-300">Belum ada data telemetri daya pada rentang waktu ini.</p>
+                  <button type="button" class="en-empty-preview-btn px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-medium text-white transition">Aktifkan Mode Simulasi</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chart 2: Distribusi Tagihan (Donut Chart) -->
+            <div class="en-bms-card rounded-xl p-4 flex flex-col">
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <h3 class="text-xs font-semibold text-slate-100">Distribusi Tagihan</h3>
+                <span class="text-[10px] text-slate-400">Proporsi IDR &amp; kWh</span>
+              </div>
+              <div class="relative flex-1 min-h-[210px]">
+                <canvas id="en-chart-donut"></canvas>
+                <div id="en-chart-donut-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-900/90 rounded-lg border border-slate-800 gap-2.5">
+                  <p class="text-xs text-slate-300">Belum ada akumulasi kWh untuk estimasi tagihan.</p>
+                  <button type="button" class="en-empty-preview-btn px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-medium text-white transition">Aktifkan Mode Simulasi</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN (~40% -> 5 of 12 cols): Room Detail Inspector + Alert/Anomaly Feed -->
+        <aside aria-label="Panel detail ruangan dan alert anomali" class="lg:col-span-5 flex flex-col gap-4 min-w-0">
+
+          <!-- Selected Room Detail Inspector Card -->
+          <div class="en-bms-card rounded-xl p-4 space-y-4">
+            <!-- Quick Room Switcher Row -->
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Detail Ruangan</span>
+              <div id="en-detail-room-pills" class="flex flex-wrap items-center gap-1.5"></div>
+            </div>
+
+            <!-- Selected Room Identity -->
+            <div class="pb-3 border-b border-slate-800/80">
+              <div class="flex items-center justify-between gap-2">
+                <h3 id="en-detail-title" class="text-base font-semibold text-white truncate">R3012: Ruang Kuliah 3012</h3>
+                <span id="en-detail-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded border bg-slate-700/40 text-slate-300 border-slate-600/50 whitespace-nowrap">OFFLINE</span>
+              </div>
+              <div class="flex items-center justify-between gap-2 mt-1 text-[11px] text-slate-400 flex-wrap">
+                <span id="en-detail-sub" class="en-num truncate">kwh-01 · Gedung BSD-A</span>
+                <span id="en-detail-lastseen" class="en-num text-slate-500 whitespace-nowrap">Terakhir: -</span>
+              </div>
+            </div>
+
+            <!-- 2x2 Room Metrics -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <div class="rounded-lg bg-slate-900/70 border border-slate-800/90 p-3">
+                <div class="text-[11px] text-slate-400">Daya Instan</div>
+                <div id="en-detail-power" class="en-num text-lg font-semibold text-sky-300 mt-0.5">0.0 W</div>
+              </div>
+              <div class="rounded-lg bg-slate-900/70 border border-slate-800/90 p-3">
+                <div class="text-[11px] text-slate-400">Energi Periode</div>
+                <div id="en-detail-energy" class="en-num text-lg font-semibold text-slate-100 mt-0.5">0.000 kWh</div>
+              </div>
+              <div class="rounded-lg bg-slate-900/70 border border-slate-800/90 p-3">
+                <div class="text-[11px] text-slate-400">Estimasi Biaya</div>
+                <div id="en-detail-bill" class="en-num text-sm font-semibold text-emerald-300 mt-1">Rp 0</div>
+              </div>
+              <div class="rounded-lg bg-slate-900/70 border border-slate-800/90 p-3">
+                <div class="flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Beban vs 3000 W</span>
+                  <span id="en-detail-load" class="en-num font-semibold text-slate-200">0%</span>
+                </div>
+                <div class="h-1.5 bg-slate-800 rounded overflow-hidden mt-2">
+                  <div id="en-detail-load-bar" class="h-full bg-sky-400 rounded transition-all duration-300" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Baseline Jam Kerja vs Luar Jam Kerja -->
+            <div class="rounded-lg bg-slate-900/55 border border-slate-800/80 p-3 space-y-2 text-[11px]">
+              <div class="font-medium text-slate-200">Baseline Rata-Rata Ruangan</div>
+              <div>
+                <div class="flex justify-between text-slate-400 mb-1">
+                  <span>Jam Kerja (07:00-18:00 WIB)</span>
+                  <span id="en-detail-work" class="en-num text-sky-300">-</span>
+                </div>
+                <div class="h-1.5 bg-slate-800 rounded overflow-hidden">
+                  <div id="en-detail-work-bar" class="h-full bg-sky-400 transition-all duration-300" style="width: 0%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-slate-400 mb-1">
+                  <span>Luar Jam Kerja (Malam / Libur)</span>
+                  <span id="en-detail-after" class="en-num text-amber-300">-</span>
+                </div>
+                <div class="h-1.5 bg-slate-800 rounded overflow-hidden">
+                  <div id="en-detail-after-bar" class="h-full bg-amber-400 transition-all duration-300" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Room Controls / Actions -->
+            <div class="grid grid-cols-2 gap-2">
+              <button id="en-detail-btn-filter" type="button" class="en-bms-btn en-tap py-2 px-3 rounded-lg text-xs font-medium text-center">
+                Fokus Grafik: R3012
+              </button>
+              <button id="en-detail-btn-csv" type="button" class="en-bms-btn en-tap py-2 px-3 rounded-lg text-xs font-medium text-center text-sky-200 border-sky-500/30">
+                Ekspor CSV R3012
+              </button>
+            </div>
+          </div>
+
+          <!-- Anomaly & Alert Feed Card -->
+          <div class="en-bms-card rounded-xl p-4 flex-1 flex flex-col min-h-[260px]">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div class="flex items-center gap-2">
+                <h3 class="text-xs font-semibold text-slate-100">Alert &amp; Status Anomali</h3>
+                <span id="en-alerts-count" class="en-num text-[10px] px-2 py-0.5 rounded bg-slate-800/80 text-slate-300">0 kejadian</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <select id="en-alert-scope" aria-label="Cakupan ruangan alert" class="en-bms-btn rounded-md px-2 py-1 text-[11px] text-slate-200">
+                  <option value="all">Semua Ruang</option>
+                  <option value="room">Ruang Terpilih</option>
+                </select>
+                <select id="en-alert-filter" aria-label="Filter tipe alert" class="en-bms-btn rounded-md px-2 py-1 text-[11px] text-slate-200">
+                  <option value="all">Semua Tipe</option>
+                  <option value="unacked">Belum ACK</option>
+                  <option value="WASTE_AFTER_HOURS">WASTE</option>
+                  <option value="HIGH_LOAD">HIGH_LOAD</option>
+                  <option value="OFFLINE">OFFLINE</option>
+                </select>
+              </div>
+            </div>
+            <div id="en-alerts-feed" class="space-y-2.5 flex-1 overflow-y-auto en-dark-scroll max-h-[340px] pr-1">
+              <div class="text-center py-6 text-xs text-slate-400">Memuat daftar alert energi...</div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- 4. SUPPLEMENTAL BMS ANALYTICS ROW (Baseline Comparison & kWh Meter Registry) -->
+      <section class="en-bms-card rounded-xl p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div role="tablist" aria-label="Analisis tambahan Smart Energy" class="flex items-center gap-1 bg-slate-900/80 border border-slate-800 rounded-lg p-0.5">
+            <button data-en-extab="baseline" role="tab" aria-selected="true" type="button" class="en-extra-tab-btn en-bms-btn active px-3 py-1 rounded-md text-xs font-medium border-transparent">Baseline Jam Kerja</button>
+            <button data-en-extab="table" role="tab" aria-selected="false" type="button" class="en-extra-tab-btn en-bms-btn px-3 py-1 rounded-md text-xs font-medium border-transparent">Tabel kWh Meter (4)</button>
+          </div>
+          <span class="text-[11px] text-slate-400">Klik baris meter untuk menyorot ruangan di denah lantai</span>
+        </div>
+
+        <!-- Pane 1: Baseline Chart -->
+        <div id="en-extra-pane-baseline" class="relative h-[220px]">
+          <canvas id="en-chart-baseline"></canvas>
+          <div id="en-chart-baseline-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-4 bg-slate-900/90 rounded-lg border border-slate-800 gap-2.5">
+            <p class="text-xs text-slate-300">Data perbandingan jam kerja vs luar jam kerja belum tersedia.</p>
+            <button type="button" class="en-empty-preview-btn px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-medium text-white transition">Aktifkan Mode Simulasi</button>
+          </div>
+        </div>
+
+        <!-- Pane 2: Meter Registry Table -->
+        <div id="en-extra-pane-table" class="hidden space-y-3">
+          <div class="flex justify-end">
+            <input id="en-table-search" type="search" aria-label="Cari kWh meter atau ruang" placeholder="Cari ruang / meter..." class="en-bms-btn rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 w-full sm:w-64" />
+          </div>
+          <div class="overflow-x-auto en-dark-scroll">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 text-[11px] uppercase tracking-wider">
+                  <th class="py-2 px-3"><button type="button" data-sort-key="device_id" class="en-sort-btn inline-flex items-center gap-1 hover:text-white uppercase tracking-wider">Perangkat &amp; Ruang <span id="en-sort-device_id">↕</span></button></th>
+                  <th class="py-2 px-3"><button type="button" data-sort-key="status" class="en-sort-btn inline-flex items-center gap-1 hover:text-white uppercase tracking-wider">Status <span id="en-sort-status">↕</span></button></th>
+                  <th class="py-2 px-3"><button type="button" data-sort-key="power_w" class="en-sort-btn inline-flex items-center gap-1 hover:text-white uppercase tracking-wider">Daya &amp; Beban <span id="en-sort-power_w">↕</span></button></th>
+                  <th class="py-2 px-3"><button type="button" data-sort-key="energy_kwh" class="en-sort-btn inline-flex items-center gap-1 hover:text-white uppercase tracking-wider">Energi Total <span id="en-sort-energy_kwh">↕</span></button></th>
+                  <th class="py-2 px-3">Terakhir Update</th>
+                </tr>
+              </thead>
+              <tbody id="energy-container" class="divide-y divide-slate-800/70 text-xs">
+                <tr><td colspan="5" class="py-5 text-center text-slate-400">Memuat kWh meter...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
 
   <!-- FOOTER -->
@@ -981,25 +851,6 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    function syncSpatialNavbarHeight() {
-      const hdr = document.querySelector('body > header');
-      const errBanner = document.getElementById('api-error-banner');
-      let h = hdr ? hdr.getBoundingClientRect().height : 112;
-      if (errBanner && !errBanner.classList.contains('hidden')) {
-        h += errBanner.getBoundingClientRect().height;
-      }
-      document.documentElement.style.setProperty('--navbar-height', `${Math.ceil(h)}px`);
-    }
-    window.addEventListener('resize', () => {
-      if (currentTab === 'energy') syncSpatialNavbarHeight();
-    });
-    const apiErrBannerEl = document.getElementById('api-error-banner');
-    if (apiErrBannerEl && typeof MutationObserver !== 'undefined') {
-      new MutationObserver(() => {
-        if (currentTab === 'energy') syncSpatialNavbarHeight();
-      }).observe(apiErrBannerEl, { attributes: true, attributeFilter: ['class'] });
-    }
-
     // Tab Navigation
     function switchTab(tabId) {
       currentTab = tabId;
@@ -1017,19 +868,19 @@
       });
 
       const isEnergy = tabId === 'energy';
-      document.body.classList.toggle('en-spatial-mode', isEnergy);
-      if (isEnergy) {
-        syncSpatialNavbarHeight();
-        window.scrollTo({ top: 0 });
-      } else {
-        closeEnergyInfoPopover();
+      document.body.classList.toggle('en-bms-mode', isEnergy);
+      if (!isEnergy && typeof window.closeEnergyInfoPopover === 'function') {
+        window.closeEnergyInfoPopover();
       }
 
       if (tabId === 'air') fetchAirRooms();
       if (tabId === 'coldchain') fetchColdchainChambers();
-      if (tabId === 'energy') fetchEnergyRooms();
-      if (window.en3d && typeof window.en3d.setActive === 'function') {
-        window.en3d.setActive(isEnergy);
+      if (tabId === 'energy') {
+        if (window.energyApp && typeof window.energyApp.onTabActivated === 'function') {
+          window.energyApp.onTabActivated();
+        } else if (typeof window.fetchEnergyRooms === 'function') {
+          window.fetchEnergyRooms();
+        }
       }
     }
 
@@ -1305,902 +1156,6 @@
       }
     }
 
-    // ==============================================================
-    // SMART ENERGY (TIM 1) — DARK GLASSMORPHISM + CHART.JS ANALYTICS
-    // ==============================================================
-    const ENERGY_ROOM_COLORS = {
-      r3012: '#38bdf8',
-      r3013: '#22c55e',
-      r3017: '#f59e0b',
-      'lab-iot': '#c084fc'
-    };
-
-    const enState = {
-      previewMode: false,
-      rooms: [],
-      alerts: [],
-      sortKey: 'device_id',
-      sortAsc: true,
-      previewAckedIds: {},
-      charts: {
-        power: null,
-        donut: null,
-        baseline: null
-      }
-    };
-
-    function escapeEnHtml(val) {
-      return String(val ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function formatEnIdr(val) {
-      return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        maximumFractionDigits: 0
-      }).format(Number(val || 0));
-    }
-
-    function formatEnTimeWib(isoStr) {
-      if (!isoStr) return '-';
-      const d = new Date(isoStr);
-      if (Number.isNaN(d.getTime())) return isoStr;
-      return d.toLocaleTimeString('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      }) + ' WIB';
-    }
-
-    function toggleEnergyPreviewMode() {
-      enState.previewMode = !enState.previewMode;
-      const btn = document.getElementById('en-mode-toggle');
-      const notice = document.getElementById('en-preview-notice');
-      const badge = document.getElementById('en-source-badge');
-
-      if (enState.previewMode) {
-        btn.textContent = 'Kembali ke Live API';
-        btn.className = 'px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-[11px] font-semibold text-amber-200 transition';
-        notice.classList.remove('hidden');
-        badge.textContent = 'Preview Simulasi';
-        badge.className = 'text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/40 font-semibold';
-      } else {
-        btn.textContent = 'Preview Data Contoh';
-        btn.className = 'en3d-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold';
-        notice.classList.add('hidden');
-        badge.textContent = 'Live FastAPI';
-        badge.className = 'text-[10px] bg-emerald-500/15 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 font-semibold';
-      }
-      document.querySelectorAll('.en-empty-preview-btn').forEach(el => {
-        el.classList.toggle('hidden', enState.previewMode);
-      });
-      fetchEnergyRooms();
-    }
-
-    // Popover Info (ⓘ) untuk Asumsi Tarif, Jam Kerja & Ambang Alert
-    function toggleEnergyInfoPopover(ev) {
-      if (ev) ev.stopPropagation();
-      const pop = document.getElementById('en-info-popover');
-      if (!pop) return;
-      pop.classList.toggle('hidden');
-    }
-
-    function closeEnergyInfoPopover() {
-      const pop = document.getElementById('en-info-popover');
-      if (pop) pop.classList.add('hidden');
-    }
-
-    // Bottom Expandable 2D Analytics Drawer
-    let enBottomDrawerOpen = false;
-    function toggleEnergyBottomDrawer(forceState) {
-      const drawer = document.getElementById('en-bottom-drawer');
-      const trigger = document.getElementById('en-bottom-drawer-toggle');
-      if (!drawer || !trigger) return;
-      enBottomDrawerOpen = typeof forceState === 'boolean' ? forceState : !enBottomDrawerOpen;
-      drawer.classList.toggle('en-bottom-closed', !enBottomDrawerOpen);
-      trigger.classList.toggle('hidden', enBottomDrawerOpen);
-      if (window.en3d && typeof window.en3d.setBottomDrawerOpen === 'function') {
-        window.en3d.setBottomDrawerOpen(enBottomDrawerOpen);
-      }
-      if (enBottomDrawerOpen) {
-        setTimeout(() => {
-          enState.charts.power?.resize();
-          enState.charts.donut?.resize();
-          enState.charts.baseline?.resize();
-        }, 120);
-      }
-    }
-
-    function switchEnergyDrawerTab(tabKey) {
-      const panes = {
-        charts: document.getElementById('en-drawer-pane-charts'),
-        baseline: document.getElementById('en-drawer-pane-baseline'),
-        table: document.getElementById('en-drawer-pane-table')
-      };
-      Object.entries(panes).forEach(([k, el]) => {
-        if (!el) return;
-        el.classList.toggle('hidden', k !== tabKey);
-      });
-      document.querySelectorAll('.en-drawer-tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.enDtab === tabKey);
-      });
-      setTimeout(() => {
-        if (tabKey === 'charts') {
-          enState.charts.power?.resize();
-          enState.charts.donut?.resize();
-        } else if (tabKey === 'baseline') {
-          enState.charts.baseline?.resize();
-        }
-      }, 60);
-    }
-
-    // Close popover on outside click & ESC handling for Smart Energy drawers
-    document.addEventListener('click', (e) => {
-      const pop = document.getElementById('en-info-popover');
-      if (!pop || pop.classList.contains('hidden')) return;
-      if (pop.contains(e.target)) return;
-      if (e.target.closest('#en-info-btn-title') || e.target.closest('#en-info-btn-bill')) return;
-      pop.classList.add('hidden');
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key !== 'Escape' || currentTab !== 'energy') return;
-      const pop = document.getElementById('en-info-popover');
-      if (pop && !pop.classList.contains('hidden')) {
-        pop.classList.add('hidden');
-        return;
-      }
-      if (enBottomDrawerOpen) {
-        toggleEnergyBottomDrawer(false);
-        return;
-      }
-      if (window.en3d && typeof window.en3d.closeDetailDrawer === 'function') {
-        window.en3d.closeDetailDrawer(false);
-      }
-    });
-
-    // Isolasi scroll/wheel/pointer agar tidak tembus ke OrbitControls Three.js
-    ['en-bottom-drawer', 'en3d-drawer', 'en-info-popover'].forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      ['wheel', 'pointerdown', 'mousedown', 'touchstart'].forEach(evtName => {
-        el.addEventListener(evtName, (ev) => ev.stopPropagation(), { passive: evtName !== 'wheel' ? true : false });
-      });
-    });
-
-    // Dataset simulasi JSON realistis (hanya dipakai saat user mengaktifkan Mode Preview)
-    function buildEnergyPreviewSnapshot(period, winMins) {
-      const nowMs = Date.now();
-      const scale = period === 'weekly' ? 6.4 : 1.0;
-      const tarif = 1500;
-
-      const rooms = [
-        { device_id: 'kwh-01', display_name: 'KWh Meter Ruang 3012', gedung: 'bsd-a', ruang: 'r3012', status: 'online', online: true, power_w: 785.4, energy_kwh: 18.42, last_seen: new Date(nowMs - 4000).toISOString() },
-        { device_id: 'kwh-02', display_name: 'KWh Meter Ruang 3013', gedung: 'bsd-a', ruang: 'r3013', status: 'online', online: true, power_w: 3180.0, energy_kwh: 29.85, last_seen: new Date(nowMs - 3000).toISOString() },
-        { device_id: 'kwh-03', display_name: 'KWh Meter Ruang 3017', gedung: 'bsd-a', ruang: 'r3017', status: 'online', online: true, power_w: 412.6, energy_kwh: 14.11, last_seen: new Date(nowMs - 5000).toISOString() },
-        { device_id: 'kwh-04', display_name: 'KWh Meter Lab IoT', gedung: 'bsd-a', ruang: 'lab-iot', status: 'offline', online: false, power_w: 0.0, energy_kwh: 34.90, last_seen: new Date(nowMs - 185000).toISOString() }
-      ];
-
-      const perRuang = [
-        { device_id: 'kwh-01', ruang: 'r3012', display_name: 'KWh Meter Ruang 3012', energy_kwh: Number((5.4 * scale).toFixed(3)), estimasi_tagihan_idr: Math.round(5.4 * scale * tarif) },
-        { device_id: 'kwh-02', ruang: 'r3013', display_name: 'KWh Meter Ruang 3013', energy_kwh: Number((8.9 * scale).toFixed(3)), estimasi_tagihan_idr: Math.round(8.9 * scale * tarif) },
-        { device_id: 'kwh-03', ruang: 'r3017', display_name: 'KWh Meter Ruang 3017', energy_kwh: Number((3.6 * scale).toFixed(3)), estimasi_tagihan_idr: Math.round(3.6 * scale * tarif) },
-        { device_id: 'kwh-04', ruang: 'lab-iot', display_name: 'KWh Meter Lab IoT', energy_kwh: Number((6.2 * scale).toFixed(3)), estimasi_tagihan_idr: Math.round(6.2 * scale * tarif) }
-      ];
-      const totalKwh = Number(perRuang.reduce((a, b) => a + b.energy_kwh, 0).toFixed(3));
-
-      const points = 12;
-      const stepMs = (winMins * 60 * 1000) / points;
-      const curves = {
-        r3012: [610, 640, 720, 790, 810, 770, 740, 760, 805, 820, 795, 785],
-        r3013: [890, 940, 1120, 1450, 2200, 2890, 3150, 3240, 3110, 3080, 3210, 3180],
-        r3017: [290, 310, 350, 420, 440, 400, 380, 395, 430, 450, 425, 413],
-        'lab-iot': [980, 1020, 990, 950, 880, 820, 610, 420, 120, 0, 0, 0]
-      };
-      const telemData = [];
-      for (let i = 0; i < points; i++) {
-        const tsIso = new Date(nowMs - (points - 1 - i) * stepMs).toISOString();
-        for (const r of rooms) {
-          telemData.push({
-            time: tsIso,
-            device_id: r.device_id,
-            ruang: r.ruang,
-            field: 'power_w',
-            value: curves[r.ruang][i]
-          });
-        }
-      }
-
-      const rawAlerts = [
-        {
-          id: 'ALT-PREVIEW-0001',
-          device_id: 'kwh-02',
-          domain: 'energy',
-          code: 'HIGH_LOAD',
-          severity: 'critical',
-          message: 'Lonjakan beban di r3013 (kwh-02): 3180.0 W (> 3000 W selama 1 menit)',
-          value: 3180.0,
-          context: { ruang: 'r3013', gedung: 'bsd-a' },
-          ts_raised: new Date(nowMs - 140000).toISOString(),
-          ts_acked: enState.previewAckedIds['ALT-PREVIEW-0001'] || null,
-          acked_by: enState.previewAckedIds['ALT-PREVIEW-0001'] ? 'Tim 1 Energy Operator' : null
-        },
-        {
-          id: 'ALT-PREVIEW-0002',
-          device_id: 'kwh-01',
-          domain: 'energy',
-          code: 'WASTE_AFTER_HOURS',
-          severity: 'warning',
-          message: 'Indikasi pemborosan di r3012 (kwh-01): 785.4 W di luar jam kerja (> 200 W)',
-          value: 785.4,
-          context: { ruang: 'r3012', gedung: 'bsd-a' },
-          ts_raised: new Date(nowMs - 480000).toISOString(),
-          ts_acked: enState.previewAckedIds['ALT-PREVIEW-0002'] || null,
-          acked_by: enState.previewAckedIds['ALT-PREVIEW-0002'] ? 'Tim 1 Energy Operator' : null
-        },
-        {
-          id: 'ALT-PREVIEW-0003',
-          device_id: 'kwh-04',
-          domain: 'energy',
-          code: 'OFFLINE',
-          severity: 'critical',
-          message: 'Perangkat kwh-04 (lab-iot) berstatus offline (LWT / no-data > 60 detik)',
-          value: 0.0,
-          context: { ruang: 'lab-iot', gedung: 'bsd-a' },
-          ts_raised: new Date(nowMs - 185000).toISOString(),
-          ts_acked: enState.previewAckedIds['ALT-PREVIEW-0003'] || null,
-          acked_by: enState.previewAckedIds['ALT-PREVIEW-0003'] ? 'Tim 1 Energy Operator' : null
-        }
-      ];
-
-      const wasteAlerts = rawAlerts.filter(a => a.code === 'WASTE_AFTER_HOURS');
-      const unackedWaste = wasteAlerts.filter(a => !a.ts_acked).length;
-
-      return {
-        rooms,
-        bill: {
-          periode: {
-            jenis: period,
-            from: new Date(nowMs - (period === 'weekly' ? 6 : 0.5) * 86400000).toISOString(),
-            to: new Date(nowMs).toISOString()
-          },
-          tarif_asumsi: {
-            tarif_per_kwh_idr: tarif,
-            satuan: 'IDR/kWh',
-            catatan: 'Asumsi tarif simulasi internal kampus (bukan tarif resmi PLN).',
-            jam_kerja_wib: 'Senin-Jumat pukul 07:00-18:00 WIB'
-          },
-          total_kwh: totalKwh,
-          estimasi_tagihan_total_idr: Math.round(totalKwh * tarif),
-          per_ruang: perRuang
-        },
-        waste: {
-          summary: {
-            total_events: wasteAlerts.length,
-            unacked_count: unackedWaste,
-            acked_count: wasteAlerts.length - unackedWaste
-          },
-          items: wasteAlerts
-        },
-        alerts: rawAlerts,
-        telemetry: telemData,
-        baseline: [
-          { ruang: 'r3012', device_id: 'kwh-01', avg_work_hours_w: 790.5, avg_after_hours_w: 410.2, samples_work_hours: 120, samples_after_hours: 48 },
-          { ruang: 'r3013', device_id: 'kwh-02', avg_work_hours_w: 1420.0, avg_after_hours_w: 185.0, samples_work_hours: 118, samples_after_hours: 50 },
-          { ruang: 'r3017', device_id: 'kwh-03', avg_work_hours_w: 520.3, avg_after_hours_w: 92.4, samples_work_hours: 120, samples_after_hours: 52 },
-          { ruang: 'lab-iot', device_id: 'kwh-04', avg_work_hours_w: 1080.0, avg_after_hours_w: 115.6, samples_work_hours: 96, samples_after_hours: 40 }
-        ]
-      };
-    }
-
-    function renderEnergyPowerChart(rows, roomFilter) {
-      const canvas = document.getElementById('en-chart-power');
-      const emptyBox = document.getElementById('en-chart-power-empty');
-      if (!canvas || typeof Chart === 'undefined') return;
-
-      const byRoom = {};
-      const timeMap = new Map();
-      for (const row of (rows || [])) {
-        if (row.field !== 'power_w') continue;
-        const ruang = row.ruang || row.device_id || 'unknown';
-        if (roomFilter !== 'all' && ruang !== roomFilter) continue;
-        const ms = new Date(row.time).getTime();
-        if (Number.isNaN(ms)) continue;
-        const label = formatEnTimeWib(row.time).replace(' WIB', '');
-        if (!timeMap.has(label) || ms < timeMap.get(label)) {
-          timeMap.set(label, ms);
-        }
-        if (!byRoom[ruang]) byRoom[ruang] = {};
-        byRoom[ruang][label] = Number(row.value || 0);
-      }
-
-      // Urutkan sumbu-X secara kronologis berdasarkan epoch ms
-      const labels = Array.from(timeMap.entries())
-        .sort((a, b) => a[1] - b[1])
-        .map(([label]) => label);
-      const roomNames = Object.keys(byRoom).sort();
-
-      if (labels.length === 0 || roomNames.length === 0) {
-        emptyBox.classList.remove('hidden');
-        if (enState.charts.power) {
-          enState.charts.power.destroy();
-          enState.charts.power = null;
-        }
-        return;
-      }
-      emptyBox.classList.add('hidden');
-
-      const ctx = canvas.getContext('2d');
-      const fallbackColors = ['#fb7185', '#2dd4bf', '#a3e635', '#facc15'];
-      const datasets = roomNames.map((ruang, idx) => {
-        const color = ENERGY_ROOM_COLORS[ruang] || fallbackColors[idx % fallbackColors.length];
-        const grad = ctx.createLinearGradient(0, 0, 0, 260);
-        grad.addColorStop(0, color + '44');
-        grad.addColorStop(1, color + '04');
-        return {
-          label: ruang,
-          data: labels.map(l => (byRoom[ruang][l] !== undefined ? byRoom[ruang][l] : null)),
-          borderColor: color,
-          backgroundColor: grad,
-          fill: true,
-          tension: 0.35,
-          borderWidth: 2.2,
-          pointRadius: 2.5,
-          pointHoverRadius: 6,
-          spanGaps: true
-        };
-      });
-
-      if (enState.charts.power) {
-        enState.charts.power.data.labels = labels;
-        enState.charts.power.data.datasets = datasets;
-        enState.charts.power.update('none');
-        return;
-      }
-
-      enState.charts.power = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          animation: { duration: 300 },
-          plugins: {
-            legend: {
-              position: 'top',
-              labels: { color: '#cbd5e1', usePointStyle: true, boxWidth: 8, font: { size: 11 } }
-            },
-            tooltip: {
-              backgroundColor: 'rgba(15, 23, 42, 0.94)',
-              borderColor: 'rgba(56, 189, 248, 0.4)',
-              borderWidth: 1,
-              titleColor: '#f8fafc',
-              bodyColor: '#e2e8f0',
-              padding: 10,
-              callbacks: {
-                label: (ctxItem) => ` ${ctxItem.dataset.label}: ${Number(ctxItem.parsed.y || 0).toFixed(1)} W`
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { color: 'rgba(51, 65, 85, 0.35)' },
-              ticks: { color: '#94a3b8', maxTicksLimit: 8, font: { size: 10 } }
-            },
-            y: {
-              beginAtZero: true,
-              grid: { color: 'rgba(51, 65, 85, 0.35)' },
-              ticks: { color: '#94a3b8', font: { size: 10 }, callback: (v) => `${v} W` }
-            }
-          }
-        }
-      });
-    }
-
-    function renderEnergyDonutChart(perRuang, roomFilter) {
-      const canvas = document.getElementById('en-chart-donut');
-      const emptyBox = document.getElementById('en-chart-donut-empty');
-      if (!canvas || typeof Chart === 'undefined') return;
-
-      const filtered = (perRuang || []).filter(r => roomFilter === 'all' || r.ruang === roomFilter);
-      const totalVal = filtered.reduce((s, r) => s + Number(r.energy_kwh || 0), 0);
-      if (totalVal <= 0) {
-        emptyBox.classList.remove('hidden');
-        if (enState.charts.donut) {
-          enState.charts.donut.destroy();
-          enState.charts.donut = null;
-        }
-        return;
-      }
-      emptyBox.classList.add('hidden');
-
-      const labels = filtered.map(r => r.ruang);
-      const values = filtered.map(r => Number(r.estimasi_tagihan_idr || 0));
-      const kwhs = filtered.map(r => Number(r.energy_kwh || 0));
-      const colors = labels.map(r => ENERGY_ROOM_COLORS[r] || '#38bdf8');
-      const meta = { labels, values, kwhs, totalVal };
-
-      if (enState.charts.donut) {
-        enState.charts.donut.$enMeta = meta;
-        enState.charts.donut.data.labels = labels;
-        enState.charts.donut.data.datasets[0].data = values;
-        enState.charts.donut.data.datasets[0].backgroundColor = colors;
-        enState.charts.donut.update('none');
-        return;
-      }
-
-      const donutChart = new Chart(canvas.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-          labels,
-          datasets: [{
-            data: values,
-            backgroundColor: colors,
-            borderColor: '#0f172a',
-            borderWidth: 2,
-            hoverOffset: 8
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '64%',
-          animation: { duration: 300 },
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: { color: '#cbd5e1', usePointStyle: true, padding: 14, font: { size: 11 } }
-            },
-            tooltip: {
-              backgroundColor: 'rgba(15, 23, 42, 0.94)',
-              borderColor: 'rgba(56, 189, 248, 0.4)',
-              borderWidth: 1,
-              padding: 10,
-              callbacks: {
-                label: (ctxItem) => {
-                  const m = ctxItem.chart.$enMeta || meta;
-                  const idx = ctxItem.dataIndex;
-                  const rp = m.values[idx] || 0;
-                  const kwh = m.kwhs[idx] || 0;
-                  const pct = m.totalVal > 0 ? ((kwh / m.totalVal) * 100).toFixed(1) : '0.0';
-                  return ` ${m.labels[idx]}: ${formatEnIdr(rp)} (${kwh.toFixed(2)} kWh · ${pct}%)`;
-                }
-              }
-            }
-          }
-        }
-      });
-      donutChart.$enMeta = meta;
-      enState.charts.donut = donutChart;
-    }
-
-    function renderEnergyBaselineChart(items, roomFilter) {
-      const canvas = document.getElementById('en-chart-baseline');
-      const emptyBox = document.getElementById('en-chart-baseline-empty');
-      if (!canvas || typeof Chart === 'undefined') return;
-
-      const filtered = (items || []).filter(b => roomFilter === 'all' || b.ruang === roomFilter);
-      const hasData = filtered.some(b => b.avg_work_hours_w !== null || b.avg_after_hours_w !== null);
-      if (!hasData) {
-        emptyBox.classList.remove('hidden');
-        if (enState.charts.baseline) {
-          enState.charts.baseline.destroy();
-          enState.charts.baseline = null;
-        }
-        return;
-      }
-      emptyBox.classList.add('hidden');
-
-      const labels = filtered.map(b => b.ruang);
-      const workData = filtered.map(b => Number(b.avg_work_hours_w || 0));
-      const afterData = filtered.map(b => Number(b.avg_after_hours_w || 0));
-
-      if (enState.charts.baseline) {
-        enState.charts.baseline.data.labels = labels;
-        enState.charts.baseline.data.datasets[0].data = workData;
-        enState.charts.baseline.data.datasets[1].data = afterData;
-        enState.charts.baseline.update('none');
-        return;
-      }
-
-      enState.charts.baseline = new Chart(canvas.getContext('2d'), {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'Jam Kerja (07–18 WIB)',
-              data: workData,
-              backgroundColor: 'rgba(56, 189, 248, 0.78)',
-              borderColor: '#38bdf8',
-              borderWidth: 1,
-              borderRadius: 6
-            },
-            {
-              label: 'Luar Jam Kerja (Malam/Libur)',
-              data: afterData,
-              backgroundColor: 'rgba(245, 158, 11, 0.78)',
-              borderColor: '#f59e0b',
-              borderWidth: 1,
-              borderRadius: 6
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: { duration: 300 },
-          plugins: {
-            legend: {
-              position: 'top',
-              labels: { color: '#cbd5e1', usePointStyle: true, boxWidth: 8, font: { size: 11 } }
-            },
-            tooltip: {
-              backgroundColor: 'rgba(15, 23, 42, 0.94)',
-              borderColor: 'rgba(245, 158, 11, 0.4)',
-              borderWidth: 1,
-              padding: 10,
-              callbacks: {
-                label: (ctxItem) => ` ${ctxItem.dataset.label}: ${Number(ctxItem.parsed.y || 0).toFixed(1)} W`
-              }
-            }
-          },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: '#cbd5e1', font: { size: 11 } } },
-            y: {
-              beginAtZero: true,
-              grid: { color: 'rgba(51, 65, 85, 0.35)' },
-              ticks: { color: '#94a3b8', font: { size: 10 }, callback: (v) => `${v} W` }
-            }
-          }
-        }
-      });
-    }
-
-    function sortEnergyTable(key) {
-      if (enState.sortKey === key) {
-        enState.sortAsc = !enState.sortAsc;
-      } else {
-        enState.sortKey = key;
-        enState.sortAsc = true;
-      }
-      ['device_id', 'status', 'power_w', 'energy_kwh'].forEach(k => {
-        const ind = document.getElementById(`en-sort-${k}`);
-        if (ind) ind.textContent = k === enState.sortKey ? (enState.sortAsc ? '↑' : '↓') : '↕';
-      });
-      renderEnergyMetersTable();
-    }
-
-    function renderEnergyMetersTable() {
-      const tbody = document.getElementById('energy-container');
-      const query = (document.getElementById('en-table-search')?.value || '').trim().toLowerCase();
-      const roomFilter = document.getElementById('en-room-filter')?.value || 'all';
-
-      let rows = (enState.rooms || []).filter(r => {
-        if (roomFilter !== 'all' && r.ruang !== roomFilter) return false;
-        if (!query) return true;
-        return `${r.device_id} ${r.display_name} ${r.ruang} ${r.status}`.toLowerCase().includes(query);
-      });
-
-      const key = enState.sortKey;
-      const dir = enState.sortAsc ? 1 : -1;
-      rows.sort((a, b) => {
-        const va = a[key] ?? '';
-        const vb = b[key] ?? '';
-        if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
-        return String(va).localeCompare(String(vb)) * dir;
-      });
-
-      if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Tidak ada kWh meter yang cocok dengan filter.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = rows.map(r => {
-        const isOn = r.status === 'online';
-        const pw = Number(r.power_w || 0);
-        const loadPct = Math.min(100, Math.round((pw / 3500) * 100));
-        const barColor = pw > 3000 ? 'bg-rose-500' : (pw > 200 ? 'bg-amber-400' : 'bg-emerald-400');
-        const badge = isOn
-          ? `<span class="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span>Online</span></span>`
-          : `<span class="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span><span>Offline</span></span>`;
-        return `
-          <tr class="hover:bg-slate-700/30 transition">
-            <td class="py-3 px-3">
-              <div class="font-mono font-bold text-slate-100">${escapeEnHtml(r.device_id)}</div>
-              <div class="text-[11px] text-slate-400">${escapeEnHtml(r.display_name)} · <span class="text-sky-300">${escapeEnHtml(r.ruang)}</span></div>
-            </td>
-            <td class="py-3 px-3">${badge}</td>
-            <td class="py-3 px-3 min-w-[170px]">
-              <div class="flex items-center justify-between text-xs mb-1">
-                <strong class="text-white">${pw.toFixed(1)} W</strong>
-                <span class="text-[10px] text-slate-400">${loadPct}% kapasitas</span>
-              </div>
-              <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                <div class="h-1.5 rounded-full ${barColor} transition-all duration-300" style="width:${loadPct}%"></div>
-              </div>
-            </td>
-            <td class="py-3 px-3 text-slate-200 font-mono font-semibold">${Number(r.energy_kwh || 0).toFixed(4)} kWh</td>
-            <td class="py-3 px-3 text-slate-400">${escapeEnHtml(formatEnTimeWib(r.last_seen))}</td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function resolveEnergyAlertRoom(alertObj) {
-      if (alertObj?.context?.ruang) return alertObj.context.ruang;
-      if (alertObj?.ruang) return alertObj.ruang;
-      const dev = (enState.rooms || []).find(r => r.device_id === alertObj?.device_id);
-      return dev ? dev.ruang : null;
-    }
-
-    function renderEnergyAlertsList() {
-      const feed = document.getElementById('en-alerts-feed');
-      const filter = document.getElementById('en-alert-filter')?.value || 'all';
-      const roomFilter = document.getElementById('en-room-filter')?.value || 'all';
-
-      const filtered = (enState.alerts || []).filter(a => {
-        if (filter === 'unacked' && a.ts_acked) return false;
-        if ((filter === 'WASTE_AFTER_HOURS' || filter === 'HIGH_LOAD' || filter === 'OFFLINE') && a.code !== filter) return false;
-        if (roomFilter !== 'all') {
-          const alertRoom = resolveEnergyAlertRoom(a);
-          if (alertRoom && alertRoom !== roomFilter) return false;
-        }
-        return true;
-      });
-
-      if (!filtered.length) {
-        feed.innerHTML = `<div class="text-center py-8 text-xs text-slate-400">Tidak ada kejadian alert yang cocok dengan filter.</div>`;
-        return;
-      }
-
-      feed.innerHTML = filtered.map(a => {
-        const isAcked = Boolean(a.ts_acked);
-        const sevClass = a.severity === 'critical'
-          ? 'border-rose-500/40 bg-rose-500/10 text-rose-300'
-          : 'border-amber-500/40 bg-amber-500/10 text-amber-300';
-        return `
-          <div class="border rounded-xl p-3 text-xs ${sevClass}">
-            <div class="flex items-center justify-between font-semibold">
-              <span class="font-mono text-[11px]">[${escapeEnHtml(a.code)}] ${escapeEnHtml(a.device_id)}</span>
-              <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-900/50">${escapeEnHtml(a.severity)}</span>
-            </div>
-            <p class="mt-1 text-slate-200 text-[11px] leading-relaxed">${escapeEnHtml(a.message)}</p>
-            <div class="mt-2 pt-2 border-t border-slate-700/40 flex items-center justify-between text-[10px] text-slate-400">
-              <span>${escapeEnHtml(formatEnTimeWib(a.ts_raised))}</span>
-              ${isAcked
-                ? `<span class="text-emerald-400 font-semibold">✓ Di-ACK oleh ${escapeEnHtml(a.acked_by || 'operator')}</span>`
-                : `<button onclick="ackEnergyAlert('${escapeEnHtml(a.id)}')" class="px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-700 text-slate-100 font-semibold border border-slate-600 transition">Tandai ACK</button>`
-              }
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    async function ackEnergyAlert(alertId) {
-      if (enState.previewMode) {
-        enState.previewAckedIds[alertId] = new Date().toISOString();
-        fetchEnergyRooms();
-        return;
-      }
-      try {
-        const res = await fetch(`/api/v1/alerts/${encodeURIComponent(alertId)}/ack`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ acked_by: 'Tim 1 Energy Operator' })
-        });
-        if (res.ok) {
-          fetchEnergyRooms();
-          fetchAlerts();
-          fetchSummary();
-        }
-      } catch (e) {
-        console.error("Energy ACK error:", e);
-      }
-    }
-
-    async function exportEnergyCsv() {
-      const roomFilter = document.getElementById('en-room-filter')?.value || 'all';
-      const targetRuang = roomFilter === 'all' ? 'r3012' : roomFilter;
-      const winSel = document.getElementById('en-window-select');
-      const mins = Number(winSel.options[winSel.selectedIndex]?.dataset?.mins || 60);
-
-      if (enState.previewMode) {
-        const snap = buildEnergyPreviewSnapshot('daily', mins);
-        const rows = snap.telemetry.filter(r => r.ruang === targetRuang);
-        const csvLines = ['ts_wib,ruang,device_id,power_w', ...rows.map(r => `${r.time},${r.ruang},${r.device_id},${r.value}`)];
-        const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `energy_${targetRuang}_preview.csv`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        return;
-      }
-
-      const fromIso = new Date(Date.now() - mins * 60 * 1000).toISOString();
-      try {
-        const res = await fetch(`/api/v1/energy/rooms/${encodeURIComponent(targetRuang)}/usage/export?from=${encodeURIComponent(fromIso)}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `energy_${targetRuang}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      } catch (e) {
-        alert("Gagal mengekspor CSV Energy: " + e.message);
-      }
-    }
-
-    function applyEnergyDashboardData({ rooms, bill, waste, alerts, telemetry, baseline }) {
-      const period = document.getElementById('en-bill-period')?.value || 'daily';
-      const roomFilter = document.getElementById('en-room-filter')?.value || 'all';
-      const winSel = document.getElementById('en-window-select');
-      const winLabel = winSel.options[winSel.selectedIndex]?.textContent || '1 Jam Terakhir';
-      document.getElementById('en-trend-window-pill').textContent = `${winLabel}${roomFilter === 'all' ? '' : ' · ' + roomFilter}`;
-
-      enState.rooms = rooms || [];
-      enState.alerts = alerts || [];
-
-      const scopedRooms = enState.rooms.filter(r => roomFilter === 'all' || r.ruang === roomFilter);
-      const totalPower = scopedRooms.reduce((sum, r) => sum + (r.status === 'online' ? Number(r.power_w || 0) : 0), 0);
-      const onlineCnt = scopedRooms.filter(r => r.status === 'online').length;
-      const capMax = Math.max(1, scopedRooms.length * 3000);
-      const utilPct = ((totalPower / capMax) * 100).toFixed(1);
-
-      document.getElementById('en-kpi-power').textContent = `${totalPower.toFixed(1)} W`;
-      document.getElementById('en-kpi-online').textContent = `Meter: ${onlineCnt}/${scopedRooms.length}`;
-      const powerDeltaEl = document.getElementById('en-kpi-power-delta');
-      powerDeltaEl.textContent = `${utilPct}% beban`;
-      powerDeltaEl.className = Number(utilPct) > 70
-        ? 'text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300'
-        : (Number(utilPct) > 25
-            ? 'text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300'
-            : 'text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300');
-
-      const scopedPerRuang = (bill?.per_ruang || []).filter(r => roomFilter === 'all' || r.ruang === roomFilter);
-      const scopedKwh = scopedPerRuang.reduce((s, r) => s + Number(r.energy_kwh || 0), 0);
-      const scopedBill = scopedPerRuang.reduce((s, r) => s + Number(r.estimasi_tagihan_idr || 0), 0);
-      const tarif = bill?.tarif_asumsi?.tarif_per_kwh_idr ?? 1500;
-
-      document.getElementById('en-kpi-kwh').textContent = `${scopedKwh.toFixed(3)} kWh`;
-      document.getElementById('en-kpi-kwh-delta').textContent = period === 'daily' ? 'Harian' : 'Mingguan';
-      const periodNote = `${formatEnTimeWib(bill?.periode?.from)} – ${formatEnTimeWib(bill?.periode?.to)}`;
-      const periodNoteEl = document.getElementById('en-kpi-period-note');
-      periodNoteEl.textContent = periodNote;
-      periodNoteEl.title = periodNote;
-      document.getElementById('en-kpi-bill').textContent = formatEnIdr(scopedBill);
-      document.getElementById('en-kpi-tariff').textContent = `Rp ${Number(tarif).toLocaleString('id-ID')}/kWh`;
-
-      if (bill?.tarif_asumsi) {
-        document.getElementById('en-assumptions-banner').innerHTML =
-          `<strong>Tarif Simulasi:</strong> <strong class="text-emerald-300">Rp ${Number(tarif).toLocaleString('id-ID')} / kWh</strong> (${escapeEnHtml(bill.tarif_asumsi.catatan)})<br/><strong>Jam Kerja Kampus:</strong> ${escapeEnHtml(bill.tarif_asumsi.jam_kerja_wib)}.`;
-      }
-
-      const scopedWasteItems = (waste?.items || []).filter(item => {
-        if (roomFilter === 'all') return true;
-        const wRoom = resolveEnergyAlertRoom(item);
-        return !wRoom || wRoom === roomFilter;
-      });
-      const unackedWaste = roomFilter === 'all'
-        ? Number(waste?.summary?.unacked_count ?? 0)
-        : scopedWasteItems.filter(item => !item.ts_acked && !item.acked).length;
-      const totalWaste = roomFilter === 'all'
-        ? Number(waste?.summary?.total_events ?? 0)
-        : scopedWasteItems.length;
-      document.getElementById('en-kpi-waste-unacked').textContent = String(unackedWaste);
-      document.getElementById('en-kpi-waste-total').textContent = `Total boros: ${totalWaste}`;
-      const wasteBadge = document.getElementById('en-kpi-waste-badge');
-      if (unackedWaste > 0) {
-        wasteBadge.textContent = 'Perlu ACK';
-        wasteBadge.className = 'text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300';
-      } else {
-        wasteBadge.textContent = 'Aman';
-        wasteBadge.className = 'text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300';
-      }
-
-      const unackedAny = (enState.alerts || []).some(a => !a.ts_acked);
-      document.getElementById('en-bottom-alert-dot')?.classList.toggle('hidden', !unackedAny);
-
-      renderEnergyPowerChart(telemetry, roomFilter);
-      renderEnergyDonutChart(bill?.per_ruang || [], roomFilter);
-      renderEnergyBaselineChart(baseline, roomFilter);
-      renderEnergyMetersTable();
-      renderEnergyAlertsList();
-
-      const en3dPayload = {
-        rooms: enState.rooms,
-        bill,
-        waste,
-        alerts: enState.alerts,
-        telemetry: telemetry || [],
-        baseline: baseline || [],
-        roomFilter,
-        windowLabel: winLabel,
-        previewMode: enState.previewMode
-      };
-      window.__enLastPayload = en3dPayload;
-      if (window.en3d && typeof window.en3d.updateData === 'function') {
-        window.en3d.updateData(en3dPayload);
-      }
-    }
-
-    // Fetch Energy Rooms, Bill, Waste, Alerts, Telemetry & Baseline (Tim 1 Domain Tab)
-    async function fetchEnergyRooms() {
-      const period = document.getElementById('en-bill-period')?.value || 'daily';
-      const winSel = document.getElementById('en-window-select');
-      const winRel = winSel?.value || '-1h';
-      const winMins = Number(winSel?.options[winSel.selectedIndex]?.dataset?.mins || 60);
-
-      if (enState.previewMode) {
-        applyEnergyDashboardData(buildEnergyPreviewSnapshot(period, winMins));
-        return;
-      }
-
-      try {
-        const [roomsRes, billRes, wasteRes, alertsRes, telemRes, baseRes] = await Promise.all([
-          fetch(`/api/v1/energy/rooms`),
-          fetch(`/api/v1/energy/bill?period=${encodeURIComponent(period)}`),
-          fetch(`/api/v1/energy/waste`),
-          fetch(`/api/v1/alerts?domain=energy&limit=25`),
-          fetch(`/api/v1/telemetry?domain=energy&from=${encodeURIComponent(winRel)}&limit=600`),
-          fetch(`/api/v1/energy/baseline`)
-        ]);
-
-        const [rooms, bill, waste, alerts, telem, base] = await Promise.all([
-          roomsRes.ok ? roomsRes.json() : [],
-          billRes.ok ? billRes.json() : null,
-          wasteRes.ok ? wasteRes.json() : null,
-          alertsRes.ok ? alertsRes.json() : [],
-          telemRes.ok ? telemRes.json() : { data: [] },
-          baseRes.ok ? baseRes.json() : { items: [] }
-        ]);
-
-        const srcBadge = document.getElementById('en-source-badge');
-        if (srcBadge && !enState.previewMode) {
-          if (roomsRes.ok) {
-            srcBadge.textContent = 'Live FastAPI';
-            srcBadge.className = 'text-[10px] bg-emerald-500/15 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 font-semibold';
-          } else {
-            srcBadge.textContent = `API Error (${roomsRes.status})`;
-            srcBadge.className = 'text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/40 font-semibold';
-          }
-        }
-
-        applyEnergyDashboardData({
-          rooms,
-          bill,
-          waste,
-          alerts,
-          telemetry: telem.data || [],
-          baseline: base.items || []
-        });
-      } catch (e) {
-        console.error("Energy fetch error:", e);
-        const srcBadge = document.getElementById('en-source-badge');
-        if (srcBadge && !enState.previewMode) {
-          srcBadge.textContent = 'API Terputus';
-          srcBadge.className = 'text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/40 font-semibold';
-        }
-      }
-    }
-
     // Initial Load & Loop
     function init() {
       fetchSummary();
@@ -2217,1065 +1172,11 @@
       if (currentTab === 'overview') fetchDevices();
       if (currentTab === 'air') fetchAirRooms();
       if (currentTab === 'coldchain') fetchColdchainChambers();
-      if (currentTab === 'energy') fetchEnergyRooms();
+      if (currentTab === 'energy' && typeof window.fetchEnergyRooms === 'function') window.fetchEnergyRooms();
     }, 5000);
   </script>
 
-  <!-- ====================================================================== -->
-  <!-- 3D DIGITAL TWIN ENGINE (THREE.JS ES MODULE) FOR TAB SMART ENERGY       -->
-  <!-- ====================================================================== -->
-  <script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-    const ROOM_LAYOUT = [
-      {
-        ruang: 'r3012',
-        device_id: 'kwh-01',
-        label: 'Ruang Kuliah 3012',
-        subtitle: 'Kelas Reguler · 2 AC Split + Proyektor',
-        position: [-5.8, 0, -3.4],
-        size: [4.8, 2.5, 4.2],
-        type: 'classroom'
-      },
-      {
-        ruang: 'r3013',
-        device_id: 'kwh-02',
-        label: 'Ruang Kuliah 3013',
-        subtitle: 'Kelas Seminar · AC Cassette + Audio',
-        position: [5.8, 0, -3.4],
-        size: [4.8, 2.5, 4.2],
-        type: 'classroom'
-      },
-      {
-        ruang: 'r3017',
-        device_id: 'kwh-03',
-        label: 'Ruang Diskusi 3017',
-        subtitle: 'Studio Kolaborasi · Smart TV + Lighting',
-        position: [-5.8, 0, 3.6],
-        size: [4.8, 2.5, 4.2],
-        type: 'studio'
-      },
-      {
-        ruang: 'lab-iot',
-        device_id: 'kwh-04',
-        label: 'Lab IoT & Embedded',
-        subtitle: '30 Workstation · Server Rack + Oscilloscope',
-        position: [5.8, 0, 3.6],
-        size: [5.2, 2.7, 4.4],
-        type: 'lab'
-      }
-    ];
-
-    const STATUS_PALETTE = {
-      normal:    { hex: '#22d3ee', color: 0x22d3ee, badgeBg: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35', label: 'NORMAL', dot: 'bg-cyan-400' },
-      waste:     { hex: '#f59e0b', color: 0xf59e0b, badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-400/40', label: 'WASTE >200W', dot: 'bg-amber-400' },
-      high_load: { hex: '#f43f5e', color: 0xf43f5e, badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-500/45', label: 'HIGH LOAD', dot: 'bg-rose-500' },
-      offline:   { hex: '#64748b', color: 0x64748b, badgeBg: 'bg-slate-600/30 text-slate-300 border-slate-500/40', label: 'OFFLINE', dot: 'bg-slate-500' }
-    };
-
-    const CAMERA_PRESETS = {
-      overview: { pos: new THREE.Vector3(0, 13.5, 19.5), target: new THREE.Vector3(0, 0.8, 0) },
-      top:      { pos: new THREE.Vector3(0, 24.5, 2.2),  target: new THREE.Vector3(0, 0, 0) },
-      corridor: { pos: new THREE.Vector3(-15.5, 4.4, 0.4), target: new THREE.Vector3(3.5, 1.2, 0) }
-    };
-
-    const stageEl = document.getElementById('en3d-stage');
-    const hostEl = document.getElementById('en3d-canvas-host');
-    const tooltipEl = document.getElementById('en3d-tooltip');
-    const drawerEl = document.getElementById('en3d-drawer');
-
-    if (stageEl && hostEl) {
-      let initialized = false;
-      let isActive = false;
-      let rafId = null;
-
-      let scene, camera, renderer, controls, mdpCore, mdpRing, clock;
-      const roomObjects = new Map();
-      const hitMeshes = [];
-      const energyParticles = [];
-      const raycaster = new THREE.Raycaster();
-      const pointer = new THREE.Vector2(-99, -99);
-      let pointerDownPos = { x: 0, y: 0 };
-
-      let selectedRoom = null;
-      let hoveredRoom = null;
-      let autoOrbit = false;
-      let isOrbitDragging = false;
-      let bottomDrawerOpen = false;
-      let dockCollapsed = false;
-      let lastRoomFilter = 'all';
-      let drawerChart = null;
-      let currentRoomsMap = new Map();
-      let currentWindowLabel = '1 Jam Terakhir';
-
-      let currentViewOffsetX = 0;
-      let targetViewOffsetX = 0;
-      let currentViewOffsetY = 0;
-      let targetViewOffsetY = 0;
-      const labelWorldPos = new THREE.Vector3();
-      const camToolbarEl = document.getElementById('en3d-cam-toolbar');
-
-      const camTransition = {
-        active: false,
-        startPos: new THREE.Vector3(),
-        endPos: new THREE.Vector3(),
-        startTarget: new THREE.Vector3(),
-        endTarget: new THREE.Vector3(),
-        progress: 0,
-        duration: 0.85
-      };
-
-      function fmtIdr(val) {
-        return 'Rp ' + Math.round(Number(val || 0)).toLocaleString('id-ID');
-      }
-
-      function escHtml(str) {
-        return String(str ?? '')
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;');
-      }
-
-      function flyCameraTo(pos, target, duration = 0.85) {
-        if (!camera || !controls) return;
-        camTransition.startPos.copy(camera.position);
-        camTransition.endPos.copy(pos);
-        camTransition.startTarget.copy(controls.target);
-        camTransition.endTarget.copy(target);
-        camTransition.progress = 0;
-        camTransition.duration = duration;
-        camTransition.active = true;
-      }
-
-      function setCameraPreset(name) {
-        const preset = CAMERA_PRESETS[name] || CAMERA_PRESETS.overview;
-        flyCameraTo(preset.pos, preset.target, 0.85);
-        stageEl.querySelectorAll('.en3d-cam-btn').forEach(b => {
-          b.classList.toggle('active', b.dataset.en3dCam === name);
-        });
-      }
-
-      function createLabelSprite(roomName, deviceId, powerText, statusHex) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 360;
-        canvas.height = 128;
-        const ctx = canvas.getContext('2d');
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false }));
-        sprite.scale.set(3.4, 1.2, 1);
-
-        function redraw(name, dev, powerStr, hex) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          const r = 20;
-          ctx.fillStyle = 'rgba(8, 15, 32, 0.85)';
-          ctx.strokeStyle = hex;
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.moveTo(r + 6, 8);
-          ctx.lineTo(canvas.width - r - 6, 8);
-          ctx.quadraticCurveTo(canvas.width - 6, 8, canvas.width - 6, r + 8);
-          ctx.lineTo(canvas.width - 6, canvas.height - r - 8);
-          ctx.quadraticCurveTo(canvas.width - 6, canvas.height - 8, canvas.width - r - 6, canvas.height - 8);
-          ctx.lineTo(r + 6, canvas.height - 8);
-          ctx.quadraticCurveTo(6, canvas.height - 8, 6, canvas.height - r - 8);
-          ctx.lineTo(6, r + 8);
-          ctx.quadraticCurveTo(6, 8, r + 6, 8);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.fillStyle = hex;
-          ctx.beginPath();
-          ctx.arc(34, 42, 8, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = '#f8fafc';
-          ctx.font = '700 28px Inter, system-ui, sans-serif';
-          ctx.fillText(name, 54, 51);
-
-          ctx.fillStyle = '#94a3b8';
-          ctx.font = '500 20px monospace';
-          ctx.fillText(dev, 236, 49);
-
-          ctx.fillStyle = hex;
-          ctx.font = '700 32px monospace';
-          ctx.fillText(powerStr, 30, 98);
-          texture.needsUpdate = true;
-        }
-
-        redraw(roomName, deviceId, powerText, statusHex);
-        return { sprite, redraw };
-      }
-
-      function buildRoomModule(cfg) {
-        const [w, , d] = cfg.size;
-        const group = new THREE.Group();
-        group.position.set(...cfg.position);
-        scene.add(group);
-
-        const pad = new THREE.Mesh(
-          new THREE.BoxGeometry(w, 0.14, d),
-          new THREE.MeshStandardMaterial({ color: 0x0f1c34, roughness: 0.45, metalness: 0.5 })
-        );
-        pad.position.y = 0.07;
-        pad.receiveShadow = true;
-        pad.castShadow = true;
-        group.add(pad);
-
-        const wallMat = new THREE.MeshPhysicalMaterial({
-          color: 0x1e293b,
-          emissive: 0x0ea5e9,
-          emissiveIntensity: 0.12,
-          transparent: true,
-          opacity: 0.24,
-          roughness: 0.15,
-          metalness: 0.1,
-          side: THREE.DoubleSide
-        });
-        const wallH = 1.55;
-        const wt = 0.08;
-        const bW = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, wt), wallMat);
-        bW.position.set(0, wallH / 2 + 0.14, -d / 2 + wt / 2);
-        const fW = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, wt), wallMat);
-        fW.position.set(0, wallH / 2 + 0.14, d / 2 - wt / 2);
-        const lW = new THREE.Mesh(new THREE.BoxGeometry(wt, wallH, d), wallMat);
-        lW.position.set(-w / 2 + wt / 2, wallH / 2 + 0.14, 0);
-        const rW = new THREE.Mesh(new THREE.BoxGeometry(wt, wallH, d), wallMat);
-        rW.position.set(w / 2 - wt / 2, wallH / 2 + 0.14, 0);
-        group.add(bW, fW, lW, rW);
-
-        const edgeMat = new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.72 });
-        const roomEdges = new THREE.LineSegments(
-          new THREE.EdgesGeometry(new THREE.BoxGeometry(w + 0.02, wallH, d + 0.02)),
-          edgeMat
-        );
-        roomEdges.position.y = wallH / 2 + 0.14;
-        group.add(roomEdges);
-
-        const furnMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.65, metalness: 0.35 });
-        if (cfg.type === 'lab') {
-          for (let i = -1; i <= 1; i += 2) {
-            const rack = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.15, 0.7), furnMat);
-            rack.position.set(i * 1.7, 0.72, -1.25);
-            rack.castShadow = true;
-            group.add(rack);
-          }
-          const bench = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.42, 0.65), furnMat);
-          bench.position.set(0, 0.35, 1.25);
-          group.add(bench);
-        } else {
-          for (let r = -1; r <= 1; r += 2) {
-            const desk = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.38, 0.55), furnMat);
-            desk.position.set(r * 1.35, 0.33, 1.1);
-            group.add(desk);
-          }
-        }
-
-        const meterZ = cfg.position[2] < 0 ? d / 2 - 0.16 : -d / 2 + 0.16;
-        const meterBox = new THREE.Mesh(
-          new THREE.BoxGeometry(0.45, 0.55, 0.18),
-          new THREE.MeshStandardMaterial({ color: 0x334155, emissive: 0x22d3ee, emissiveIntensity: 0.35, metalness: 0.6, roughness: 0.3 })
-        );
-        meterBox.position.set(-w / 2 + 0.7, 0.85, meterZ);
-        group.add(meterBox);
-
-        const pillarMat = new THREE.MeshStandardMaterial({
-          color: 0x64748b,
-          emissive: 0x64748b,
-          emissiveIntensity: 0.6,
-          transparent: true,
-          opacity: 0.86,
-          roughness: 0.2,
-          metalness: 0.2
-        });
-        const pillarGeom = new THREE.CylinderGeometry(0.52, 0.64, 1, 24);
-        pillarGeom.translate(0, 0.5, 0);
-        const pillar = new THREE.Mesh(pillarGeom, pillarMat);
-        pillar.position.set(0, 0.16, 0);
-        pillar.castShadow = true;
-        group.add(pillar);
-
-        const pillarShellMat = new THREE.MeshBasicMaterial({
-          color: 0x64748b,
-          wireframe: true,
-          transparent: true,
-          opacity: 0.24
-        });
-        const pillarShellGeom = new THREE.CylinderGeometry(0.68, 0.78, 1, 12, 1, true);
-        pillarShellGeom.translate(0, 0.5, 0);
-        const pillarShell = new THREE.Mesh(pillarShellGeom, pillarShellMat);
-        pillarShell.position.set(0, 0.16, 0);
-        group.add(pillarShell);
-
-        const statusRingMat = new THREE.MeshBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.72 });
-        const statusRing = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.032, 10, 40), statusRingMat);
-        statusRing.rotation.x = Math.PI / 2;
-        statusRing.position.y = 0.2;
-        group.add(statusRing);
-
-        const roomLight = new THREE.PointLight(0x22d3ee, 1.8, 8.5, 1.8);
-        roomLight.position.set(0, 2.5, 0);
-        group.add(roomLight);
-
-        const hitMesh = new THREE.Mesh(
-          new THREE.BoxGeometry(w, 4.6, d),
-          new THREE.MeshBasicMaterial({ visible: false })
-        );
-        hitMesh.position.y = 2.3;
-        hitMesh.userData.ruang = cfg.ruang;
-        group.add(hitMesh);
-        hitMeshes.push(hitMesh);
-
-        const labelObj = createLabelSprite(cfg.ruang, cfg.device_id, 'OFFLINE', '#64748b');
-        labelObj.sprite.position.set(0, 3.0, 0);
-        group.add(labelObj.sprite);
-
-        const startPt = new THREE.Vector3(0, 0.1, 0);
-        const midPt = new THREE.Vector3(cfg.position[0], 0.1, 0);
-        const endPt = new THREE.Vector3(cfg.position[0], 0.1, cfg.position[2]);
-        const conduitCurve = new THREE.CurvePath();
-        conduitCurve.add(new THREE.LineCurve3(startPt, midPt));
-        conduitCurve.add(new THREE.LineCurve3(midPt, endPt));
-
-        const tubeMat = new THREE.MeshStandardMaterial({
-          color: 0x1e3a5f,
-          emissive: 0x64748b,
-          emissiveIntensity: 0.45,
-          roughness: 0.3,
-          metalness: 0.5
-        });
-        scene.add(new THREE.Mesh(new THREE.TubeGeometry(conduitCurve, 28, 0.055, 8, false), tubeMat));
-
-        const pGeom = new THREE.SphereGeometry(0.11, 10, 10);
-        for (let i = 0; i < 4; i++) {
-          const pMesh = new THREE.Mesh(pGeom, new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
-          pMesh.visible = false;
-          scene.add(pMesh);
-          energyParticles.push({
-            ruang: cfg.ruang,
-            mesh: pMesh,
-            curve: conduitCurve,
-            t: i / 4
-          });
-        }
-
-        roomObjects.set(cfg.ruang, {
-          cfg,
-          group,
-          wallMat,
-          edgeMat,
-          pillar,
-          pillarMat,
-          pillarShell,
-          pillarShellMat,
-          statusRing,
-          statusRingMat,
-          roomLight,
-          tubeMat,
-          labelObj,
-          currentHeight: 0.25,
-          targetHeight: 0.25,
-          currentColor: new THREE.Color(0x64748b),
-          targetColor: new THREE.Color(0x64748b),
-          currentScale: 1.0,
-          currentOpacity: 1.0,
-          targetOpacity: 1.0,
-          flowSpeed: 0,
-          lastLabelKey: ''
-        });
-      }
-
-      function initThreeScene() {
-        if (initialized) return;
-        const w = Math.max(hostEl.clientWidth, 320);
-        const h = Math.max(hostEl.clientHeight, 320);
-
-        scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x040916, 0.026);
-
-        camera = new THREE.PerspectiveCamera(44, w / h, 0.1, 140);
-        camera.position.copy(CAMERA_PRESETS.overview.pos);
-
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-        renderer.setSize(w, h);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.15;
-        hostEl.appendChild(renderer.domElement);
-
-        controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.06;
-        controls.rotateSpeed = 0.72;
-        controls.zoomSpeed = 0.85;
-        controls.panSpeed = 0.7;
-        controls.minDistance = 7.2;
-        controls.maxDistance = 36;
-        controls.maxPolarAngle = Math.PI / 2 - 0.07;
-        controls.minPolarAngle = 0.14;
-        controls.target.copy(CAMERA_PRESETS.overview.target);
-        controls.addEventListener('start', () => {
-          camTransition.active = false;
-          isOrbitDragging = true;
-          tooltipEl.classList.remove('visible');
-        });
-        controls.addEventListener('end', () => {
-          isOrbitDragging = false;
-        });
-
-        scene.add(new THREE.AmbientLight(0x94a3b8, 0.65));
-        scene.add(new THREE.HemisphereLight(0x38bdf8, 0x0f172a, 0.7));
-
-        const dirLight = new THREE.DirectionalLight(0xe0f2fe, 1.45);
-        dirLight.position.set(14, 24, 14);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.set(1024, 1024);
-        dirLight.shadow.camera.near = 4;
-        dirLight.shadow.camera.far = 55;
-        dirLight.shadow.camera.left = -16;
-        dirLight.shadow.camera.right = 16;
-        dirLight.shadow.camera.top = 16;
-        dirLight.shadow.camera.bottom = -16;
-        dirLight.shadow.bias = -0.0005;
-        scene.add(dirLight);
-
-        const rimLight = new THREE.PointLight(0x38bdf8, 3.0, 26, 1.4);
-        rimLight.position.set(0, 7.5, 0);
-        scene.add(rimLight);
-
-        const floorMesh = new THREE.Mesh(
-          new THREE.PlaneGeometry(140, 140),
-          new THREE.MeshStandardMaterial({ color: 0x040915, roughness: 0.88, metalness: 0.25 })
-        );
-        floorMesh.rotation.x = -Math.PI / 2;
-        floorMesh.position.y = -0.22;
-        floorMesh.receiveShadow = true;
-        scene.add(floorMesh);
-
-        const grid = new THREE.GridHelper(70, 70, 0x1e3a5f, 0x0c1b33);
-        grid.position.y = -0.2;
-        scene.add(grid);
-
-        const slab = new THREE.Mesh(
-          new THREE.BoxGeometry(19.2, 0.22, 13.6),
-          new THREE.MeshStandardMaterial({ color: 0x0b1528, roughness: 0.55, metalness: 0.45 })
-        );
-        slab.position.y = -0.11;
-        slab.receiveShadow = true;
-        scene.add(slab);
-
-        const slabOutline = new THREE.LineSegments(
-          new THREE.EdgesGeometry(new THREE.BoxGeometry(19.24, 0.24, 13.64)),
-          new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.42 })
-        );
-        slabOutline.position.y = -0.11;
-        scene.add(slabOutline);
-
-        const corridor = new THREE.Mesh(
-          new THREE.PlaneGeometry(18.4, 2.0),
-          new THREE.MeshStandardMaterial({ color: 0x0f203d, emissive: 0x0c2d57, emissiveIntensity: 0.45, roughness: 0.4, metalness: 0.5 })
-        );
-        corridor.rotation.x = -Math.PI / 2;
-        corridor.position.y = 0.012;
-        scene.add(corridor);
-
-        const mdpBase = new THREE.Mesh(
-          new THREE.CylinderGeometry(1.15, 1.35, 0.3, 32),
-          new THREE.MeshStandardMaterial({ color: 0x111f38, metalness: 0.65, roughness: 0.3 })
-        );
-        mdpBase.position.y = 0.15;
-        scene.add(mdpBase);
-
-        mdpCore = new THREE.Mesh(
-          new THREE.OctahedronGeometry(0.56, 0),
-          new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0ea5e9, emissiveIntensity: 1.5, metalness: 0.3, roughness: 0.15 })
-        );
-        mdpCore.position.y = 1.15;
-        scene.add(mdpCore);
-
-        mdpRing = new THREE.Mesh(
-          new THREE.TorusGeometry(0.95, 0.03, 12, 48),
-          new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.72 })
-        );
-        mdpRing.rotation.x = Math.PI / 2;
-        mdpRing.position.y = 0.55;
-        scene.add(mdpRing);
-
-        ROOM_LAYOUT.forEach(buildRoomModule);
-
-        // Pointer Raycasting on 3D canvas
-        renderer.domElement.addEventListener('pointermove', (e) => {
-          if (isOrbitDragging || e.buttons > 0) {
-            hoveredRoom = null;
-            tooltipEl.classList.remove('visible');
-            return;
-          }
-          const rect = renderer.domElement.getBoundingClientRect();
-          pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-          pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-          raycaster.setFromCamera(pointer, camera);
-          const hits = raycaster.intersectObjects(hitMeshes, false);
-          const hitRoom = hits.length > 0 ? hits[0].object.userData.ruang : null;
-          hoveredRoom = hitRoom;
-          renderer.domElement.style.cursor = hitRoom ? 'pointer' : 'grab';
-          // Auto-disable hover tooltip for the currently selected room (already open in right drawer)
-          if (hitRoom && hitRoom === selectedRoom) {
-            tooltipEl.classList.remove('visible');
-          } else {
-            updateTooltip(hitRoom, e.clientX - rect.left, e.clientY - rect.top, rect.width, rect.height);
-          }
-        });
-
-        renderer.domElement.addEventListener('pointerdown', (e) => {
-          pointerDownPos = { x: e.clientX, y: e.clientY };
-          tooltipEl.classList.remove('visible');
-        });
-
-        renderer.domElement.addEventListener('wheel', () => {
-          tooltipEl.classList.remove('visible');
-        }, { passive: true });
-
-        renderer.domElement.addEventListener('pointerup', (e) => {
-          isOrbitDragging = false;
-          if (Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y) > 6) return;
-          const rect = renderer.domElement.getBoundingClientRect();
-          pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-          pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-          raycaster.setFromCamera(pointer, camera);
-          const hits = raycaster.intersectObjects(hitMeshes, false);
-          if (hits.length > 0) selectRoom(hits[0].object.userData.ruang);
-        });
-
-        renderer.domElement.addEventListener('pointerleave', () => {
-          hoveredRoom = null;
-          tooltipEl.classList.remove('visible');
-        });
-
-        const resizeScene = () => {
-          if (!renderer || !camera) return;
-          const nw = Math.max(hostEl.clientWidth, 1);
-          const nh = Math.max(hostEl.clientHeight, 1);
-          renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-          renderer.setSize(nw, nh);
-          camera.aspect = nw / nh;
-          recomputeCameraFramingTargets();
-          applyCameraViewOffset(nw, nh);
-        };
-        new ResizeObserver(resizeScene).observe(hostEl);
-        document.addEventListener('fullscreenchange', () => {
-          const btnFs = document.getElementById('en3d-btn-fullscreen');
-          if (btnFs) btnFs.textContent = document.fullscreenElement === stageEl ? 'Keluar Fullscreen' : 'Layar Penuh';
-          setTimeout(resizeScene, 60);
-        });
-
-        clock = new THREE.Clock();
-        initialized = true;
-
-        if (window.__enLastPayload) {
-          updateData(window.__enLastPayload);
-        }
-      }
-
-      function recomputeCameraFramingTargets() {
-        const nw = Math.max(hostEl.clientWidth, 1);
-        const nh = Math.max(hostEl.clientHeight, 1);
-        if (selectedRoom && nw > 768) {
-          const drawerW = drawerEl ? Math.min(drawerEl.offsetWidth || 340, nw * 0.36) : 340;
-          targetViewOffsetX = Math.round(drawerW * 0.52);
-        } else {
-          targetViewOffsetX = 0;
-        }
-        targetViewOffsetY = bottomDrawerOpen ? Math.round(Math.min(125, nh * 0.16)) : 0;
-      }
-
-      function applyCameraViewOffset(w, h) {
-        if (!camera) return;
-        if (Math.abs(currentViewOffsetX) > 0.35 || Math.abs(currentViewOffsetY) > 0.35) {
-          camera.setViewOffset(w, h, currentViewOffsetX, currentViewOffsetY, w, h);
-        } else {
-          camera.clearViewOffset();
-          camera.aspect = w / h;
-          camera.updateProjectionMatrix();
-        }
-      }
-
-      function updateTooltip(ruang, relX, relY, stageWidth, stageHeight) {
-        if (!ruang || ruang === selectedRoom || isOrbitDragging || !currentRoomsMap.has(ruang)) {
-          tooltipEl.classList.remove('visible');
-          return;
-        }
-        const r = currentRoomsMap.get(ruang);
-        const pal = STATUS_PALETTE[r.visualStatus] || STATUS_PALETTE.offline;
-        document.getElementById('en3d-tt-room').textContent = `${r.ruang} · ${r.label}`;
-        document.getElementById('en3d-tt-device').textContent = `${r.device_id} · Gedung BSD-A`;
-        const b = document.getElementById('en3d-tt-badge');
-        b.textContent = pal.label;
-        b.className = `text-[10px] font-semibold px-2 py-0.5 rounded-full border ${pal.badgeBg}`;
-        document.getElementById('en3d-tt-power').textContent = r.online ? `${r.power_w.toFixed(1)} W` : 'OFFLINE';
-        document.getElementById('en3d-tt-energy').textContent = `${r.energy_kwh.toFixed(2)} kWh · ${fmtIdr(r.bill_idr)}`;
-
-        // Anti-overlap clamping: avoid top HUD (~120px), right drawer (if open), and bottom dock
-        const rightMargin = selectedRoom && stageWidth > 768 ? 360 + 115 : 120;
-        const clampedX = Math.min(Math.max(120, stageWidth - rightMargin), Math.max(120, relX + 18));
-        const clampedY = Math.min(Math.max(145, stageHeight - 75), Math.max(145, relY - 22));
-        tooltipEl.style.left = `${clampedX}px`;
-        tooltipEl.style.top = `${clampedY}px`;
-        tooltipEl.classList.add('visible');
-      }
-
-      function renderDrawer(r) {
-        if (!r) return;
-        const pal = STATUS_PALETTE[r.visualStatus] || STATUS_PALETTE.offline;
-        document.getElementById('en3d-dr-title').textContent = `${r.ruang} — ${r.label}`;
-        const badge = document.getElementById('en3d-dr-badge');
-        badge.textContent = pal.label;
-        badge.className = `text-[10px] font-bold px-2 py-0.5 rounded-full border ${pal.badgeBg}`;
-        document.getElementById('en3d-dr-sub').textContent = `${r.device_id} · ${r.subtitle}`;
-        document.getElementById('en3d-dr-power').textContent = r.online ? `${r.power_w.toFixed(1)} W` : '0.0 W (Offline)';
-        document.getElementById('en3d-dr-energy').textContent = `${r.energy_kwh.toFixed(3)} kWh`;
-        document.getElementById('en3d-dr-bill').textContent = fmtIdr(r.bill_idr);
-        document.getElementById('en3d-dr-load').textContent = `${Math.min(100, Math.round((r.power_w / 3000) * 100))}%`;
-        document.getElementById('en3d-dr-window').textContent = currentWindowLabel;
-
-        document.getElementById('en3d-dr-work').textContent = r.avg_work_w !== null ? `${Number(r.avg_work_w).toFixed(1)} W` : '-';
-        document.getElementById('en3d-dr-after').textContent = r.avg_after_w !== null ? `${Number(r.avg_after_w).toFixed(1)} W` : '-';
-        document.getElementById('en3d-dr-work-bar').style.width = `${Math.min(100, (Number(r.avg_work_w || 0) / 3000) * 100)}%`;
-        document.getElementById('en3d-dr-after-bar').style.width = `${Math.min(100, (Number(r.avg_after_w || 0) / 3000) * 100)}%`;
-
-        const alertList = document.getElementById('en3d-dr-alerts');
-        document.getElementById('en3d-dr-alert-cnt').textContent = `${r.alerts.length} kejadian`;
-        if (!r.alerts.length) {
-          alertList.innerHTML = `<div class="text-slate-500 italic">Tidak ada alert aktif pada ruangan ini.</div>`;
-        } else {
-          alertList.innerHTML = r.alerts.slice(0, 4).map(a => {
-            const isAcked = Boolean(a.ts_acked);
-            const code = a.code || a.type || 'ALERT';
-            const sevCrit = a.severity === 'critical';
-            return `
-              <div class="rounded-lg p-2 border ${isAcked ? 'bg-slate-900/50 border-slate-700/50 opacity-65' : sevCrit ? 'bg-rose-500/10 border-rose-500/35' : 'bg-amber-500/10 border-amber-500/35'}">
-                <div class="flex items-center justify-between gap-1 mb-0.5">
-                  <span class="font-mono font-bold ${sevCrit ? 'text-rose-300' : 'text-amber-300'}">${escHtml(code)}</span>
-                  ${isAcked
-                    ? `<span class="text-emerald-300 font-semibold">✓ ACK</span>`
-                    : `<button data-en3d-ack="${escHtml(a.id)}" type="button" class="en3d-ack-btn px-2 py-0.5 rounded bg-sky-500/25 hover:bg-sky-500/40 text-sky-200 border border-sky-400/40 font-semibold">ACK</button>`}
-                </div>
-                <div class="text-slate-300 leading-snug">${escHtml(a.message || code)}</div>
-              </div>
-            `;
-          }).join('');
-
-          alertList.querySelectorAll('.en3d-ack-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-              if (typeof window.ackEnergyAlert === 'function') {
-                window.ackEnergyAlert(btn.dataset.en3dAck);
-              }
-            });
-          });
-        }
-
-        // Mini Chart.js trend inside right drawer with explicit OFFLINE/no-data empty state
-        const canvas = document.getElementById('en3d-drawer-chart');
-        const emptyEl = document.getElementById('en3d-drawer-chart-empty');
-        const hasSeries = r.seriesVals.length > 0 && (r.online || r.seriesVals.some(v => v > 0));
-        if (!hasSeries) {
-          if (emptyEl) {
-            emptyEl.classList.remove('hidden');
-            const pBtn = emptyEl.querySelector('.en-empty-preview-btn');
-            if (pBtn) pBtn.classList.toggle('hidden', Boolean(window.__enLastPayload?.previewMode));
-          }
-          if (drawerChart) {
-            drawerChart.destroy();
-            drawerChart = null;
-          }
-          return;
-        }
-        if (emptyEl) emptyEl.classList.add('hidden');
-
-        if (canvas && typeof Chart !== 'undefined') {
-          const ctx = canvas.getContext('2d');
-          const grad = ctx.createLinearGradient(0, 0, 0, 112);
-          grad.addColorStop(0, `${pal.hex}55`);
-          grad.addColorStop(1, `${pal.hex}05`);
-          const labels = r.seriesLabels;
-          const vals = r.seriesVals;
-
-          if (drawerChart) {
-            drawerChart.data.labels = labels;
-            drawerChart.data.datasets[0].data = vals;
-            drawerChart.data.datasets[0].borderColor = pal.hex;
-            drawerChart.data.datasets[0].backgroundColor = grad;
-            drawerChart.update('none');
-          } else {
-            drawerChart = new Chart(ctx, {
-              type: 'line',
-              data: {
-                labels,
-                datasets: [{
-                  label: 'Daya (W)',
-                  data: vals,
-                  borderColor: pal.hex,
-                  backgroundColor: grad,
-                  borderWidth: 2,
-                  fill: true,
-                  tension: 0.35,
-                  pointRadius: 2,
-                  pointHoverRadius: 4
-                }]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: { duration: 200 },
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.94)',
-                    borderColor: 'rgba(56, 189, 248, 0.4)',
-                    borderWidth: 1,
-                    callbacks: { label: c => ` ${Number(c.parsed.y || 0).toFixed(1)} W` }
-                  }
-                },
-                scales: {
-                  x: { grid: { color: 'rgba(51,65,85,0.28)' }, ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 4 } },
-                  y: { beginAtZero: true, grid: { color: 'rgba(51,65,85,0.28)' }, ticks: { color: '#94a3b8', font: { size: 9 }, callback: v => `${v}W` } }
-                }
-              }
-            });
-          }
-        }
-      }
-
-      function selectRoom(ruang) {
-        const obj = roomObjects.get(ruang);
-        if (!obj) return;
-        selectedRoom = ruang;
-        tooltipEl.classList.remove('visible');
-        const [x, , z] = obj.cfg.position;
-        const offX = x >= 0 ? 5.2 : -5.2;
-        const offZ = z >= 0 ? 6.4 : 6.8;
-        flyCameraTo(
-          new THREE.Vector3(x + offX * 0.62, 6.2, z + offZ),
-          new THREE.Vector3(x, 1.3, z),
-          0.85
-        );
-        drawerEl.classList.remove('en3d-drawer-closed');
-        drawerEl.scrollTop = 0;
-        recomputeCameraFramingTargets();
-        stageEl.querySelectorAll('.en3d-room-pill').forEach(p => p.classList.toggle('active', p.dataset.en3dRoom === ruang));
-        if (currentRoomsMap.has(ruang)) renderDrawer(currentRoomsMap.get(ruang));
-      }
-
-      function closeDrawer(resetCam = false) {
-        selectedRoom = null;
-        drawerEl.classList.add('en3d-drawer-closed');
-        recomputeCameraFramingTargets();
-        stageEl.querySelectorAll('.en3d-room-pill').forEach(p => p.classList.remove('active'));
-        if (resetCam) setCameraPreset('overview');
-      }
-
-      function setBottomDrawerOpen(isOpen) {
-        bottomDrawerOpen = Boolean(isOpen);
-        recomputeCameraFramingTargets();
-      }
-
-      function updateData(payload) {
-        if (!payload) return;
-        const { rooms = [], bill, alerts = [], telemetry = [], baseline = [], roomFilter = 'all', windowLabel = '1 Jam Terakhir' } = payload;
-        currentWindowLabel = windowLabel;
-
-        const roomApiMap = new Map(rooms.map(r => [r.ruang, r]));
-        const billMap = new Map((bill?.per_ruang || []).map(b => [b.ruang, b]));
-        const baseMap = new Map((baseline || []).map(b => [b.ruang, b]));
-
-        // Group sorted telemetry series per room
-        const seriesByRoom = new Map();
-        const powerRows = (telemetry || [])
-          .filter(t => t.field === 'power_w')
-          .map(t => ({ ...t, _ms: new Date(t.time).getTime() }))
-          .filter(t => !Number.isNaN(t._ms))
-          .sort((a, b) => a._ms - b._ms);
-        for (const row of powerRows) {
-          const k = row.ruang || row.device_id;
-          if (!seriesByRoom.has(k)) seriesByRoom.set(k, []);
-          seriesByRoom.get(k).push(row);
-        }
-
-        currentRoomsMap.clear();
-        for (const cfg of ROOM_LAYOUT) {
-          const rApi = roomApiMap.get(cfg.ruang) || {};
-          const bApi = billMap.get(cfg.ruang) || {};
-          const bsApi = baseMap.get(cfg.ruang) || {};
-          const rAlerts = alerts.filter(a => a.device_id === cfg.device_id || a.ruang === cfg.ruang);
-          const unackedAlerts = rAlerts.filter(a => !a.ts_acked);
-
-          const online = rApi.status === 'online' || Boolean(rApi.online);
-          const pw = Number(rApi.power_w || 0);
-          let visualStatus = 'normal';
-          if (!online) visualStatus = 'offline';
-          else if (pw > 3000 || unackedAlerts.some(a => (a.code || a.type) === 'HIGH_LOAD')) visualStatus = 'high_load';
-          else if (unackedAlerts.some(a => (a.code || a.type) === 'WASTE_AFTER_HOURS')) visualStatus = 'waste';
-
-          const pts = (seriesByRoom.get(cfg.ruang) || []).slice(-16);
-          const seriesLabels = pts.map(p => new Date(p._ms).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' }));
-          const seriesVals = pts.map(p => Number(p.value || 0));
-
-          const merged = {
-            ...cfg,
-            online,
-            visualStatus,
-            power_w: pw,
-            energy_kwh: Number(bApi.energy_kwh ?? rApi.energy_kwh ?? 0),
-            bill_idr: Number(bApi.estimasi_tagihan_idr ?? 0),
-            avg_work_w: bsApi.avg_work_hours_w ?? null,
-            avg_after_w: bsApi.avg_after_hours_w ?? null,
-            alerts: rAlerts,
-            seriesLabels,
-            seriesVals
-          };
-          currentRoomsMap.set(cfg.ruang, merged);
-
-          const pal = STATUS_PALETTE[visualStatus] || STATUS_PALETTE.offline;
-          const pill = stageEl.querySelector(`.en3d-room-pill[data-en3d-room="${cfg.ruang}"]`);
-          if (pill) {
-            const dot = pill.querySelector('.en3d-dot');
-            if (dot) dot.className = `en3d-dot w-2 h-2 rounded-full ${pal.dot}`;
-          }
-
-          const obj = roomObjects.get(cfg.ruang);
-          if (obj) {
-            const focusedByFilter = roomFilter === 'all' || roomFilter === cfg.ruang;
-            const targetH = online ? Math.min(4.2, Math.max(0.4, 0.35 + (pw / 3500) * 3.75)) : 0.24;
-            obj.targetHeight = focusedByFilter ? targetH : 0.22;
-            obj.targetColor.setHex(focusedByFilter ? pal.color : 0x334155);
-            obj.targetOpacity = focusedByFilter ? 1.0 : 0.26;
-            obj.flowSpeed = (!online || !focusedByFilter) ? 0 : Math.min(0.65, 0.1 + (pw / 3400) * 0.5);
-
-            const pwText = online ? `${Math.round(pw).toLocaleString('id-ID')} W` : 'OFFLINE';
-            const lKey = `${pwText}|${pal.hex}|${focusedByFilter}`;
-            if (obj.lastLabelKey !== lKey) {
-              obj.labelObj.redraw(cfg.ruang, cfg.device_id, pwText, focusedByFilter ? pal.hex : '#475569');
-              obj.lastLabelKey = lKey;
-            }
-          }
-        }
-
-        // Only fly camera when user actively changed #en-room-filter (not on 5s refresh)
-        if (initialized && roomFilter !== lastRoomFilter) {
-          lastRoomFilter = roomFilter;
-          if (roomFilter !== 'all' && roomObjects.has(roomFilter)) {
-            selectRoom(roomFilter);
-          } else if (roomFilter === 'all') {
-            closeDrawer(true);
-          }
-        } else {
-          lastRoomFilter = roomFilter;
-        }
-
-        if (selectedRoom && currentRoomsMap.has(selectedRoom)) {
-          renderDrawer(currentRoomsMap.get(selectedRoom));
-        }
-      }
-
-      let fpsFrames = 0;
-      let fpsTimer = 0;
-
-      function animateLoop() {
-        if (!isActive || !initialized) return;
-        rafId = requestAnimationFrame(animateLoop);
-
-        const dt = Math.min(clock.getDelta(), 0.05);
-        const elapsed = clock.getElapsedTime();
-
-        fpsFrames++;
-        fpsTimer += dt;
-        if (fpsTimer >= 0.6) {
-          const fpsEl = document.getElementById('en3d-fps');
-          if (fpsEl) fpsEl.textContent = `${Math.round(fpsFrames / fpsTimer)} FPS`;
-          fpsFrames = 0;
-          fpsTimer = 0;
-        }
-
-        if (camTransition.active) {
-          camTransition.progress += dt / camTransition.duration;
-          const t = Math.min(1, camTransition.progress);
-          const ease = 1 - Math.pow(1 - t, 3);
-          camera.position.lerpVectors(camTransition.startPos, camTransition.endPos, ease);
-          controls.target.lerpVectors(camTransition.startTarget, camTransition.endTarget, ease);
-          if (t >= 1) camTransition.active = false;
-        }
-
-        // Smooth camera framing offset when right/bottom drawers open or close
-        const offsetLerp = Math.min(1, dt * 8.5);
-        const prevOffX = currentViewOffsetX;
-        const prevOffY = currentViewOffsetY;
-        currentViewOffsetX += (targetViewOffsetX - currentViewOffsetX) * offsetLerp;
-        currentViewOffsetY += (targetViewOffsetY - currentViewOffsetY) * offsetLerp;
-        if (Math.abs(currentViewOffsetX - prevOffX) > 0.05 || Math.abs(currentViewOffsetY - prevOffY) > 0.05) {
-          const nw = Math.max(hostEl.clientWidth, 1);
-          const nh = Math.max(hostEl.clientHeight, 1);
-          applyCameraViewOffset(nw, nh);
-        }
-
-        mdpCore.rotation.y += dt * 1.1;
-        mdpCore.position.y = 1.15 + Math.sin(elapsed * 2.2) * 0.1;
-        mdpRing.rotation.z -= dt * 0.6;
-
-        const alpha = Math.min(1, dt * 6.5);
-        for (const [ruang, obj] of roomObjects.entries()) {
-          const isHover = hoveredRoom === ruang;
-          const isSel = selectedRoom === ruang;
-          const rData = currentRoomsMap.get(ruang);
-          const isAlert = rData && (rData.visualStatus === 'waste' || rData.visualStatus === 'high_load');
-
-          obj.currentHeight += (obj.targetHeight - obj.currentHeight) * alpha;
-          obj.currentColor.lerp(obj.targetColor, alpha);
-          obj.currentOpacity += (obj.targetOpacity - obj.currentOpacity) * alpha;
-
-          const tScale = isHover ? 1.035 : isSel ? 1.02 : 1.0;
-          obj.currentScale += (tScale - obj.currentScale) * alpha;
-          obj.group.scale.set(obj.currentScale, 1, obj.currentScale);
-
-          const breathe = rData && rData.online ? Math.sin(elapsed * 2.4 + obj.cfg.position[0]) * 0.04 : 0;
-          const hVal = Math.max(0.2, obj.currentHeight + breathe);
-          obj.pillar.scale.set(1, hVal, 1);
-          obj.pillarShell.scale.set(1, hVal * 1.04, 1);
-          obj.pillarShell.rotation.y += dt * (isAlert ? 1.4 : 0.45);
-          obj.statusRing.rotation.z += dt * (isAlert ? 1.8 : 0.6);
-
-          const alertPulse = isAlert ? (0.5 + 0.5 * Math.sin(elapsed * 6)) * 0.8 : 0;
-          const boost = isHover ? 0.6 : isSel ? 0.38 : 0;
-
-          obj.pillarMat.color.copy(obj.currentColor);
-          obj.pillarMat.emissive.copy(obj.currentColor);
-          obj.pillarMat.emissiveIntensity = (0.75 + boost + alertPulse) * obj.currentOpacity;
-          obj.pillarMat.opacity = 0.85 * obj.currentOpacity;
-
-          obj.pillarShellMat.color.copy(obj.currentColor);
-          obj.pillarShellMat.opacity = (0.22 + (isHover || isSel ? 0.2 : 0)) * obj.currentOpacity;
-
-          obj.wallMat.emissive.copy(obj.currentColor);
-          obj.wallMat.emissiveIntensity = (0.1 + (isHover ? 0.24 : isSel ? 0.16 : 0) + alertPulse * 0.16) * obj.currentOpacity;
-          obj.wallMat.opacity = (0.22 + (isHover || isSel ? 0.1 : 0)) * obj.currentOpacity;
-
-          obj.edgeMat.color.copy(obj.currentColor);
-          obj.edgeMat.opacity = (isHover || isSel ? 1.0 : 0.68) * obj.currentOpacity;
-
-          obj.statusRingMat.color.copy(obj.currentColor);
-          obj.statusRingMat.opacity = (0.7 + alertPulse * 0.25) * obj.currentOpacity;
-
-          obj.roomLight.color.copy(obj.currentColor);
-          obj.roomLight.intensity = (1.8 + boost * 1.5 + alertPulse * 1.4) * obj.currentOpacity;
-
-          obj.tubeMat.emissive.copy(obj.currentColor);
-          obj.tubeMat.emissiveIntensity = (0.5 + boost * 0.5) * obj.currentOpacity;
-
-          // Auto-hide 3D label for selected room & clamp label scale by camera distance
-          const sprite = obj.labelObj.sprite;
-          sprite.visible = !isSel;
-          if (sprite.visible) {
-            sprite.position.y = Math.max(2.35, hVal + 0.95);
-            sprite.getWorldPosition(labelWorldPos);
-            const camDist = camera.position.distanceTo(labelWorldPos);
-            const clampedW = THREE.MathUtils.clamp(camDist * 0.135, 1.35, 2.65);
-            sprite.scale.set(clampedW, clampedW * (128 / 360), 1);
-          }
-        }
-
-        for (const p of energyParticles) {
-          const obj = roomObjects.get(p.ruang);
-          if (!obj || obj.flowSpeed <= 0.001) {
-            p.mesh.visible = false;
-            continue;
-          }
-          p.mesh.visible = true;
-          p.t = (p.t + dt * obj.flowSpeed) % 1;
-          p.curve.getPointAt(p.t, p.mesh.position);
-          p.mesh.position.y += 0.08;
-          p.mesh.material.color.copy(obj.currentColor);
-        }
-
-        controls.update();
-        renderer.render(scene, camera);
-      }
-
-      // Bind HUD controls
-      stageEl.querySelectorAll('.en3d-cam-btn').forEach(btn => {
-        btn.addEventListener('click', () => setCameraPreset(btn.dataset.en3dCam));
-      });
-      document.getElementById('en3d-btn-reset')?.addEventListener('click', () => closeDrawer(true));
-      document.getElementById('en3d-btn-close-drawer')?.addEventListener('click', () => closeDrawer(false));
-      document.getElementById('en3d-btn-orbit')?.addEventListener('click', (e) => {
-        autoOrbit = !autoOrbit;
-        if (controls) {
-          controls.autoRotate = autoOrbit;
-          controls.autoRotateSpeed = 0.85;
-        }
-        e.currentTarget.classList.toggle('active', autoOrbit);
-      });
-      document.getElementById('en3d-btn-fullscreen')?.addEventListener('click', () => {
-        if (document.fullscreenElement === stageEl) {
-          document.exitFullscreen?.();
-        } else {
-          stageEl.requestFullscreen?.();
-        }
-      });
-      document.getElementById('en3d-btn-sync-filter')?.addEventListener('click', () => {
-        if (!selectedRoom) return;
-        const sel = document.getElementById('en-room-filter');
-        if (sel) {
-          sel.value = selectedRoom;
-          lastRoomFilter = selectedRoom;
-          if (typeof window.fetchEnergyRooms === 'function') window.fetchEnergyRooms();
-        }
-        if (typeof window.toggleEnergyBottomDrawer === 'function') {
-          window.toggleEnergyBottomDrawer(true);
-        }
-      });
-      stageEl.querySelectorAll('.en3d-room-pill').forEach(btn => {
-        btn.addEventListener('click', () => selectRoom(btn.dataset.en3dRoom));
-      });
-
-      // Collapsible Bottom-Left Dock
-      document.getElementById('en3d-dock-toggle')?.addEventListener('click', () => {
-        dockCollapsed = !dockCollapsed;
-        const body = document.getElementById('en3d-dock-body');
-        const chev = document.getElementById('en3d-dock-chevron');
-        if (body) body.classList.toggle('hidden', dockCollapsed);
-        if (chev) chev.textContent = dockCollapsed ? '▶' : '◀';
-      });
-
-      function setActive(active) {
-        isActive = Boolean(active);
-        if (isActive) {
-          if (!initialized) initThreeScene();
-          if (clock) clock.getDelta();
-          recomputeCameraFramingTargets();
-          if (rafId) cancelAnimationFrame(rafId);
-          animateLoop();
-        } else if (rafId) {
-          cancelAnimationFrame(rafId);
-          rafId = null;
-        }
-      }
-
-      window.en3d = {
-        setActive,
-        updateData,
-        selectRoom,
-        setCameraPreset,
-        closeDetailDrawer: closeDrawer,
-        setBottomDrawerOpen
-      };
-      const energyTabEl = document.getElementById('content-energy');
-      if (energyTabEl && !energyTabEl.classList.contains('hidden')) {
-        setActive(true);
-      }
-    }
-  </script>
+  <!-- Modular Smart Energy BMS App (Interactive 2D SVG Floor Plan + Charts + Detail Panel) -->
+  <script type="module" src="/energy/energyApp.js"></script>
 </body>
 </html>
