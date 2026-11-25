@@ -4,7 +4,9 @@ import threading
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 
-from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi import FastAPI, Depends, HTTPException, Header, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from app.config import settings
 from app.database import get_db_connection
 from app.influx import query_influx
@@ -44,6 +46,33 @@ app = FastAPI(
     description="API untuk monitoring sistem cold-chain",
     version="1.0.0",
 )
+
+# =========================
+# SAFE VALIDATION ERROR HANDLER
+# =========================
+
+@app.exception_handler(RequestValidationError)
+async def safe_validation_error_handler(
+    request: Request,
+    exc: RequestValidationError,
+):
+    errors = []
+
+    for error in exc.errors():
+        errors.append({
+            "type": str(error.get("type", "validation_error")),
+            "loc": [
+                item if isinstance(item, (str, int)) else str(item)
+                for item in error.get("loc", ())
+            ],
+            "msg": str(error.get("msg", "Invalid request")),
+        })
+
+    return JSONResponse(
+        status_code=422,
+        content={"detail": errors},
+    )
+
 
 app.include_router(coldchain_router)
 app.include_router(device_status_router)

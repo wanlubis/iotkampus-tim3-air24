@@ -18,5 +18,10 @@ class Settings:
     INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET", "iot")
     INFLUXDB_TOKEN = os.getenv("INFLUXDB_ADMIN_TOKEN", "")
 
+    MQTT_HOST = os.getenv("MQTT_HOST", "mosquitto")
+    MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
+    MQTT_USERNAME = os.getenv("MQTT_USERNAME", "")
+    MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "")
+
 
 settings = Settings()

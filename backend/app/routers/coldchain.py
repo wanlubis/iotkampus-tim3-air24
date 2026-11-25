@@ -1,8 +1,17 @@
+import logging
+import re
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Header, HTTPException
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import settings
 from app.database import get_db_connection
 from app.influx import query_influx
+from app.mqtt import publish_command
+
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(
@@ -229,3 +238,129 @@ def get_escalations():
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# =========================
+# SETPOINT COMMAND MODELS
+# =========================
+
+class SetpointArgs(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    temp_c: float = Field(
+        ...,
+        strict=True,
+        ge=0,
+        le=10,
+        allow_inf_nan=False,
+    )
+
+
+class SetpointCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    command: Literal["setpoint"]
+    args: SetpointArgs
+
+
+# =========================
+# POST SETPOINT COMMAND
+# =========================
+
+@router.post(
+    "/cmd/{device_id}",
+    dependencies=[Depends(verify_api_key)],
+)
+def send_setpoint_command(
+    device_id: str,
+    request: SetpointCommand,
+):
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,50}", device_id):
+        raise HTTPException(
+            status_code=422,
+            detail="Device ID tidak valid",
+        )
+
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT device_id, domain, gedung, ruang, status
+                    FROM devices
+                    WHERE device_id = %s
+                      AND domain = 'coldchain'
+                    """,
+                    (device_id,),
+                )
+
+                device = cur.fetchone()
+
+    except Exception:
+        logger.exception("Failed to query chamber registry")
+        raise HTTPException(
+            status_code=500,
+            detail="Gagal mengakses registry device",
+        )
+
+    if not device:
+        raise HTTPException(
+            status_code=404,
+            detail="Chamber tidak ditemukan",
+        )
+
+    if device["status"] != "online":
+        raise HTTPException(
+            status_code=409,
+            detail="Chamber sedang offline",
+        )
+
+    segments = [
+        device["domain"],
+        device["gedung"],
+        device["ruang"],
+        device["device_id"],
+    ]
+
+    if not all(
+        isinstance(segment, str)
+        and re.fullmatch(r"[A-Za-z0-9_-]+", segment)
+        for segment in segments
+    ):
+        raise HTTPException(
+            status_code=500,
+            detail="Registry MQTT topic tidak valid",
+        )
+
+    topic = "kampus/" + "/".join(segments) + "/cmd"
+
+    payload = {
+        "command": "setpoint",
+        "args": {
+            "temp_c": request.args.temp_c,
+        },
+    }
+
+    try:
+        publish_command(topic, payload)
+
+    except Exception as error:
+        logger.warning(
+            "MQTT command failed for %s: %s",
+            device_id,
+            type(error).__name__,
+        )
+
+        raise HTTPException(
+            status_code=503,
+            detail="Gagal mengirim command ke MQTT broker",
+        )
+
+    return {
+        "message": "Setpoint command berhasil dipublish",
+        "device_id": device_id,
+        "topic": topic,
+        "command": payload["command"],
+        "args": payload["args"],
+        "status": "published",
+    }
