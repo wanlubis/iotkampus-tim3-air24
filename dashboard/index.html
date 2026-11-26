@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cold-Chain Smart Storage Monitoring - Tim 2">
+    <title>Cold-Chain Dashboard | Tim 2</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-icon" aria-hidden="true">&#10052;</div>
+            <div>
+                <h1>COLDCHAIN</h1>
+                <p>Smart Storage Monitoring | Tim 2</p>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <span id="connection-status" class="status-badge">
+                Disconnected
+            </span>
+            <button id="refresh-button" type="button">
+                Refresh
+            </button>
+            <button id="disconnect-button" type="button" hidden>
+                Disconnect
+            </button>
+        </div>
+    </header>
+
+    <main class="dashboard">
+
+        <section id="auth-panel" class="panel">
+            <h2>API Connection</h2>
+            <p>Masukkan API key untuk mengakses dashboard.</p>
+
+            <form id="auth-form">
+                <label for="api-key">API Key</label>
+                <input
+                    id="api-key"
+                    type="password"
+                    placeholder="Masukkan API key"
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit">Connect</button>
+            </form>
+
+            <p id="auth-message" role="status"></p>
+        </section>
+
+        <div id="error-banner" role="alert" hidden></div>
+
+        <div id="dashboard-content" hidden>
+
+            <section class="section-heading">
+                <div>
+                    <h2>Cold-Chain Overview</h2>
+                    <p>Real-time chamber monitoring</p>
+                </div>
+
+                <div class="last-update">
+                    <span>Last update:</span>
+                    <span id="last-update">--</span>
+                    <small>Auto refresh: 5 detik</small>
+                </div>
+            </section>
+
+            <section class="kpi-grid" aria-label="Key performance indicators">
+
+                <article class="kpi-card">
+                    <h3>Online Chambers</h3>
+                    <strong id="kpi-online">--</strong>
+                    <p id="kpi-online-detail">Menunggu data</p>
+                </article>
+
+                <article class="kpi-card">
+                    <h3>Average Temperature</h3>
+                    <strong id="kpi-temperature">--</strong>
+                    <p>Temperature chamber</p>
+                </article>
+
+                <article class="kpi-card">
+                    <h3>Active Alerts</h3>
+                    <strong id="kpi-alerts">--</strong>
+                    <p id="kpi-alert-detail">Menunggu data</p>
+                </article>
+
+                <article class="kpi-card">
+                    <h3>Open Doors</h3>
+                    <strong id="kpi-doors">--</strong>
+                    <p id="kpi-door-detail">Menunggu data</p>
+                </article>
+
+            </section>
+
+            <section class="dashboard-section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Chamber Monitoring</h2>
+                        <p>Status perangkat dan kondisi penyimpanan</p>
+                    </div>
+                </div>
+
+                <div id="chamber-grid" class="chamber-grid">
+                    <p>Menunggu data chamber...</p>
+                </div>
+            </section>
+
+            <section class="dashboard-section">
+
+                <div class="section-heading">
+                    <div>
+                        <h2>Telemetry Monitoring</h2>
+                        <p>Riwayat temperatur dan kelembapan</p>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="device-filter">Device</label>
+                        <select id="device-filter">
+                            <option value="all">All Chambers</option>
+                            <option value="cc-01">cc-01</option>
+                            <option value="cc-02">cc-02</option>
+                            <option value="cc-03">cc-03</option>
+                        </select>
+
+                        <label for="time-range">Time Range</label>
+                        <select id="time-range">
+                            <option value="15">Last 15 minutes</option>
+                            <option value="30" selected>Last 30 minutes</option>
+                            <option value="60">Last 1 hour</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="chart-grid">
+
+                    <article class="panel chart-panel">
+                        <h3>Temperature Trend</h3>
+                        <div class="chart-legend">
+                            <span>Warning: 6 &deg;C</span>
+                            <span>Critical: 8 &deg;C</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="temperature-chart"
+                                role="img"
+                                aria-label="Grafik temperatur chamber">
+                            </canvas>
+                        </div>
+                        <p id="temperature-empty" hidden>
+                            Tidak ada data temperatur.
+                        </p>
+                    </article>
+
+                    <article class="panel chart-panel">
+                        <h3>Humidity Trend</h3>
+                        <p>Relative humidity (%)</p>
+                        <div class="chart-container">
+                            <canvas id="humidity-chart"
+                                role="img"
+                                aria-label="Grafik kelembapan chamber">
+                            </canvas>
+                        </div>
+                        <p id="humidity-empty" hidden>
+                            Tidak ada data kelembapan.
+                        </p>
+                    </article>
+
+                </div>
+
+            </section>
+
+            <section class="dashboard-section panel">
+
+                <div class="section-heading">
+                    <div>
+                        <h2>Alert Monitoring</h2>
+                        <p>Alert aktif dan riwayat penanganan</p>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="alert-filter">Status</label>
+                        <select id="alert-filter">
+                            <option value="all">All Alerts</option>
+                            <option value="active">Active</option>
+                            <option value="acknowledged">Acknowledged</option>
+                            <option value="resolved">Resolved</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Device</th>
+                                <th>Alert Type</th>
+                                <th>Severity</th>
+                                <th>Status</th>
+                                <th>Triggered At</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alert-table-body">
+                            <tr>
+                                <td colspan="7">Menunggu data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </section>
+
+            <section class="dashboard-section panel">
+
+                <div class="section-heading">
+                    <div>
+                        <h2>Escalation Monitoring</h2>
+                        <p>Critical alert yang mengalami eskalasi</p>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Device</th>
+                                <th>Original Alert</th>
+                                <th>Escalated Alert</th>
+                                <th>Temperature</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Triggered At</th>
+                            </tr>
+                        </thead>
+                        <tbody id="escalation-table-body">
+                            <tr>
+                                <td colspan="7">Menunggu data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <div id="notification" role="status" aria-live="polite" hidden></div>
+
+    <footer class="footer">
+        <p>Mini IoT Platform Kampus | Cold-Chain Tim 2</p>
+        <p>Smart Storage Monitoring System</p>
+    </footer>
+
+</body>
+</html>
