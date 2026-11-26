@@ -620,13 +620,105 @@
     <!-- TAB 3: COLD-CHAIN (TIM 2) -->
     <!-- ============================================================== -->
     <div id="content-coldchain" class="hidden space-y-6">
-      <div class="bg-gradient-to-r from-cyan-900/40 to-slate-800 border border-cyan-500/30 rounded-2xl p-5">
-        <h2 class="text-lg font-bold text-white">❄️ Cold-Chain / Smart Storage (Tim 2)</h2>
-        <p class="text-xs text-slate-300 mt-1">Pemantauan suhu penyimpanan biologis/vaksin, kelembapan, status pintu, dan eskalasi bertingkat.</p>
+
+      <!-- Header & Ambang Batas -->
+      <div class="bg-gradient-to-r from-cyan-950/60 via-slate-800/90 to-slate-800/90 border border-cyan-500/30 rounded-2xl p-5 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-2.5">
+              <h2 class="text-lg font-bold text-white">❄️ Cold-Chain / Smart Storage — Penyimpanan Bersuhu Rendah</h2>
+              <span class="text-[11px] bg-cyan-500/20 text-cyan-300 px-2.5 py-0.5 rounded-full border border-cyan-500/30 font-semibold">Tim 2</span>
+            </div>
+            <p class="text-xs text-slate-300 mt-1">
+              Pemantauan suhu biologis/vaksin, kelembapan, status pintu terbuka, dan kontrol setpoint jarak jauh via MQTT downlink.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2 text-[11px] shrink-0">
+            <div class="px-2.5 py-1 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-300">
+              Suhu: <strong class="text-amber-400">&gt;6 °C</strong> (Warn) · <strong class="text-rose-400">&gt;8 °C</strong> (Crit)
+            </div>
+            <div class="px-2.5 py-1 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-300">
+              Pintu: <strong class="text-amber-400">&gt;60s</strong> (Warn)
+            </div>
+            <div class="px-2.5 py-1 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-300">
+              Baterai: <strong class="text-rose-400">&lt;20%</strong>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="coldchain-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- 4 KARTU KPI DOMAIN COLD-CHAIN (Bagian 6.4) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+          <div class="text-xs text-slate-400 font-medium">Chamber Online</div>
+          <div class="text-2xl font-extrabold text-cyan-400 mt-1"><span id="cc-kpi-online">0</span>/3</div>
+          <div class="text-[11px] text-slate-500 mt-1">cc-01, cc-02, cc-03</div>
+        </div>
+
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+          <div class="text-xs text-slate-400 font-medium">Suhu Rata-rata Chamber</div>
+          <div class="flex items-baseline space-x-1.5">
+            <span id="cc-kpi-avg-temp" class="text-2xl font-extrabold text-cyan-300 mt-1">--</span>
+            <span class="text-xs text-slate-400">°C</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">Ambang normal 2.0 – 6.0 °C</div>
+        </div>
+
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+          <div class="text-xs text-slate-400 font-medium">Status Pintu Terbuka</div>
+          <div id="cc-kpi-door-status" class="text-2xl font-extrabold text-emerald-400 mt-1">SEMUA TERTUTUP</div>
+          <div class="text-[11px] text-slate-500 mt-1">Maks. batas terbuka 60 detik</div>
+        </div>
+
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+          <div class="text-xs text-slate-400 font-medium">Alert Cold-Chain Aktif</div>
+          <div class="flex items-baseline justify-between mt-1">
+            <span id="cc-kpi-alerts" class="text-2xl font-extrabold text-white">0</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold">Active</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">Suhu, Pintu, Offline</div>
+        </div>
+      </div>
+
+      <!-- 3 CHAMBERS CARDS DENGAN KONTROL SETPOINT -->
+      <div id="coldchain-container" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Rendered by JS -->
       </div>
+
+      <!-- INJEKSI GANGGUAN QUICK GUIDE UNTUK DEMO COLD-CHAIN -->
+      <div class="bg-slate-800/60 border border-slate-700 rounded-2xl p-5">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+          <span>🛠️ Kontrol & Injektor Gangguan Cold-Chain (Bagian 11 & Menit 12–17)</span>
+        </h3>
+        <p class="text-xs text-slate-400 mt-1">Gunakan perintah berikut di terminal simulator untuk skenario demo live Cold-Chain:</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3 text-xs">
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-cyan-400 truncate">python simulator.py --mode SPIKE</code>
+            <button onclick="window.airApp.copyDemoCmd('python simulators/coldchain/simulator.py --mode SPIKE', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
+          </div>
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-amber-400 truncate">python simulator.py --mode DOOR</code>
+            <button onclick="window.airApp.copyDemoCmd('python simulators/coldchain/simulator.py --mode DOOR', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
+          </div>
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-rose-400 truncate">python simulator.py --mode CRASH --device cc-01</code>
+            <button onclick="window.airApp.copyDemoCmd('python simulators/coldchain/simulator.py --mode CRASH --device cc-01', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
+          </div>
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-blue-400 truncate">python simulator.py --mode STOP</code>
+            <button onclick="window.airApp.copyDemoCmd('python simulators/coldchain/simulator.py --mode STOP', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
+          </div>
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-emerald-400 truncate">python simulator.py --mode NORMAL</code>
+            <button onclick="window.airApp.copyDemoCmd('python simulators/coldchain/simulator.py --mode NORMAL', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
+          </div>
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-2">
+            <code class="font-mono text-purple-400 truncate">Mode> RECONNECT cc-01</code>
+            <button onclick="window.airApp.copyDemoCmd('RECONNECT cc-01', this)" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">Copy</button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- ============================================================== -->
@@ -1297,33 +1389,156 @@
         const chambers = await res.json();
         const container = document.getElementById('coldchain-container');
 
-        container.innerHTML = chambers.map(c => `
-          <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="font-bold text-white text-base">${c.display_name}</h3>
-                <p class="text-xs text-slate-400 font-mono">${c.device_id} · ${c.gedung} / ${c.ruang}</p>
-              </div>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400">Online</span>
-            </div>
-            <div class="grid grid-cols-2 gap-3 text-center">
-              <div class="bg-slate-700/40 p-3 rounded-xl border border-slate-600/40">
-                <div class="text-[10px] text-slate-400">Suhu Saat Ini</div>
-                <div class="text-2xl font-bold text-cyan-300 mt-1">${c.temp_c}°C</div>
-                <div class="text-[10px] text-slate-400 mt-1">Setpoint: ${c.setpoint_c}°C</div>
-              </div>
-              <div class="bg-slate-700/40 p-3 rounded-xl border border-slate-600/40">
-                <div class="text-[10px] text-slate-400">Status Pintu</div>
-                <div class="text-lg font-bold ${c.door_open ? 'text-rose-400' : 'text-emerald-400'} mt-1">
-                  ${c.door_open ? 'TERBUKA' : 'TERTUTUP'}
+        // Hitung KPIs
+        let totalTemp = 0;
+        let onlineCount = 0;
+        let anyDoorOpen = false;
+
+        chambers.forEach(c => {
+          totalTemp += Number(c.temp_c || 0);
+          if (c.status === 'online') onlineCount++;
+          if (c.door_open) anyDoorOpen = true;
+        });
+
+        const avgTemp = chambers.length > 0 ? (totalTemp / chambers.length).toFixed(1) : '--';
+        const kpiOnlineEl = document.getElementById('cc-kpi-online');
+        if (kpiOnlineEl) kpiOnlineEl.textContent = onlineCount;
+
+        const kpiTempEl = document.getElementById('cc-kpi-avg-temp');
+        if (kpiTempEl) {
+          kpiTempEl.textContent = avgTemp;
+          kpiTempEl.className = `text-2xl font-extrabold mt-1 ${avgTemp > 8 ? 'text-rose-400' : (avgTemp > 6 ? 'text-amber-400' : 'text-cyan-300')}`;
+        }
+
+        const kpiDoorEl = document.getElementById('cc-kpi-door-status');
+        if (kpiDoorEl) {
+          if (anyDoorOpen) {
+            kpiDoorEl.textContent = "PINTU TERBUKA";
+            kpiDoorEl.className = "text-2xl font-extrabold text-rose-400 mt-1";
+          } else {
+            kpiDoorEl.textContent = "SEMUA TERTUTUP";
+            kpiDoorEl.className = "text-2xl font-extrabold text-emerald-400 mt-1";
+          }
+        }
+
+        container.innerHTML = chambers.map(c => {
+          const temp = Number(c.temp_c || 0);
+          const isOnline = c.status === 'online';
+          const tempColor = temp > 8.0 ? 'text-rose-400' : (temp > 6.0 ? 'text-amber-400' : 'text-cyan-300');
+          const borderClass = temp > 8.0 ? 'border-rose-500/60' : (temp > 6.0 ? 'border-amber-500/60' : 'border-slate-700/80');
+
+          return `
+            <div class="bg-slate-800/90 border ${borderClass} rounded-2xl p-5 shadow-sm space-y-4">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="font-bold text-white text-base">${c.display_name}</h3>
+                  <p class="text-xs text-slate-400 font-mono mt-0.5">${c.device_id} · ${c.gedung} / ${c.ruang}</p>
                 </div>
-                <div class="text-[10px] text-slate-400 mt-1">Kelembapan: ${c.humidity_pct}%</div>
+                <div class="flex flex-col items-end space-y-1">
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${isOnline ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'}">
+                    ${isOnline ? 'ONLINE' : 'OFFLINE'}
+                  </span>
+                  <span class="text-[10px] text-slate-400 font-mono">Baterai: ${c.battery_pct}%</span>
+                </div>
+              </div>
+
+              <!-- Metrics Display -->
+              <div class="grid grid-cols-2 gap-3 text-center">
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
+                  <div class="text-[10px] text-slate-400 font-medium">Suhu Saat Ini</div>
+                  <div class="text-2xl font-black ${tempColor} mt-1">${temp.toFixed(1)} °C</div>
+                  <div class="text-[10px] text-slate-400 mt-1">Setpoint: <span id="cur-setpoint-${c.device_id}">${c.setpoint_c}</span> °C</div>
+                </div>
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
+                  <div class="text-[10px] text-slate-400 font-medium">Status Pintu</div>
+                  <div class="text-lg font-extrabold ${c.door_open ? 'text-rose-400 animate-pulse' : 'text-emerald-400'} mt-1">
+                    ${c.door_open ? 'TERBUKA' : 'TERTUTUP'}
+                  </div>
+                  <div class="text-[10px] text-slate-400 mt-1">Kelembapan: ${c.humidity_pct}%</div>
+                </div>
+              </div>
+
+              <!-- Setpoint Control Form (Downlink CMD) -->
+              <div class="pt-3 border-t border-slate-700/60">
+                <div class="text-[11px] font-semibold text-slate-300 mb-2 flex items-center justify-between">
+                  <span>Kontrol Setpoint Suhu</span>
+                  <span class="text-[9px] text-slate-500">Kirim Downlink MQTT cmd</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <input type="number" id="input-setpoint-${c.device_id}" step="0.1" min="0" max="10" value="${c.setpoint_c}"
+                         class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white text-center font-mono focus:border-cyan-500 focus:outline-none">
+                  <span class="text-xs text-slate-400">°C</span>
+                  <button onclick="sendSetpointCommand('${c.device_id}')"
+                          class="flex-1 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-sm transition">
+                    Kirim Setpoint
+                  </button>
+                </div>
+                <div id="cmd-status-${c.device_id}" class="text-[10px] text-slate-400 mt-1.5 min-h-[14px]"></div>
+              </div>
+
+              <div class="pt-2 border-t border-slate-700/40 flex items-center justify-between text-[10px] text-slate-500">
+                <span>RSSI: ${c.rssi_dbm} dBm</span>
+                <span>Update: ${new Date(c.last_updated).toLocaleTimeString('id-ID')}</span>
               </div>
             </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       } catch (e) {
         console.error("Coldchain fetch error:", e);
+      }
+    }
+
+    // POST /api/v1/coldchain/cmd/{device_id}
+    async function sendSetpointCommand(deviceId) {
+      const inputEl = document.getElementById(`input-setpoint-${deviceId}`);
+      const statusEl = document.getElementById(`cmd-status-${deviceId}`);
+      if (!inputEl) return;
+
+      const newTemp = parseFloat(inputEl.value);
+      if (isNaN(newTemp) || newTemp < 0 || newTemp > 10) {
+        if (statusEl) {
+          statusEl.textContent = "Error: Setpoint harus antara 0.0 - 10.0 °C";
+          statusEl.className = "text-[10px] text-rose-400 mt-1.5";
+        }
+        return;
+      }
+
+      if (statusEl) {
+        statusEl.textContent = "Mengirim perintah MQTT cmd...";
+        statusEl.className = "text-[10px] text-cyan-400 mt-1.5";
+      }
+
+      try {
+        const res = await fetch(`/api/v1/coldchain/cmd/${deviceId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            command: "setpoint",
+            args: { temp_c: newTemp }
+          })
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (statusEl) {
+            statusEl.textContent = `✓ Setpoint ${newTemp} °C terkirim ke MQTT!`;
+            statusEl.className = "text-[10px] text-emerald-400 mt-1.5";
+          }
+          setTimeout(() => {
+            fetchColdchainChambers();
+          }, 1500);
+        } else {
+          const errJson = await res.json();
+          if (statusEl) {
+            statusEl.textContent = `Gagal: ${errJson.error?.message || 'Error API'}`;
+            statusEl.className = "text-[10px] text-rose-400 mt-1.5";
+          }
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = `Error: ${err.message}`;
+          statusEl.className = "text-[10px] text-rose-400 mt-1.5";
+        }
       }
     }
 

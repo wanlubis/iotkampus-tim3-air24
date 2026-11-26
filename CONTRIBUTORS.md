@@ -57,6 +57,19 @@ Kontribusi:
 - Penambahan panel Grafana observabilitas Smart Energy (`power_w` dan `energy_kwh`) pada `grafana/provisioning/dashboards/air24_observability.json`.
 - Dokumentasi peran, asumsi tarif/jam kerja, dan ringkasan API Smart Energy pada `README.md`.
 
+## Tim 2: Cold-Chain / Smart Storage (AIR24)
+
+### Ericson Meo & Chandra Jazzel
+
+GitHub: ericsonmeo (`eriksonmeo@gmail.com`) & cazzel (`chandrajazzel@gmail.com`)
+
+Kontribusi:
+- Implementasi simulator 3 chamber Cold-Chain (`cc-01`, `cc-02`, `cc-03` pada gedung `bsd-a`: `gudang-a` & `gudang-b`) dengan parameter suhu, kelembapan, status pintu (`door_open`), baterai, RSSI, dan downlink listener `cmd` setpoint pada `simulators/coldchain/simulator.py`.
+- Pengembangan skenario injektor mode `NORMAL`, `SPIKE`, `DOOR`, `STOP` (uji no-data timeout), `CRASH` (uji LWT offline), dan perintah `RECONNECT`.
+- Implementasi rule engine eskalasi bertingkat (`TEMP_WARN` >6°C, `TEMP_HIGH` >8°C, `DOOR_OPEN_LONG` >60s, `BATTERY_LOW` <20%, dan watchdog `OFFLINE`) pada tab Node-RED `Rules - Cold-Chain`.
+- Integrasi endpoint REST API Cold-Chain (`/api/v1/coldchain/chambers`, `/chambers/{device_id}`, `/escalations`, `/cmd/{device_id}`) pada `api/app/routers/coldchain.py`.
+- Desain antarmuka monitoring Cold-Chain dan kontrol setpoint downlink MQTT pada `dashboard/index.html`.
+
 ## Catatan
 
 Kontribusi anggota tercatat melalui riwayat commit Git.

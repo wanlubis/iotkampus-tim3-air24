@@ -213,8 +213,9 @@
         "name": "Link Out to Domain Rules",
         "mode": "link",
         "links": [
-            "link_from_ingest",
-            "link_energy_from_ingest"
+            "link_coldchain_from_ingest",
+            "link_energy_from_ingest",
+            "link_from_ingest"
         ],
         "x": 695,
         "y": 140,
@@ -322,6 +323,7 @@
         "name": "Link Out Status to Rules",
         "mode": "link",
         "links": [
+            "link_coldchain_status_in",
             "link_energy_status_in"
         ],
         "x": 695,
@@ -597,5 +599,119 @@
                 "out_influx_status"
             ]
         ]
+    },
+    {
+        "id": "tab_rules_coldchain",
+        "type": "tab",
+        "label": "Rules - Cold-Chain",
+        "disabled": false,
+        "info": "Rule Engine Tim 2 (Cold-Chain): TEMP_WARN, TEMP_HIGH, DOOR_OPEN_LONG, BATTERY_LOW, OFFLINE"
+    },
+    {
+        "id": "link_coldchain_from_ingest",
+        "type": "link in",
+        "z": "tab_rules_coldchain",
+        "name": "Link In Telemetry (Coldchain)",
+        "links": [
+            "link_to_rules"
+        ],
+        "x": 140,
+        "y": 100,
+        "wires": [
+            [
+                "fn_coldchain_rule_engine"
+            ]
+        ]
+    },
+    {
+        "id": "fn_coldchain_rule_engine",
+        "type": "function",
+        "z": "tab_rules_coldchain",
+        "name": "Cold-Chain Rule Engine (TEMP_WARN, TEMP_HIGH, DOOR, BATTERY)",
+        "func": "let data = msg.payload;\nif (!data || data.domain !== 'coldchain') {\n    return null;\n}\n\nconst tsMs = (typeof data.ts === 'number') ? data.ts : Date.now();\nconst deviceId = data.device_id;\nconst gedung = data.gedung || 'bsd-a';\nconst ruang = data.ruang || '';\nconst m = data.metrics || {};\n\nconst tempC = Number(m.temp_c);\nconst doorOpen = Boolean(m.door_open);\nconst batteryPct = Number(m.battery_pct !== undefined ? m.battery_pct : 100);\n\nlet activeAlerts = flow.get('coldchainActiveAlerts') || {};\nlet breachSince = flow.get('coldchainBreachSince') || {};\n\nlet alertsToPost = [];\n\nfunction evalRule(ruleCode, severity, condition, message, val) {\n    const key = deviceId + ':' + ruleCode;\n    if (condition) {\n        if (!breachSince[key]) breachSince[key] = tsMs;\n        if (!activeAlerts[key]) {\n            const alertObj = {\n                device_id: deviceId,\n                domain: 'coldchain',\n                code: ruleCode,\n                severity: severity,\n                message: message,\n                value: val,\n                context: {\n                    gedung: gedung,\n                    ruang: ruang,\n                    temp_c: tempC,\n                    door_open: doorOpen,\n                    battery_pct: batteryPct\n                }\n            };\n            activeAlerts[key] = { ...alertObj, raised_ts: tsMs };\n            alertsToPost.push(alertObj);\n        }\n    } else {\n        delete breachSince[key];\n        delete activeAlerts[key];\n    }\n}\n\n// 1. TEMP_HIGH (critical): temp_c > 8.0 °C\nevalRule('TEMP_HIGH', 'critical', tempC > 8.0, \n    'Suhu kritis chamber ' + deviceId + ' (' + ruang + ') mencapai ' + tempC.toFixed(1) + ' °C (> 8.0 °C)', tempC);\n\n// 2. TEMP_WARN (warning): temp_c > 6.0 °C\nevalRule('TEMP_WARN', 'warning', (tempC > 6.0 && tempC <= 8.0), \n    'Peringatan suhu chamber ' + deviceId + ' (' + ruang + ') naik ke ' + tempC.toFixed(1) + ' °C (> 6.0 °C)', tempC);\n\n// 3. DOOR_OPEN_LONG (warning): door_open == true\nevalRule('DOOR_OPEN_LONG', 'warning', doorOpen === true, \n    'Pintu chamber ' + deviceId + ' (' + ruang + ') terdeteksi terbuka terus menerus', 1);\n\n// 4. BATTERY_LOW (warning): battery_pct < 20\nif (batteryPct < 20) {\n    evalRule('BATTERY_LOW', 'warning', true, \n        'Baterai sensor chamber ' + deviceId + ' kritis (' + batteryPct + ' % < 20%)', batteryPct);\n}\n\nflow.set('coldchainActiveAlerts', activeAlerts);\nflow.set('coldchainBreachSince', breachSince);\n\nif (alertsToPost.length === 0) {\n    return null;\n}\n\nreturn [alertsToPost.map(a => ({\n    payload: a,\n    headers: {\n        'Content-Type': 'application/json',\n        'X-API-Key': env.get('API_KEY')\n    }\n}))];",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "x": 450,
+        "y": 100,
+        "wires": [
+            [
+                "http_post_coldchain_alert",
+                "debug_coldchain_alert"
+            ]
+        ]
+    },
+    {
+        "id": "link_coldchain_status_in",
+        "type": "link in",
+        "z": "tab_rules_coldchain",
+        "name": "Link In Status (Coldchain)",
+        "links": [
+            "link_to_status_rules"
+        ],
+        "x": 140,
+        "y": 220,
+        "wires": [
+            [
+                "fn_coldchain_status_lwt"
+            ]
+        ]
+    },
+    {
+        "id": "fn_coldchain_status_lwt",
+        "type": "function",
+        "z": "tab_rules_coldchain",
+        "name": "Cold-Chain LWT Offline Tracker",
+        "func": "let data = msg.payload;\nif (!data || data.domain !== 'coldchain' || !data.device_id) {\n    return null;\n}\n\nconst status = String(data.status || '').toLowerCase();\nconst deviceId = data.device_id;\nconst gedung = data.gedung || 'bsd-a';\nconst ruang = data.ruang || '';\n\nlet activeAlerts = flow.get('coldchainActiveAlerts') || {};\nconst key = deviceId + ':OFFLINE';\n\nif (status === 'offline') {\n    if (!activeAlerts[key]) {\n        const alertObj = {\n            device_id: deviceId,\n            domain: 'coldchain',\n            code: 'OFFLINE',\n            severity: 'critical',\n            message: 'Chamber ' + deviceId + ' (' + ruang + ') terputus dari broker (LWT offline)',\n            value: 0,\n            context: { gedung: gedung, ruang: ruang, trigger: 'lwt_offline' }\n        };\n        activeAlerts[key] = alertObj;\n        flow.set('coldchainActiveAlerts', activeAlerts);\n        return [{\n            payload: alertObj,\n            headers: {\n                'Content-Type': 'application/json',\n                'X-API-Key': env.get('API_KEY')\n            }\n        }];\n    }\n} else if (status === 'online') {\n    delete activeAlerts[key];\n    flow.set('coldchainActiveAlerts', activeAlerts);\n}\n\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "x": 430,
+        "y": 220,
+        "wires": [
+            [
+                "http_post_coldchain_alert",
+                "debug_coldchain_alert"
+            ]
+        ]
+    },
+    {
+        "id": "http_post_coldchain_alert",
+        "type": "http request",
+        "z": "tab_rules_coldchain",
+        "name": "Post Coldchain Alert to FastAPI",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://api:8000/api/v1/alerts",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 780,
+        "y": 140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "debug_coldchain_alert",
+        "type": "debug",
+        "z": "tab_rules_coldchain",
+        "name": "Coldchain Alert Raised",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 200,
+        "wires": []
     }
 ]
