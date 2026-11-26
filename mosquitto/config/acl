@@ -1,0 +1,5 @@
+user coldchain_user
+topic readwrite kampus/coldchain/#
+
+user nodered_user
+topic read kampus/coldchain/#

@@ -1,132 +1,139 @@
 
 services:
+
+  dashboard:
+    image: nginx@sha256:8eb04fe3b385090e9aa02961f77398ad09b6bf33ab07f6669a5bb7acce22c0d3
+    container_name: coldchain-dashboard
+    restart: unless-stopped
+
+    read_only: true
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
+
+    tmpfs:
+      - /run:rw,noexec,nosuid,nodev,size=8m
+      - /var/cache/nginx:rw,noexec,nosuid,nodev,size=64m
+      - /tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777
+
+    ports:
+      - "127.0.0.1:8080:80"
+
+    volumes:
+      - ./dashboard/index.html:/usr/share/nginx/html/index.html:ro
+      - ./dashboard/style.css:/usr/share/nginx/html/style.css:ro
+      - ./dashboard/app.js:/usr/share/nginx/html/app.js:ro
+      - ./dashboard/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+    depends_on:
+      - backend
+
+
   mosquitto:
     image: eclipse-mosquitto:2
-    container_name: air24-mosquitto
+    container_name: coldchain-mosquitto
+    restart: unless-stopped
     ports:
       - "1883:1883"
     volumes:
-      - ./mosquitto/config:/mosquitto/config:ro
+      - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
-    restart: unless-stopped
-
+      - ./mosquitto/log:/mosquitto/log
 
   nodered:
     image: nodered/node-red:latest
-    container_name: air24-nodered
+    container_name: coldchain-nodered
+    restart: unless-stopped
+    environment:
+      API_KEY: ${API_KEY}
     ports:
       - "1880:1880"
     volumes:
       - ./nodered/data:/data
     depends_on:
       - mosquitto
-      - influxdb
-      - postgres
-    restart: unless-stopped
 
-  
   influxdb:
     image: influxdb:2.7
-    container_name: air24-influxdb
-    environment:
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME}
-      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD}
-      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
-      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
+    container_name: coldchain-influxdb
+    restart: unless-stopped
     ports:
       - "8086:8086"
     volumes:
-      - ./influx/data:/var/lib/influxdb2
-    restart: unless-stopped
-
+      - ./influxdb:/var/lib/influxdb2
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_ADMIN_USER}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_ADMIN_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
 
   postgres:
     image: postgres:16
-    container_name: air24-postgres
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    container_name: coldchain-postgres
+    restart: unless-stopped
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_DB: kampus
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
-      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./postgres/init:/docker-entrypoint-initdb.d
+
+  backend:
+    build: ./backend
+    container_name: coldchain-backend
     restart: unless-stopped
-  
-  
-  api:
-    build:
-      context: ./api
-    container_name: air24-api
     ports:
       - "8000:8000"
     environment:
       API_KEY: ${API_KEY}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: kampus
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_ORG: ${INFLUXDB_ORG}
+      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET}
+      INFLUXDB_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
     depends_on:
       - postgres
       - influxdb
-    restart: unless-stopped
-   
-  
-  air-simulator:
-    build:
-      context: ./simulators/air
-    container_name: air24-simulator
-    environment:
-      MQTT_HOST: mosquitto
-      MQTT_PORT: 1883
-      MQTT_USERNAME: ${MQTT_USERNAME}
-      MQTT_PASSWORD: ${MQTT_PASSWORD}
-    depends_on:
       - mosquitto
-    restart: unless-stopped
-
-  
-  energy-simulator:
-    profiles: ["team-1"]
-    build:
-      context: ./simulators/energy
-    container_name: air24-energy-simulator
-    environment:
-      MQTT_HOST: mosquitto
-      MQTT_PORT: 1883
-      MQTT_USERNAME: ${MQTT_USERNAME}
-      MQTT_PASSWORD: ${MQTT_PASSWORD}
-    depends_on:
-      - mosquitto
-    restart: unless-stopped
-
-  coldchain-simulator:
-    profiles: ["team-2"]
-    build:
-      context: ./simulators/coldchain
-    container_name: air24-coldchain-simulator
-    environment:
-      MQTT_HOST: mosquitto
-      MQTT_PORT: 1883
-      MQTT_USERNAME: ${MQTT_USERNAME}
-      MQTT_PASSWORD: ${MQTT_PASSWORD}
-    depends_on:
-      - mosquitto
-    restart: unless-stopped
-
-
 
   grafana:
-    image: grafana/grafana:11.5.2
-    container_name: air24-grafana
+    image: grafana/grafana:latest
+    container_name: coldchain-grafana
+    restart: unless-stopped
     ports:
       - "3000:3000"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      INFLUXDB_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN}
     volumes:
       - ./grafana/data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
     depends_on:
       - influxdb
-    restart: unless-stopped
+      - postgres
 
