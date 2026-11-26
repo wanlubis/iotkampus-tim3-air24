@@ -172,7 +172,7 @@ Untuk demonstrasi live di depan dosen penguji, gunakan simulator injektor beriku
 
 ### Skenario Demo & Injektor Gangguan Tim 1 — Smart Energy (Menit 8–12)
 
-Jalankan simulator 4 kWh meter (`kwh-01` s.d. `kwh-04`) melalui Docker Compose profile `team-1` atau Python lokal:
+Jalankan simulator 4 kWh meter (`kwh-01` s.d. `kwh-04`) melalui Docker Compose profile `team-1`:
 ```bash
 docker compose --profile team-1 up --build -d energy-simulator
 ```
@@ -200,10 +200,12 @@ docker compose --profile team-1 up --build -d energy-simulator
    python simulators/energy/inject.py normal --device all --via cmd
    ```
 
-5. **Dashboard BMS & Unit Test Tim 1**:
-   - **Dashboard BMS Smart Energy** (`http://localhost:8080` -> tab **Smart Energy**): menampilkan 4 kartu KPI utama, denah arsitektur **Interactive 2D SVG Floor Plan** Lantai 3 Gedung BSD-A (`R3012`, `R3013`, `R3017`, `Lab-IoT`), grafik permanen **Tren Daya** & **Distribusi Tagihan**, **Panel Detail Ruangan** + feed Alert/ACK, Ekspor CSV, serta tombol **Mode Simulasi** untuk preview lokal tanpa backend aktif.
-   - **Unit Test Terotomasi Tim 1**:
-     ```bash
-     pytest -q api/tests/test_energy_api.py simulators/energy/test_simulator.py
-     node nodered/tests/test_rules.js
-     ```
+### Dashboard BMS & Unit Test Tim 1 — Smart Energy
+
+- **Dashboard BMS (`http://localhost:8080` → tab *Smart Energy*)**:
+  Menampilkan 4 kartu KPI utama, denah arsitektur **Interactive 2D SVG Floor Plan** Lantai 3 Gedung BSD-A (`R3012`, `R3013`, `R3017`, `Lab-IoT`), grafik permanen **Tren Daya** & **Distribusi Tagihan**, **Panel Detail Ruangan** + feed Alert/ACK, **Ekspor CSV**, serta tombol **Mode Simulasi** untuk pratinjau lokal.
+- **Unit Test Terotomasi Tim 1**:
+  ```bash
+  pytest -q api/tests/test_energy_api.py simulators/energy/test_simulator.py
+  node nodered/tests/test_rules.js
+  ```
