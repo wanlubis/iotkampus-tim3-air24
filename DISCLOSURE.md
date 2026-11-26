@@ -1,42 +1,10 @@
-AI Usage Disclosure
+# AI Usage Disclosure — Tim 1 (Smart Energy)
 
-
-
-AI Tool Used
-
-\- ChatGPT
-
-
-
-Purpose of Use
-
-ChatGPT was used as an assistant during the development of the Team 3 Smart Environment / Air Quality project.
-
-
-
-The assistance included:
-
-\- Understanding the project requirements and system architecture.
-
-\- Planning the project folder structure.
-
-\- Providing step-by-step development guidance.
-
-\- Helping explain code and troubleshoot technical issues.
-
-
-
-Human Review and Responsibility
-
-All AI-generated suggestions and code are reviewed, tested, and adjusted by the team before being used in the project.
-
-
-
-The team is responsible for understanding, validating, and maintaining the final implementation.
+Dokumen ini mencatat penggunaan alat bantu AI selama pengembangan domain **Smart Energy (Tim 1 — AIR24)** pada proyek *Mini IoT Platform Kampus*.
 
 ---
 
-## Tim 1 (Smart Energy — Anggota 2: Aldy / `Aldy-create`)
+## Tim 1 (Smart Energy — Anggota 2: Aldy Alfaisal Pasaribu / `Aldy-create`)
 
 ### AI Tool Used
 - Antigravity (AI Coding Assistant)
@@ -52,7 +20,7 @@ The author designed the Smart Energy backend/dashboard architecture, implemented
 
 ---
 
-## Tim 1 (Smart Energy — Anggota 1: Vincent / `VozzyJun`)
+## Tim 1 (Smart Energy — Anggota 1: Vincent Junio Ibrahim / `VozzyJun`)
 
 ### AI Tool Used
 - Antigravity (AI Coding Assistant)
@@ -65,4 +33,3 @@ AI assistance was used in a limited supporting role during the development of th
 
 ### Human Review and Responsibility
 The author designed, implemented, and validated the simulator, fault injection modes, and Node-RED rule flows via automated Python and Node.js tests before pushing to `team-1-energy`. The author holds full ownership and responsibility for the implementation.
-
