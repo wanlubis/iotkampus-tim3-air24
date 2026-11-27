@@ -53,7 +53,7 @@ GitHub: Aldy-create (`aldypasaribu59@gmail.com`)
 Kontribusi:
 - Implementasi REST API Smart Energy (`/api/v1/energy/rooms`, `/usage`, `/usage/export`, `/waste`, `/bill`, `/baseline`) pada `api/app/routers/energy.py`.
 - Penambahan unit test endpoint & autentikasi Smart Energy pada `api/tests/test_energy_api.py`.
-- Pengembangan tab Dashboard Smart Energy (`#content-energy`) dengan Full-Viewport 3D Digital Twin (Three.js), Floating Glassmorphism HUD, Expandable 2D Analytics Drawer (Chart.js), tabel kWh meter, dan ACK alert pada `dashboard/index.html`.
+- Pengembangan tab Dashboard Smart Energy (`#content-energy`) dengan tata letak BMS Bento Grid, Interactive 2D SVG Architectural Floor Plan Lantai 3 Gedung BSD-A, grafik analitik Chart.js (Tren Daya, Distribusi Tagihan, Baseline), tabel kWh meter, ekspor CSV, mode simulasi lokal, dan tombol ACK alert pada `dashboard/index.html` serta modul ES6 di `dashboard/energy/`.
 - Penambahan panel Grafana observabilitas Smart Energy (`power_w` dan `energy_kwh`) pada `grafana/provisioning/dashboards/air24_observability.json`.
 - Dokumentasi peran, asumsi tarif/jam kerja, dan ringkasan API Smart Energy pada `README.md`.
 

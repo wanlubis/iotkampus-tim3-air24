@@ -98,6 +98,7 @@ Semua angka ambang berikut adalah asumsi simulasi lab kampus:
    - Jam kerja acuan: Senin–Jumat, 07.00–18.00 WIB.
    - `WASTE_AFTER_HOURS`: Warning jika `power_w > 200 W` di luar jam kerja selama 2 menit.
    - `HIGH_LOAD`: Critical jika `power_w > 3000 W` selama 1 menit.
+   - `OFFLINE`: Critical jika telemetry/heartbeat terputus 60 detik (watchdog) atau LWT bernilai `offline`.
 
 > **Pernyataan Secret & Keamanan**: File `.env` sungguhan dan secret tidak pernah di-commit ke repositori Git. Kredensial lab dikonfigurasi melalui berkas template `.env.example`.
 
@@ -155,11 +156,22 @@ docker compose down
 
 ### A. Domain Smart Energy (Tim 1)
 ```bash
-# Injeksi pemborosan di luar jam kerja (>200 W):
-python simulators/energy/simulator.py --mode BOROS
+# Injeksi pemborosan di luar jam kerja (>200 W selama 2 menit -> WASTE_AFTER_HOURS):
+python simulators/energy/inject.py boros --device kwh-02 --via cmd
 
-# Injeksi lonjakan beban kritis (>3000 W):
-python simulators/energy/simulator.py --mode LONJAKAN
+# Injeksi lonjakan beban kritis (>3000 W selama 1 menit -> HIGH_LOAD):
+python simulators/energy/inject.py lonjakan --device kwh-03 --via cmd
+
+# Uji putus mendadak (LWT offline instan) & no-data (watchdog 60 detik):
+python simulators/energy/inject.py crash --device kwh-01 --via cmd
+python simulators/energy/inject.py stop --device kwh-04 --via cmd
+
+# Pulihkan semua perangkat ke kondisi normal (auto-resolve):
+python simulators/energy/inject.py normal --device all --via cmd
+
+# Menjalankan unit test terotomasi Tim 1 (API, simulator, & Node-RED rules):
+pytest -q api/tests/test_energy_api.py simulators/energy/test_simulator.py
+node nodered/tests/test_rules.js
 ```
 
 ### B. Domain Cold-Chain (Tim 2)
